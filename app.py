@@ -1,16 +1,20 @@
 import sqlite3
 import pandas as pd
-from datetime import datetime
+from datetime import datetime, timedelta, timezone
 from flask import Flask, render_template, request, redirect, url_for, send_file, jsonify
 
 app = Flask(__name__)
+
+# Configuração do Fuso Horário de Brasília
+def get_agora_brasil():
+    fuso = timezone(timedelta(hours=-3))
+    return datetime.now(fuso)
 
 def get_db_connection():
     conn = sqlite3.connect('ponto.db')
     conn.row_factory = sqlite3.Row
     return conn
 
-# Inicializa o banco de dados se não existir
 def init_db():
     conn = get_db_connection()
     conn.execute('''CREATE TABLE IF NOT EXISTS registros 
@@ -19,6 +23,14 @@ def init_db():
                  (id INTEGER PRIMARY KEY AUTOINCREMENT, nome TEXT UNIQUE)''')
     conn.commit()
     conn.close()
+
+# Transforma decimal (0.97) em formato amigável (0h 58min)
+def formatar_horas_bonito(decimal_horas):
+    sinal = "+" if decimal_horas >= 0 else "-"
+    total_minutos = abs(int(decimal_horas * 60))
+    h = total_minutos // 60
+    m = total_minutos % 60
+    return f"{sinal}{h}h {m}min"
 
 def calcular_jornada(entrada_str, saida_str):
     for formato in ("%d/%m/%Y %H:%M:%S", "%d/%m/%Y %H:%M"):
@@ -46,10 +58,10 @@ def bater_ponto():
     status_local = "✅ OK"
     if lat and lon:
         distancia = ((float(lat) - CLINICA_LAT)**2 + (float(lon) - CLINICA_LON)**2)**0.5
-        if distancia > 0.002: status_local = "📍 Fora da Clínica"
+        if distancia > 0.002: status_local = "📍 Fora"
     else: status_local = "❓ Sem GPS"
     
-    agora = datetime.now()
+    agora = get_agora_brasil()
     conn = get_db_connection()
     conn.execute("INSERT INTO registros (nome, tipo, horario, data_texto, localizacao) VALUES (?, ?, ?, ?, ?)", 
                  (nome, tipo, agora.strftime("%d/%m/%Y %H:%M:%S"), agora.strftime("%d/%m/%Y"), status_local))
@@ -61,27 +73,49 @@ def bater_ponto():
 @app.route('/painel_gestao')
 def painel_gestao():
     if request.args.get('senha') != '8340': return redirect(url_for('index'))
-    mes = request.args.get('mes', datetime.now().strftime("%m"))
-    filtro = f"/{mes}/{datetime.now().strftime('%Y')}"
+    agora_br = get_agora_brasil()
+    mes = request.args.get('mes', agora_br.strftime("%m"))
+    filtro = f"/{mes}/2026"
+    
     conn = get_db_connection()
     colab_lista = conn.execute("SELECT * FROM colaboradoras ORDER BY nome ASC").fetchall()
-    relatorio = []; presentes = []; total_extras_mes = 0.0
+    relatorio = []; presentes = []; total_extras_decimal = 0.0
+    
     for c in colab_lista:
         regs = conn.execute("SELECT tipo, horario FROM registros WHERE nome = ? AND horario LIKE ?", (c['nome'], f"%{filtro}%")).fetchall()
-        if regs and regs[-1]['tipo'] == 'Entrada' and regs[-1]['horario'].startswith(datetime.now().strftime("%d/%m/%Y")):
+        if regs and regs[-1]['tipo'] == 'Entrada' and regs[-1]['horario'].startswith(agora_br.strftime("%d/%m/%Y")):
             presentes.append(c['nome'])
+        
         datas = sorted(list(set([r['horario'].split(' ')[0] for r in regs])))
-        total_saldo = 0.0; dias = 0
+        total_saldo_colaboradora = 0.0; dias = 0
         for d in datas:
             e = [r['horario'] for r in regs if r['horario'].startswith(d) and r['tipo'] == 'Entrada']
             s = [r['horario'] for r in regs if r['horario'].startswith(d) and r['tipo'] == 'Saída']
             if e and s:
-                dias += 1; _, saldo = calcular_jornada(e[0], s[-1]); total_saldo += saldo
-        if total_saldo > 0: total_extras_mes += total_saldo
-        relatorio.append({'nome': c['nome'], 'dias': dias, 'saldo': round(total_saldo, 2)})
+                dias += 1; _, saldo = calcular_jornada(e[0], s[-1]); total_saldo_colaboradora += saldo
+        
+        if total_saldo_colaboradora > 0: total_extras_decimal += total_saldo_colaboradora
+        relatorio.append({
+            'nome': c['nome'], 
+            'dias': dias, 
+            'saldo_decimal': total_saldo_colaboradora,
+            'saldo_formatado': formatar_horas_bonito(total_saldo_colaboradora)
+        })
+    
     ultimos = conn.execute("SELECT * FROM registros ORDER BY id DESC LIMIT 50").fetchall()
     conn.close()
-    return render_template('admin.html', relatorio=relatorio, ultimos=ultimos, colaboradoras=colab_lista, mes_sel=mes, presentes=presentes, total_extras=round(total_extras_mes, 1))
+    
+    return render_template('admin.html', 
+                           relatorio=relatorio, 
+                           ultimos=ultimos, 
+                           colaboradoras=colab_lista, 
+                           mes_sel=mes, 
+                           presentes=presentes, 
+                           total_extras=formatar_horas_bonito(total_extras_decimal))
+
+@app.route('/backup')
+def backup():
+    return send_file("ponto.db", as_attachment=True)
 
 @app.route('/cadastrar_colaboradora', methods=['POST'])
 def cadastrar():
@@ -97,7 +131,7 @@ def cadastrar():
 def lancar_manual():
     n = request.form.get('nome'); t = request.form.get('tipo'); dt = request.form.get('data_hora').strip()
     conn = get_db_connection()
-    conn.execute("INSERT INTO registros (nome, tipo, horario, data_texto, localizacao) VALUES (?, ?, ?, ?, ?)", (n, t, dt, dt.split(' ')[0], "📝 Manual (OK)"))
+    conn.execute("INSERT INTO registros (nome, tipo, horario, data_texto, localizacao) VALUES (?, ?, ?, ?, ?)", (n, t, dt, dt.split(' ')[0], "📝 Manual"))
     conn.commit(); conn.close()
     return redirect(url_for('painel_gestao', senha='8340'))
 

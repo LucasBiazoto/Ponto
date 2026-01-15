@@ -83,6 +83,16 @@
             font-weight: 600; 
         }
 
+        .btn-backup {
+            background: #6d6875;
+            color: white;
+            padding: 8px 15px;
+            border-radius: 10px;
+            text-decoration: none;
+            font-size: 12px;
+            margin-right: 10px;
+        }
+
         .btn-acao { 
             background: var(--rosa); 
             color: white; 
@@ -95,8 +105,6 @@
             transition: 0.3s;
         }
 
-        .btn-acao:hover { opacity: 0.8; }
-
         input, select { 
             width: 100%; 
             padding: 12px; 
@@ -107,7 +115,6 @@
             font-family: 'Poppins', sans-serif;
         }
 
-        /* Estilo dos Badges de Saldo para evitar erro no VS Code */
         .saldo-badge { 
             padding: 5px 12px; 
             border-radius: 8px; 
@@ -118,6 +125,15 @@
         .positivo { background-color: #e8f5e9; color: #2e7d32; }
         .negativo { background-color: #ffebee; color: #c62828; }
 
+        .tipo-badge {
+            font-size: 10px;
+            text-transform: uppercase;
+            padding: 3px 8px;
+            border-radius: 5px;
+            background: #f0f0f0;
+            color: #888;
+        }
+
         @media (max-width: 900px) { 
             .grid, .dashboard { grid-template-columns: 1fr; } 
         }
@@ -127,7 +143,10 @@
 
     <div class="header">
         <h1>Gestão Clínica Dra Thamiris Araujo</h1>
-        <a href="/" style="color: var(--rosa); text-decoration: none; font-weight: 600; font-size: 14px;">← Voltar ao Ponto</a>
+        <div style="display: flex; align-items: center;">
+            <a href="/backup" class="btn-backup">💾 Backup Banco</a>
+            <a href="/" style="color: var(--rosa); text-decoration: none; font-weight: 600; font-size: 14px;">← Voltar</a>
+        </div>
     </div>
 
     <div class="dashboard">
@@ -136,11 +155,11 @@
             <p>{{ presentes|length }}</p>
         </div>
         <div class="dash-card" style="border-bottom-color: #28a745;">
-            <h3>Extras Acumuladas 📈</h3>
-            <p>+{{ total_extras }}h</p>
+            <h3>Total Extras (Mês) 📈</h3>
+            <p>{{ total_extras }}</p>
         </div>
         <div class="dash-card">
-            <h3>Mês Atual 📅</h3>
+            <h3>Mês de Referência 📅</h3>
             <p>{{ mes_sel }}/2026</p>
         </div>
     </div>
@@ -148,7 +167,7 @@
     <div class="grid">
         <aside>
             <div class="card">
-                <h2>Cadastrar Colaboradora</h2>
+                <h2>Nova Colaboradora</h2>
                 <form action="/cadastrar_colaboradora" method="POST">
                     <input type="text" name="nome_novo" placeholder="Nome Completo" required>
                     <button type="submit" class="btn-acao">Salvar Cadastro</button>
@@ -159,7 +178,7 @@
                 <h2>Lançamento Manual 🖋️</h2>
                 <form action="/lancar_manual" method="POST">
                     <select name="nome" required>
-                        <option value="" disabled selected>Quem faltou bater?</option>
+                        <option value="" disabled selected>Selecionar Colaboradora...</option>
                         {% for c in colaboradoras %}
                         <option value="{{ c.nome }}">{{ c.nome }}</option>
                         {% endfor %}
@@ -169,7 +188,7 @@
                         <option value="Entrada">Entrada</option>
                         <option value="Saída">Saída</option>
                     </select>
-                    <button type="submit" class="btn-acao" style="background: var(--texto);">Corrigir Ponto</button>
+                    <button type="submit" class="btn-acao" style="background: var(--texto);">Inserir Registro</button>
                 </form>
             </div>
         </aside>
@@ -177,15 +196,15 @@
         <main>
             <div class="card">
                 <div style="display:flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">
-                    <h2 style="border:none; margin:0;">Resumo do Mês 🌸</h2>
-                    <a href="/exportar" class="btn-excel">📊 Gerar Relatório</a>
+                    <h2 style="border:none; margin:0;">Resumo Mensal (Banco de Horas) 🌸</h2>
+                    <a href="/exportar" class="btn-excel">📊 Exportar Excel</a>
                 </div>
                 <table>
                     <thead>
                         <tr>
-                            <th>Colaboradora</th>
-                            <th>Dias Ativos</th>
-                            <th>Saldo</th>
+                            <th>Nome</th>
+                            <th>Dias</th>
+                            <th>Saldo Acumulado</th>
                         </tr>
                     </thead>
                     <tbody>
@@ -194,8 +213,8 @@
                             <td><strong>{{ r.nome }}</strong></td>
                             <td>{{ r.dias }} dias</td>
                             <td>
-                                <span class="saldo-badge {{ 'positivo' if r.saldo > 0 else 'negativo' }}">
-                                    {{ '+' if r.saldo > 0 }}{{ r.saldo }}h
+                                <span class="saldo-badge {{ 'positivo' if r.saldo_decimal >= 0 else 'negativo' }}">
+                                    {{ r.saldo_formatado }}
                                 </span>
                             </td>
                         </tr>
@@ -205,13 +224,14 @@
             </div>
 
             <div class="card">
-                <h2>Histórico Recente 📍</h2>
+                <h2>Histórico de Movimentações 📍</h2>
                 <table>
                     <thead>
                         <tr>
                             <th>Nome</th>
-                            <th>Registro</th>
-                            <th>Localização</th>
+                            <th>Tipo</th>
+                            <th>Horário</th>
+                            <th>Status</th>
                             <th>Ação</th>
                         </tr>
                     </thead>
@@ -219,10 +239,11 @@
                         {% for u in ultimos %}
                         <tr>
                             <td>{{ u.nome }}</td>
+                            <td><span class="tipo-badge">{{ u.tipo }}</span></td>
                             <td>{{ u.horario }}</td>
                             <td><small>{{ u.localizacao }}</small></td>
                             <td>
-                                <a href="/excluir_ponto/{{ u.id }}" style="color: #c62828; text-decoration: none; font-size: 11px;" onclick="return confirm('Excluir este registro?')">Excluir</a>
+                                <a href="/excluir_ponto/{{ u.id }}" style="color: #c62828; text-decoration: none; font-size: 11px;" onclick="return confirm('Excluir este ponto?')">Excluir</a>
                             </td>
                         </tr>
                         {% endfor %}
