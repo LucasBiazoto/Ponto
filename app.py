@@ -26,21 +26,25 @@ def init_db():
 
 def formatar_horas_bonito(decimal_horas):
     sinal = "+" if decimal_horas >= 0 else "-"
-    total_minutos = abs(int(decimal_horas * 60))
+    total_minutos = abs(int(round(decimal_horas * 60)))
     h = total_minutos // 60
     m = total_minutos % 60
     return f"{sinal}{h}h {m}min"
 
 def calcular_jornada(entrada_str, saida_str):
-    for formato in ("%d/%m/%Y %H:%M:%S", "%d/%m/%Y %H:%M"):
-        try:
-            inicio = datetime.strptime(entrada_str, formato)
-            fim = datetime.strptime(saida_str, formato)
-            diff = fim - inicio
-            horas = diff.total_seconds() / 3600
-            return round(horas, 2), round(horas - 6.0, 2)
-        except: continue
-    return 0, 0
+    # Formato agora apenas com Hora e Minuto para o cálculo ser exato
+    formato = "%d/%m/%Y %H:%M"
+    try:
+        # Remove os segundos caso existam registros antigos no banco
+        inicio = datetime.strptime(entrada_str[:16], formato)
+        fim = datetime.strptime(saida_str[:16], formato)
+        diff = fim - inicio
+        horas = diff.total_seconds() / 3600
+        # Considera jornada de 6h. Retorna total e saldo.
+        return round(horas, 2), round(horas - 6.0, 2)
+    except Exception as e:
+        print(f"Erro no cálculo: {e}")
+        return 0, 0
 
 @app.route('/')
 def index():
@@ -61,20 +65,20 @@ def bater_ponto():
     else: status_local = "❓ Sem GPS"
     
     agora = get_agora_brasil()
+    # GRAVAÇÃO SEM SEGUNDOS: %H:%M
+    horario_formatado = agora.strftime("%d/%m/%Y %H:%M")
+    
     conn = get_db_connection()
     conn.execute("INSERT INTO registros (nome, tipo, horario, data_texto, localizacao) VALUES (?, ?, ?, ?, ?)", 
-                 (nome, tipo, agora.strftime("%d/%m/%Y %H:%M:%S"), agora.strftime("%d/%m/%Y"), status_local))
+                 (nome, tipo, horario_formatado, agora.strftime("%d/%m/%Y"), status_local))
     conn.commit(); conn.close()
     
     msg = "Bom trabalho meu bem" if tipo == "Entrada" else "Bom descanso meu bem"
-    return jsonify({"status": "SUCESSO", "msg_destaque": msg, "msg_sub": f"Local: {status_local}"})
+    return jsonify({"status": "SUCESSO", "msg_destaque": msg, "msg_sub": f"Registrado às {horario_formatado.split(' ')[1]}"})
 
 @app.route('/painel_gestao')
 def painel_gestao():
-    # TRAVA REAL DE SEGURANÇA
-    if request.args.get('senha') != '8340':
-        return redirect(url_for('index'))
-    
+    if request.args.get('senha') != '8340': return redirect(url_for('index'))
     agora_br = get_agora_brasil()
     mes = request.args.get('mes', agora_br.strftime("%m"))
     filtro = f"/{mes}/2026"
@@ -96,7 +100,7 @@ def painel_gestao():
             if e and s:
                 dias += 1; _, saldo = calcular_jornada(e[0], s[-1]); total_saldo_colaboradora += saldo
         
-        if total_saldo_colaboradora > 0: total_extras_decimal += total_saldo_colaboradora
+        total_extras_decimal += total_saldo_colaboradora
         relatorio.append({
             'id': c['id'], 'nome': c['nome'], 'dias': dias, 
             'saldo_decimal': total_saldo_colaboradora,
@@ -107,6 +111,7 @@ def painel_gestao():
     conn.close()
     return render_template('admin.html', relatorio=relatorio, ultimos=ultimos, colaboradoras=colab_lista, mes_sel=mes, presentes=presentes, total_extras=formatar_horas_bonito(total_extras_decimal))
 
+# ... demais rotas (excluir, backup, exportar) permanecem iguais ...
 @app.route('/excluir_colaboradora/<int:id>')
 def excluir_colaboradora(id):
     conn = get_db_connection()
