@@ -7,9 +7,8 @@ from flask import Flask, render_template, request, redirect, url_for, send_file,
 app = Flask(__name__)
 app.secret_key = 'dra_thamiris_luxury_final_revisado'
 
-# Função para conectar ao banco de dados com tratamento de caminho
+# --- CONFIGURAÇÃO DE BANCO DE DADOS ---
 def get_db_connection():
-    # No Render, o SQLite funciona bem na raiz do projeto
     conn = sqlite3.connect('ponto.db')
     conn.row_factory = sqlite3.Row
     return conn
@@ -17,21 +16,17 @@ def get_db_connection():
 def init_db():
     conn = get_db_connection()
     cursor = conn.cursor()
-    # Tabela de Registros de Ponto
     cursor.execute('''CREATE TABLE IF NOT EXISTS registros 
                       (id INTEGER PRIMARY KEY AUTOINCREMENT, 
-                       nome TEXT, 
-                       tipo TEXT, 
-                       horario TEXT, 
-                       data_texto TEXT, 
-                       localizacao TEXT)''')
-    # Tabela de Colaboradoras
+                       nome TEXT, tipo TEXT, horario TEXT, 
+                       data_texto TEXT, localizacao TEXT)''')
     cursor.execute('''CREATE TABLE IF NOT EXISTS colaboradoras 
                       (id INTEGER PRIMARY KEY AUTOINCREMENT, 
                        nome TEXT UNIQUE)''')
     conn.commit()
     conn.close()
 
+# --- LÓGICA DE CÁLCULO ---
 def calcular_jornada(entrada_str, saida_str):
     for formato in ("%d/%m/%Y %H:%M:%S", "%d/%m/%Y %H:%M"):
         try:
@@ -42,6 +37,8 @@ def calcular_jornada(entrada_str, saida_str):
             return round(horas, 2), round(horas - 6.0, 2)
         except: continue
     return 0, 0
+
+# --- ROTAS DO SITE ---
 
 @app.route('/')
 def index():
@@ -59,7 +56,7 @@ def bater_ponto():
     lat = request.form.get('lat')
     lon = request.form.get('lon')
     
-    # Localização da Clínica (Ajuste se necessário)
+    # Localização da Clínica (Tatuapé/SP)
     CLINICA_LAT, CLINICA_LON = -23.5255, -46.5273
     status_local = "✅ OK"
     fora = False
@@ -85,38 +82,43 @@ def bater_ponto():
 
 @app.route('/painel_gestao')
 def painel_gestao():
+    # --- PROTEÇÃO POR SENHA ---
+    senha_digitada = request.args.get('senha')
+    if senha_digitada != '8340':
+        return """
+        <body style="background:#fff5f8; font-family:sans-serif; text-align:center; padding:50px;">
+            <h2 style="color:#d4a5b2;">🌸 Acesso Restrito</h2>
+            <p>Por favor, acesse o link oficial com a senha de gestão.</p>
+            <a href="/" style="color:#b5838d;">Voltar ao Início</a>
+        </body>
+        """, 403
+
     mes = request.args.get('mes', datetime.now().strftime("%m"))
-    ano = datetime.now().strftime('%Y')
-    filtro = f"/{mes}/{ano}"
+    filtro = f"/{mes}/{datetime.now().strftime('%Y')}"
     
     conn = get_db_connection()
     cursor = conn.cursor()
     cursor.execute("SELECT * FROM colaboradoras ORDER BY nome ASC")
     colab_lista = cursor.fetchall()
     
-    relatorio = []
-    presentes = []
-    total_extras_mes = 0.0
+    relatorio = []; presentes = []; total_extras_mes = 0.0
     
     for c in colab_lista:
         n = c['nome']
         cursor.execute("SELECT tipo, horario FROM registros WHERE nome = ? AND horario LIKE ?", (n, f"%{filtro}%"))
         regs = cursor.fetchall()
         
-        # Verificar quem está presente hoje
         if regs and regs[-1]['tipo'] == 'Entrada' and regs[-1]['horario'].startswith(datetime.now().strftime("%d/%m/%Y")):
             presentes.append(n)
             
         datas = sorted(list(set([r['horario'].split(' ')[0] for r in regs])))
-        total_saldo = 0.0
-        dias = 0
+        total_saldo = 0.0; dias = 0
         for d in datas:
             e = [r['horario'] for r in regs if r['horario'].startswith(d) and r['tipo'] == 'Entrada']
             s = [r['horario'] for r in regs if r['horario'].startswith(d) and r['tipo'] == 'Saída']
             if e and s:
                 dias += 1
-                _, saldo = calcular_jornada(e[0], s[-1])
-                total_saldo += saldo
+                _, saldo = calcular_jornada(e[0], s[-1]); total_saldo += saldo
         
         total_extras_mes += total_saldo
         relatorio.append({'nome': n, 'dias': dias, 'saldo': round(total_saldo, 2)})
@@ -125,7 +127,10 @@ def painel_gestao():
     ultimos = cursor.fetchall()
     conn.close()
     
-    return render_template('admin.html', relatorio=relatorio, ultimos=ultimos, colaboradoras=colab_lista, mes_sel=mes, presentes=presentes, total_extras=round(total_extras_mes, 1))
+    return render_template('admin.html', relatorio=relatorio, ultimos=ultimos, 
+                           colaboradoras=colab_lista, mes_sel=mes, 
+                           presentes=presentes, total_extras=round(total_extras_mes, 1), 
+                           senha_ativa='8340')
 
 @app.route('/cadastrar_colaboradora', methods=['POST'])
 def cadastrar():
@@ -138,42 +143,36 @@ def cadastrar():
             conn.commit()
         except: pass
         conn.close()
-    return redirect(url_for('painel_gestao'))
+    return redirect(url_for('painel_gestao', senha='8340'))
 
 @app.route('/lancar_manual', methods=['POST'])
 def lancar_manual():
-    n = request.form.get('nome')
-    t = request.form.get('tipo')
-    dt = request.form.get('data_hora').strip()
+    n = request.form.get('nome'); t = request.form.get('tipo'); dt = request.form.get('data_hora').strip()
     conn = get_db_connection()
     cursor = conn.cursor()
     cursor.execute("INSERT INTO registros (nome, tipo, horario, data_texto, localizacao) VALUES (?, ?, ?, ?, ?)", 
                    (n, t, dt, dt.split(' ')[0], "📝 Manual (OK)"))
-    conn.commit()
-    conn.close()
-    return redirect(url_for('painel_gestao'))
+    conn.commit(); conn.close()
+    return redirect(url_for('painel_gestao', senha='8340'))
 
 @app.route('/exportar')
 def exportar():
     conn = get_db_connection()
     df = pd.read_sql_query("SELECT nome, tipo, horario, localizacao FROM registros", conn)
     conn.close()
-    caminho_arquivo = "Relatorio_Estetica.xlsx"
-    df.to_excel(caminho_arquivo, index=False)
-    return send_file(caminho_arquivo, as_attachment=True)
+    df.to_excel("Relatorio_Estetica.xlsx", index=False)
+    return send_file("Relatorio_Estetica.xlsx", as_attachment=True)
 
 @app.route('/excluir_ponto/<int:id>')
 def excluir_ponto(id):
     conn = get_db_connection()
     cursor = conn.cursor()
     cursor.execute("DELETE FROM registros WHERE id = ?", (id,))
-    conn.commit()
-    conn.close()
-    return redirect(url_for('painel_gestao'))
+    conn.commit(); conn.close()
+    return redirect(url_for('painel_gestao', senha='8340'))
 
-# Inicialização crucial para o Render
+# --- INICIALIZAÇÃO ---
 init_db()
 
 if __name__ == '__main__':
-    # Rodar localmente
     app.run(debug=True)
