@@ -11,8 +11,8 @@
         .header-painel { background: white; border-bottom: 2px solid #fff0f3; padding: 25px; text-align: center; color: #b5838d; margin-bottom: 35px; }
         .btn-luxury { background: #d4a5b2; color: white; border-radius: 12px; border: none; padding: 10px 20px; transition: 0.3s; }
         .btn-luxury:hover { background: #b5838d; transform: translateY(-2px); }
-        .delete-icon { text-decoration: none; font-size: 1.1rem; filter: grayscale(1); transition: 0.3s; cursor: pointer; border: none; background: none; }
-        .delete-icon:hover { filter: grayscale(0); transform: scale(1.2); }
+        .delete-btn { text-decoration: none; font-size: 1.2rem; cursor: pointer; border: none; background: none; transition: 0.3s; }
+        .delete-btn:hover { transform: scale(1.2); filter: sepia(1) saturate(5) hue-rotate(-50deg); }
     </style>
 </head>
 <body>
@@ -27,7 +27,7 @@
                 <div class="luxury-card">
                     <h6 style="color: #b5838d; margin-bottom: 15px;">Nova Colaboradora</h6>
                     <form action="/cadastrar_colaboradora?senha=8340" method="post" class="d-flex gap-2">
-                        <input type="text" name="nome_novo" class="form-control" placeholder="Nome" required>
+                        <input type="text" name="nome_novo" class="form-control" placeholder="Nome" required style="border-radius: 10px; border: 1px solid #f8ecee;">
                         <button class="btn-luxury">+</button>
                     </form>
                 </div>
@@ -36,8 +36,8 @@
                     <h6 style="color: #b5838d; margin-bottom: 15px;">Equipe Cadastrada</h6>
                     {% for r in relatorio %}
                     <div class="d-flex justify-content-between align-items-center mb-2 pb-2" style="border-bottom: 1px solid #fff0f3;">
-                        <small>{{ r.nome }}</small>
-                        <a href="/excluir_colaboradora/{{ r.id }}?senha=8340" class="delete-icon" onclick="return confirm('Excluir esta colaboradora?')">🗑️</a>
+                        <span style="font-size: 0.9rem;">{{ r.nome }}</span>
+                        <a href="/excluir_colaboradora/{{ r.id }}?senha=8340" class="delete-btn" onclick="return confirm('Deseja remover esta colaboradora?')">🗑️</a>
                     </div>
                     {% endfor %}
                 </div>
@@ -45,23 +45,31 @@
 
             <div class="col-12 col-lg-8">
                 <div class="luxury-card">
-                    <h6 style="color: #b5838d;" class="mb-4">Resumo Mensal (Meta 6h)</h6>
+                    <div class="d-flex justify-content-between align-items-center mb-4">
+                        <h6 style="color: #b5838d; margin: 0;">Resumo Mensal (Meta 6h)</h6>
+                        <a href="/exportar" class="btn btn-sm btn-outline-secondary" style="border-radius: 10px; font-size: 0.7rem;">Baixar Excel</a>
+                    </div>
                     <div class="table-responsive">
                         <table class="table align-middle">
-                            <thead class="table-light"><tr><th>Nome</th><th>Dias</th><th>Saldo (6h)</th></tr></thead>
+                            <thead>
+                                <tr style="font-size: 0.8rem; color: #888;">
+                                    <th>NOME</th>
+                                    <th>DIAS ATIVOS</th>
+                                    <th class="text-end">SALDO ACUMULADO</th>
+                                </tr>
+                            </thead>
                             <tbody>
                                 {% for r in relatorio %}
                                 <tr>
                                     <td><strong>{{ r.nome }}</strong></td>
-                                    <td>{{ r.dias }} ativos</td>
-                                    <td class="fw-bold" style="color: #d4a5b2;">{{ r.saldo }}h</td>
+                                    <td>{{ r.dias }} dias</td>
+                                    <td class="text-end fw-bold" style="color: {% if r.saldo >= 0 %}#6a994e{% else %}#d4a5b2{% endif %};">
+                                        {{ r.saldo }}h
+                                    </td>
                                 </tr>
                                 {% endfor %}
                             </tbody>
                         </table>
-                    </div>
-                    <div class="text-center mt-3">
-                        <a href="/exportar" class="btn btn-outline-secondary btn-sm" style="border-radius: 10px;">Baixar Relatório Excel</a>
                     </div>
                 </div>
             </div>
