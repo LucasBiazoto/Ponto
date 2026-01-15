@@ -2,68 +2,235 @@
 <html lang="pt-br">
 <head>
     <meta charset="UTF-8">
-    <title>Gestão Dra Thamiris Araujo</title>
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Painel de Gestão Dra Thamiris Araujo</title>
     <style>
-        body { background-color: #fffafb !important; font-family: 'Segoe UI', sans-serif; color: #5d4a4a; }
-        .luxury-card { background: white !important; border-radius: 25px !important; border: none !important; box-shadow: 0 15px 35px rgba(212,165,178,0.2) !important; padding: 35px; margin-bottom: 30px; }
-        .header-pink { color: #b5838d; text-align: center; margin: 50px 0; font-weight: 300; letter-spacing: 4px; text-transform: uppercase; }
-        .btn-pink { background: #d4a5b2 !important; color: white !important; border: none !important; border-radius: 12px !important; padding: 10px 20px; font-weight: bold; }
-        .btn-excel-luxo { background: white !important; color: #d4a5b2 !important; border: 2px solid #f4d3d9 !important; border-radius: 12px !important; padding: 8px 20px; text-decoration: none; font-size: 0.85rem; font-weight: bold; display: inline-block; transition: 0.3s; }
-        .btn-excel-luxo:hover { background: #f4d3d9 !important; color: white !important; }
-        .trash-icon { text-decoration: none; font-size: 1.3rem; filter: grayscale(1); opacity: 0.5; transition: 0.3s; }
-        .trash-icon:hover { filter: grayscale(0); opacity: 1; transform: scale(1.1); }
-        th { font-size: 0.8rem; color: #b5838d; text-transform: uppercase; letter-spacing: 1px; border-bottom: 2px solid #fff0f3 !important; }
-        td { padding: 20px 0 !important; }
+        @import url('https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600&display=swap');
+        
+        :root { 
+            --rosa: #b5838d; 
+            --rosa-claro: #f9f1f0; 
+            --fundo: #fdfaf9; 
+            --texto: #6d6875; 
+        }
+
+        body { 
+            font-family: 'Poppins', sans-serif; 
+            background: var(--fundo); 
+            color: var(--texto); 
+            margin: 0; 
+            padding: 20px; 
+        }
+
+        .header { 
+            background: white; 
+            padding: 20px 40px; 
+            border-radius: 20px; 
+            display: flex; 
+            justify-content: space-between; 
+            align-items: center; 
+            box-shadow: 0 5px 20px rgba(0,0,0,0.02); 
+            margin-bottom: 25px; 
+            border-left: 10px solid var(--rosa); 
+        }
+
+        h1 { color: var(--rosa); font-weight: 600; margin: 0; font-size: 20px; text-transform: uppercase; }
+
+        .dashboard { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 20px; margin-bottom: 25px; }
+
+        .dash-card { 
+            background: white; 
+            padding: 20px; 
+            border-radius: 20px; 
+            text-align: center; 
+            box-shadow: 0 5px 15px rgba(0,0,0,0.02); 
+            border-bottom: 4px solid var(--rosa); 
+        }
+
+        .dash-card h3 { font-size: 11px; color: #aaa; margin: 0; text-transform: uppercase; }
+        .dash-card p { font-size: 22px; font-weight: 600; color: var(--rosa); margin: 8px 0 0 0; }
+
+        .grid { display: grid; grid-template-columns: 320px 1fr; gap: 25px; }
+
+        .card { 
+            background: white; 
+            padding: 25px; 
+            border-radius: 25px; 
+            box-shadow: 0 10px 30px rgba(0,0,0,0.03); 
+            margin-bottom: 20px; 
+        }
+
+        h2 { 
+            color: var(--rosa); 
+            font-size: 16px; 
+            margin-top: 0; 
+            border-bottom: 1px solid var(--rosa-claro); 
+            padding-bottom: 10px; 
+            margin-bottom: 15px; 
+        }
+
+        table { width: 100%; border-collapse: collapse; }
+        th { text-align: left; padding: 12px; background: var(--rosa-claro); color: var(--rosa); font-size: 12px; }
+        td { padding: 12px; border-bottom: 1px solid #fcf6f5; font-size: 13px; }
+
+        .btn-excel { 
+            background: #28a745; 
+            color: white; 
+            padding: 10px 20px; 
+            border-radius: 12px; 
+            text-decoration: none; 
+            font-size: 12px; 
+            font-weight: 600; 
+        }
+
+        .btn-acao { 
+            background: var(--rosa); 
+            color: white; 
+            border: none; 
+            padding: 12px; 
+            border-radius: 12px; 
+            width: 100%; 
+            cursor: pointer; 
+            font-weight: 600; 
+            transition: 0.3s;
+        }
+
+        .btn-acao:hover { opacity: 0.8; }
+
+        input, select { 
+            width: 100%; 
+            padding: 12px; 
+            margin-bottom: 12px; 
+            border-radius: 12px; 
+            border: 1px solid #eee; 
+            box-sizing: border-box; 
+            font-family: 'Poppins', sans-serif;
+        }
+
+        /* Estilo dos Badges de Saldo para evitar erro no VS Code */
+        .saldo-badge { 
+            padding: 5px 12px; 
+            border-radius: 8px; 
+            font-weight: 600; 
+            font-size: 12px;
+            display: inline-block;
+        }
+        .positivo { background-color: #e8f5e9; color: #2e7d32; }
+        .negativo { background-color: #ffebee; color: #c62828; }
+
+        @media (max-width: 900px) { 
+            .grid, .dashboard { grid-template-columns: 1fr; } 
+        }
     </style>
 </head>
 <body>
-    <div class="container py-5">
-        <h3 class="header-pink">GESTÃO DRA THAMIRIS ARAUJO 🌸</h3>
-        <div class="row g-4">
-            <div class="col-md-4">
-                <div class="luxury-card">
-                    <h6 class="mb-4" style="color: #b5838d;">Nova Colaboradora</h6>
-                    <form action="/cadastrar_colaboradora?senha=8340" method="post" class="d-flex gap-2">
-                        <input type="text" name="nome_novo" class="form-control" placeholder="Nome" required style="border-radius: 12px; border: 1px solid #f8ecee;">
-                        <button class="btn-pink">+</button>
-                    </form>
-                    <div class="mt-5">
-                        <h6 class="mb-4" style="color: #b5838d;">Equipe Cadastrada</h6>
-                        {% for r in relatorio %}
-                        <div class="d-flex justify-content-between align-items-center mb-3">
-                            <span>{{ r.nome }}</span>
-                            <a href="/excluir_colaboradora/{{ r.id }}?senha=8340" class="trash-icon" onclick="return confirm('Excluir?')">🗑️</a>
-                        </div>
-                        {% endfor %}
-                    </div>
-                </div>
-            </div>
-            <div class="col-md-8">
-                <div class="luxury-card">
-                    <div class="d-flex justify-content-between align-items-center mb-4">
-                        <h6 style="color: #b5838d; margin: 0;">Resumo Mensal (Meta 6h)</h6>
-                        <a href="/exportar" class="btn-excel-luxo">Baixar Relatório Excel ✨</a>
-                    </div>
-                    <div class="table-responsive">
-                        <table class="table">
-                            <thead>
-                                <tr><th>Nome</th><th>Dias</th><th class="text-end">Saldo Acumulado</th></tr>
-                            </thead>
-                            <tbody>
-                                {% for r in relatorio %}
-                                <tr>
-                                    <td><strong>{{ r.nome }}</strong></td>
-                                    <td>{{ r.dias }} dias</td>
-                                    <td class="text-end fw-bold" style="color: #d4a5b2;">{{ r.saldo }}</td>
-                                </tr>
-                                {% endfor %}
-                            </tbody>
-                        </table>
-                    </div>
-                </div>
-            </div>
+
+    <div class="header">
+        <h1>Gestão Clínica Dra Thamiris Araujo</h1>
+        <a href="/" style="color: var(--rosa); text-decoration: none; font-weight: 600; font-size: 14px;">← Voltar ao Ponto</a>
+    </div>
+
+    <div class="dashboard">
+        <div class="dash-card">
+            <h3>Ativas Hoje ✨</h3>
+            <p>{{ presentes|length }}</p>
+        </div>
+        <div class="dash-card" style="border-bottom-color: #28a745;">
+            <h3>Extras Acumuladas 📈</h3>
+            <p>+{{ total_extras }}h</p>
+        </div>
+        <div class="dash-card">
+            <h3>Mês Atual 📅</h3>
+            <p>{{ mes_sel }}/2026</p>
         </div>
     </div>
+
+    <div class="grid">
+        <aside>
+            <div class="card">
+                <h2>Cadastrar Colaboradora</h2>
+                <form action="/cadastrar_colaboradora" method="POST">
+                    <input type="text" name="nome_novo" placeholder="Nome Completo" required>
+                    <button type="submit" class="btn-acao">Salvar Cadastro</button>
+                </form>
+            </div>
+
+            <div class="card">
+                <h2>Lançamento Manual 🖋️</h2>
+                <form action="/lancar_manual" method="POST">
+                    <select name="nome" required>
+                        <option value="" disabled selected>Quem faltou bater?</option>
+                        {% for c in colaboradoras %}
+                        <option value="{{ c.nome }}">{{ c.nome }}</option>
+                        {% endfor %}
+                    </select>
+                    <input type="text" name="data_hora" placeholder="DD/MM/AAAA HH:MM" required>
+                    <select name="tipo">
+                        <option value="Entrada">Entrada</option>
+                        <option value="Saída">Saída</option>
+                    </select>
+                    <button type="submit" class="btn-acao" style="background: var(--texto);">Corrigir Ponto</button>
+                </form>
+            </div>
+        </aside>
+
+        <main>
+            <div class="card">
+                <div style="display:flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">
+                    <h2 style="border:none; margin:0;">Resumo do Mês 🌸</h2>
+                    <a href="/exportar" class="btn-excel">📊 Gerar Relatório</a>
+                </div>
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Colaboradora</th>
+                            <th>Dias Ativos</th>
+                            <th>Saldo</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for r in relatorio %}
+                        <tr>
+                            <td><strong>{{ r.nome }}</strong></td>
+                            <td>{{ r.dias }} dias</td>
+                            <td>
+                                <span class="saldo-badge {{ 'positivo' if r.saldo > 0 else 'negativo' }}">
+                                    {{ '+' if r.saldo > 0 }}{{ r.saldo }}h
+                                </span>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+
+            <div class="card">
+                <h2>Histórico Recente 📍</h2>
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Nome</th>
+                            <th>Registro</th>
+                            <th>Localização</th>
+                            <th>Ação</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for u in ultimos %}
+                        <tr>
+                            <td>{{ u.nome }}</td>
+                            <td>{{ u.horario }}</td>
+                            <td><small>{{ u.localizacao }}</small></td>
+                            <td>
+                                <a href="/excluir_ponto/{{ u.id }}" style="color: #c62828; text-decoration: none; font-size: 11px;" onclick="return confirm('Excluir este registro?')">Excluir</a>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </main>
+    </div>
+
 </body>
 </html>
