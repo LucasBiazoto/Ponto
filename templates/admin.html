@@ -2,72 +2,51 @@
 <html lang="pt-br">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Painel Luxo - Dra Thamiris</title>
+    <title>Painel Dra Thamiris</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <style>
-        body { background-color: #fffafb; font-family: 'Segoe UI', sans-serif; color: #5d4a4a; }
-        .luxury-card { border-radius: 20px; border: none; box-shadow: 0 10px 25px rgba(212,165,178,0.15); background: white; margin-bottom: 25px; padding: 25px; }
-        .header-pink { color: #b5838d; text-align: center; margin-bottom: 35px; font-weight: 300; letter-spacing: 2px; }
-        .btn-luxury { background: #d4a5b2; color: white; border-radius: 12px; border: none; padding: 8px 20px; transition: 0.3s; }
-        .btn-luxury:hover { background: #b5838d; }
-        .delete-icon { text-decoration: none; font-size: 1.1rem; filter: grayscale(1); transition: 0.3s; }
-        .delete-icon:hover { filter: grayscale(0); transform: scale(1.1); }
+        body { background: #fffafb; font-family: sans-serif; }
+        .card-luxo { background: white; border-radius: 15px; padding: 20px; box-shadow: 0 5px 15px rgba(0,0,0,0.05); margin-bottom: 20px; }
+        .pink-text { color: #b5838d; }
     </style>
 </head>
 <body>
-    <div class="container py-5">
-        <h3 class="header-pink">GESTÃO DRA THAMIRIS ARAUJO 🌸</h3>
-        
+    <div class="container py-4">
+        <h2 class="text-center pink-text mb-4">GESTÃO DRA THAMIRIS 🌸</h2>
         <div class="row">
-            <div class="col-lg-4">
-                <div class="luxury-card">
-                    <h6 style="color: #b5838d">Nova Colaboradora</h6>
-                    <form action="/cadastrar_colaboradora?senha=8340" method="post" class="d-flex gap-2 mt-3">
-                        <input type="text" name="nome_novo" class="form-control" placeholder="Nome" required style="border-radius: 10px;">
-                        <button class="btn-luxury">+</button>
+            <div class="col-md-4">
+                <div class="card-luxo">
+                    <h6 class="pink-text">Cadastrar</h6>
+                    <form action="/cadastrar_colaboradora?senha=8340" method="post" class="d-flex gap-2">
+                        <input type="text" name="nome_novo" class="form-control" placeholder="Nome" required>
+                        <button class="btn btn-danger" style="background:#d4a5b2; border:none;">+</button>
                     </form>
                 </div>
-
-                <div class="luxury-card">
-                    <h6 style="color: #b5838d">Equipe Cadastrada</h6>
-                    <div class="mt-3">
-                        {% for r in relatorio %}
-                        <div class="d-flex justify-content-between align-items-center mb-2 pb-2" style="border-bottom: 1px solid #fff0f3;">
-                            <span style="font-size: 0.9rem;">{{ r.nome }}</span>
-                            <a href="/excluir_colaboradora/{{ r.id }}?senha=8340" class="delete-icon" onclick="return confirm('Deseja excluir?')">🗑️</a>
-                        </div>
-                        {% endfor %}
+                <div class="card-luxo">
+                    <h6 class="pink-text">Equipe</h6>
+                    {% for r in relatorio %}
+                    <div class="d-flex justify-content-between mt-2">
+                        <span>{{ r.nome }}</span>
+                        <a href="/excluir_colaboradora/{{ r.id }}?senha=8340" style="text-decoration:none;">🗑️</a>
                     </div>
+                    {% endfor %}
                 </div>
             </div>
-
-            <div class="col-lg-8">
-                <div class="luxury-card">
-                    <div class="d-flex justify-content-between align-items-center mb-4">
-                        <h6 style="color: #b5838d; margin: 0;">Resumo Mensal (Meta 6h)</h6>
-                        <a href="/exportar" class="btn btn-sm btn-outline-secondary" style="border-radius: 10px; font-size: 0.7rem;">Baixar Excel</a>
-                    </div>
-                    <div class="table-responsive">
-                        <table class="table align-middle">
-                            <thead>
-                                <tr style="font-size: 0.8rem; color: #888;">
-                                    <th>NOME</th>
-                                    <th>DIAS</th>
-                                    <th class="text-end">SALDO ACUMULADO</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                {% for r in relatorio %}
-                                <tr>
-                                    <td><strong>{{ r.nome }}</strong></td>
-                                    <td>{{ r.dias }} dias</td>
-                                    <td class="text-end fw-bold" style="color: #d4a5b2;">{{ r.saldo }}h</td>
-                                </tr>
-                                {% endfor %}
-                            </tbody>
-                        </table>
-                    </div>
+            <div class="col-md-8">
+                <div class="card-luxo">
+                    <h6 class="pink-text">Registros Recentes</h6>
+                    <table class="table">
+                        <thead><tr><th>Nome</th><th>Tipo</th><th>Data</th></tr></thead>
+                        <tbody>
+                            {% for u in ultimos %}
+                            <tr>
+                                <td>{{ u.nome }}</td>
+                                <td>{{ u.tipo }}</td>
+                                <td>{{ u.horario }}</td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
                 </div>
             </div>
         </div>
