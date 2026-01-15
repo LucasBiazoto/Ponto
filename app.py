@@ -4,7 +4,7 @@ from datetime import datetime
 from flask import Flask, render_template, request, redirect, url_for, send_file, jsonify
 
 app = Flask(__name__)
-app.secret_key = 'dra_thamiris_luxury_secret'
+app.secret_key = 'dra_thamiris_luxury_secret_final'
 
 def get_db_connection():
     conn = sqlite3.connect('ponto.db')
@@ -13,9 +13,8 @@ def get_db_connection():
 
 def init_db():
     conn = get_db_connection()
-    cursor = conn.cursor()
-    cursor.execute('CREATE TABLE IF NOT EXISTS registros (id INTEGER PRIMARY KEY AUTOINCREMENT, nome TEXT, tipo TEXT, horario TEXT, data_texto TEXT, localizacao TEXT)')
-    cursor.execute('CREATE TABLE IF NOT EXISTS colaboradoras (id INTEGER PRIMARY KEY AUTOINCREMENT, nome TEXT UNIQUE)')
+    conn.execute('CREATE TABLE IF NOT EXISTS registros (id INTEGER PRIMARY KEY AUTOINCREMENT, nome TEXT, tipo TEXT, horario TEXT, data_texto TEXT, localizacao TEXT)')
+    conn.execute('CREATE TABLE IF NOT EXISTS colaboradoras (id INTEGER PRIMARY KEY AUTOINCREMENT, nome TEXT UNIQUE)')
     conn.commit()
     conn.close()
 
@@ -24,8 +23,7 @@ def calcular_jornada(entrada_str, saida_str):
         try:
             inicio = datetime.strptime(entrada_str, formato)
             fim = datetime.strptime(saida_str, formato)
-            diff = fim - inicio
-            horas = diff.total_seconds() / 3600
+            horas = (fim - inicio).total_seconds() / 3600
             return round(horas, 2), round(horas - 6.0, 2)
         except: continue
     return 0, 0
@@ -53,34 +51,25 @@ def bater_ponto():
 
 @app.route('/painel_gestao')
 def painel_gestao():
-    senha = request.args.get('senha')
-    if senha != '8340':
-        return """
-        <body style="background:#fffafb;font-family:sans-serif;display:flex;align-items:center;justify-content:center;height:100vh;margin:0;">
-            <div style="background:white;padding:40px;border-radius:25px;box-shadow:0 10px 30px rgba(212,165,178,0.2);text-align:center;width:300px;">
-                <h3 style="color:#b5838d;">🌸 Gestão Restrita</h3>
-                <form action="/painel_gestao" method="get">
-                    <input type="password" name="senha" placeholder="Senha" style="padding:12px;border-radius:10px;border:1px solid #eee;width:100%;margin-bottom:15px;outline:none;">
-                    <button style="background:#d4a5b2;color:white;border:none;padding:10px;width:100%;border-radius:10px;cursor:pointer;">Entrar</button>
-                </form>
-            </div>
-        </body>""", 403
+    if request.args.get('senha') != '8340':
+        return render_template('login_admin.html'), 403
     
     conn = get_db_connection()
-    colab_lista = conn.execute("SELECT * FROM colaboradoras ORDER BY nome ASC").fetchall()
+    colabs = conn.execute("SELECT * FROM colaboradoras ORDER BY nome ASC").fetchall()
     relatorio = []
-    for c in colab_lista:
+    for c in colabs:
         regs = conn.execute("SELECT tipo, horario FROM registros WHERE nome = ?", (c['nome'],)).fetchall()
         datas = sorted(list(set([r['horario'].split(' ')[0] for r in regs])))
-        saldo_total = 0.0
+        saldo_t = 0.0
         for d in datas:
             e = [r['horario'] for r in regs if r['horario'].startswith(d) and r['tipo'] == 'Entrada']
             s = [r['horario'] for r in regs if r['horario'].startswith(d) and r['tipo'] == 'Saída']
             if e and s:
                 _, saldo = calcular_jornada(e[0], s[-1])
-                saldo_total += saldo
-        relatorio.append({'id': c['id'], 'nome': c['nome'], 'dias': len(datas), 'saldo': round(saldo_total, 2)})
-    ultimos = conn.execute("SELECT * FROM registros ORDER BY id DESC LIMIT 10").fetchall()
+                saldo_t += saldo
+        relatorio.append({'id': c['id'], 'nome': c['nome'], 'dias': len(datas), 'saldo': round(saldo_t, 2)})
+    
+    ultimos = conn.execute("SELECT * FROM registros ORDER BY id DESC LIMIT 15").fetchall()
     conn.close()
     return render_template('admin.html', relatorio=relatorio, ultimos=ultimos)
 
@@ -100,6 +89,21 @@ def excluir_colaboradora(id):
     conn.execute("DELETE FROM colaboradoras WHERE id = ?", (id,))
     conn.commit(); conn.close()
     return redirect(url_for('painel_gestao', senha='8340'))
+
+@app.route('/excluir_ponto/<int:id>')
+def excluir_ponto(id):
+    conn = get_db_connection()
+    conn.execute("DELETE FROM registros WHERE id = ?", (id,))
+    conn.commit(); conn.close()
+    return redirect(url_for('painel_gestao', senha='8340'))
+
+@app.route('/exportar')
+def exportar():
+    conn = get_db_connection()
+    df = pd.read_sql_query("SELECT nome, tipo, horario, localizacao FROM registros", conn)
+    conn.close()
+    df.to_excel("Relatorio_Estetica.xlsx", index=False)
+    return send_file("Relatorio_Estetica.xlsx", as_attachment=True)
 
 init_db()
 if __name__ == '__main__':
