@@ -24,7 +24,6 @@ def init_db():
     conn.commit()
     conn.close()
 
-# Transforma decimal (0.97) em formato amigável (0h 58min)
 def formatar_horas_bonito(decimal_horas):
     sinal = "+" if decimal_horas >= 0 else "-"
     total_minutos = abs(int(decimal_horas * 60))
@@ -39,6 +38,7 @@ def calcular_jornada(entrada_str, saida_str):
             fim = datetime.strptime(saida_str, formato)
             diff = fim - inicio
             horas = diff.total_seconds() / 3600
+            # Considera jornada de 6h (ajuste se for diferente)
             return round(horas, 2), round(horas - 6.0, 2)
         except: continue
     return 0, 0
@@ -105,13 +105,18 @@ def painel_gestao():
     ultimos = conn.execute("SELECT * FROM registros ORDER BY id DESC LIMIT 50").fetchall()
     conn.close()
     
-    return render_template('admin.html', 
-                           relatorio=relatorio, 
-                           ultimos=ultimos, 
-                           colaboradoras=colab_lista, 
-                           mes_sel=mes, 
-                           presentes=presentes, 
-                           total_extras=formatar_horas_bonito(total_extras_decimal))
+    return render_template('admin.html', relatorio=relatorio, ultimos=ultimos, colaboradoras=colab_lista, mes_sel=mes, presentes=presentes, total_extras=formatar_horas_bonito(total_extras_decimal))
+
+@app.route('/excluir_colaboradora/<int:id>')
+def excluir_colaboradora(id):
+    conn = get_db_connection()
+    nome_row = conn.execute("SELECT nome FROM colaboradoras WHERE id = ?", (id,)).fetchone()
+    if nome_row:
+        conn.execute("DELETE FROM registros WHERE nome = ?", (nome_row['nome'],))
+        conn.execute("DELETE FROM colaboradoras WHERE id = ?", (id,))
+        conn.commit()
+    conn.close()
+    return redirect(url_for('painel_gestao', senha='8340'))
 
 @app.route('/backup')
 def backup():
@@ -152,4 +157,4 @@ def excluir_ponto(id):
 
 if __name__ == '__main__':
     init_db()
-    app.run(debug=True)
+    app.run(debug=True) 

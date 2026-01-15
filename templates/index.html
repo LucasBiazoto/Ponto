@@ -3,56 +3,71 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Ponto - Dra Thamiris Araujo</title>
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <title>Registro de Ponto - Dra Thamiris Araujo</title>
     <style>
-        body { background-color: #fffafb; font-family: 'Segoe UI', sans-serif; display: flex; align-items: center; justify-content: center; min-height: 100vh; margin: 0; }
-        .main-card { background: white; border-radius: 35px; box-shadow: 0 20px 45px rgba(212,165,178,0.2); padding: 50px; width: 100%; max-width: 420px; text-align: center; }
-        .logo-text { color: #b5838d; font-weight: 300; letter-spacing: 4px; text-transform: uppercase; }
-        .btn-ponto { border-radius: 18px; padding: 15px; margin-bottom: 12px; border: none; font-weight: bold; width: 100%; transition: 0.3s; color: white; }
-        .btn-entrada { background-color: #d4a5b2; }
-        .btn-saida { background-color: #f4d3d9; color: #5d4a4a; }
-        #status-msg { margin-top: 30px; font-size: 0.95rem; min-height: 50px; }
+        @import url('https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600&display=swap');
+        :root { --rosa: #b5838d; --rosa-claro: #f9f1f0; --fundo: #fdfaf9; --texto: #6d6875; }
+        body { font-family: 'Poppins', sans-serif; background: var(--fundo); color: var(--texto); display: flex; justify-content: center; align-items: center; height: 100vh; margin: 0; }
+        .card { background: white; padding: 40px; border-radius: 30px; box-shadow: 0 10px 40px rgba(0,0,0,0.03); width: 100%; max-width: 400px; text-align: center; border: 1px solid var(--rosa-claro); }
+        h1 { margin: 0; font-size: 22px; letter-spacing: 1px; color: var(--texto); }
+        .subtitle { margin: 5px 0 30px 0; font-size: 12px; letter-spacing: 4px; color: var(--rosa); text-transform: uppercase; font-weight: 300; }
+        select, .btn { width: 100%; padding: 15px; margin-bottom: 15px; border-radius: 15px; border: 1px solid #eee; font-family: 'Poppins'; font-size: 16px; box-sizing: border-box; }
+        .btn { background: var(--rosa); color: white; border: none; font-weight: 600; cursor: pointer; transition: 0.3s; }
+        .btn-saida { background: #6d6875; margin-top: -5px; }
+        .modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(255,255,255,0.95); justify-content: center; align-items: center; z-index: 100; }
+        .modal-content { text-align: center; animation: slideUp 0.5s ease; }
+        @keyframes slideUp { from { transform: translateY(20px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
     </style>
 </head>
 <body>
-    <div class="main-card">
-        <h2 class="logo-text">Dra Thamiris</h2>
-        <p style="font-size: 0.75rem; color: #d4a5b2; margin-bottom: 40px;">AESTHETIC CLINIC</p>
-        <select id="colaboradora" class="form-select mb-4" style="border-radius: 15px; border: 1px solid #f8ecee;">
-            <option value="" disabled selected>Selecione seu nome...</option>
-            {% for nome in colaboradoras %}
-            <option value="{{ nome }}">{{ nome }}</option>
-            {% endfor %}
-        </select>
-        <button onclick="registrar('Entrada')" class="btn-ponto btn-entrada">✨ Registrar Entrada</button>
-        <button onclick="registrar('Saída')" class="btn-ponto btn-saida">🌸 Registrar Saída</button>
-        <div id="status-msg"></div>
-        <div class="mt-5">
-            <a href="#" onclick="pedirSenha()" style="color: #d4a5b2; text-decoration: none; font-size: 0.75rem;">ÁREA ADMINISTRATIVA</a>
+
+    <div class="card">
+        <h1>DRA THAMIRIS ARAUJO</h1>
+        <p class="subtitle">Estética Avançada</p>
+        
+        <form id="pontoForm">
+            <select name="nome" id="nome" required>
+                <option value="" disabled selected>Quem está chegando? ✨</option>
+                {% for nome in colaboradoras %}
+                <option value="{{ nome }}">{{ nome }}</option>
+                {% endfor %}
+            </select>
+            
+            <input type="hidden" name="lat" id="lat">
+            <input type="hidden" name="lon" id="lon">
+            
+            <button type="button" onclick="enviar('Entrada')" class="btn">Bater Entrada</button>
+            <button type="button" onclick="enviar('Saída')" class="btn btn-saida">Bater Saída</button>
+        </form>
+        
+        <a href="/painel_gestao?senha=8340" style="display:block; margin-top:20px; color:#ddd; text-decoration:none; font-size:10px;">Acesso Restrito</a>
+    </div>
+
+    <div id="modal" class="modal">
+        <div class="modal-content">
+            <h2 id="msg_destaque" style="color: var(--rosa); font-size: 28px;"></h2>
+            <p id="msg_sub"></p>
+            <button onclick="location.reload()" class="btn" style="width: auto; padding: 10px 30px; margin-top: 20px;">OK</button>
         </div>
     </div>
 
     <script>
-        let lat = "", lon = "";
-        navigator.geolocation.getCurrentPosition(pos => { lat = pos.coords.latitude; lon = pos.coords.longitude; });
+        // Captura GPS ao carregar
+        navigator.geolocation.getCurrentPosition(p => {
+            document.getElementById('lat').value = p.coords.latitude;
+            document.getElementById('lon').value = p.coords.longitude;
+        });
 
-        async function registrar(tipo) {
-            const nome = document.getElementById('colaboradora').value;
-            if(!nome) return alert("Selecione seu nome!");
-            const res = await fetch('/bater_ponto', {
-                method: 'POST',
-                headers: {'Content-Type': 'application/x-www-form-urlencoded'},
-                body: `nome=${nome}&tipo=${tipo}&lat=${lat}&lon=${lon}`
-            });
-            const data = await res.json();
-            document.getElementById('status-msg').innerHTML = `<span style="color:#b5838d">${data.msg_destaque}</span><br><small style="color:#aaa">${data.msg_sub}</small>`;
-        }
-
-        function pedirSenha() {
-            const s = prompt("Digite a senha de gestão:");
-            if(s === "8340") window.location.href = "/painel_gestao?senha=8340";
-            else if(s) alert("Senha incorreta!");
+        async function enviar(tipo) {
+            const formData = new FormData(document.getElementById('pontoForm'));
+            formData.append('tipo', tipo);
+            
+            const response = await fetch('/bater_ponto', { method: 'POST', body: formData });
+            const data = await response.json();
+            
+            document.getElementById('msg_destaque').innerText = data.msg_destaque;
+            document.getElementById('msg_sub').innerText = data.msg_sub;
+            document.getElementById('modal').style.display = 'flex';
         }
     </script>
 </body>
