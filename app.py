@@ -29,16 +29,17 @@ def bater_ponto():
 
 @app.route('/painel_gestao')
 def painel_gestao():
-    # Se a senha não for 8340, ele volta para o início
+    # Se a senha for diferente de 8340, volta para o início
     if request.args.get('senha') != '8340':
         return redirect(url_for('index'))
     
     conn = get_db_connection()
-    relatorio = []
     colabs = conn.execute("SELECT * FROM colaboradoras ORDER BY nome ASC").fetchall()
+    relatorio = []
     for c in colabs:
         regs = conn.execute("SELECT tipo, horario FROM registros WHERE nome = ?", (c['nome'],)).fetchall()
-        relatorio.append({'id': c['id'], 'nome': c['nome'], 'dias': len(set([r['horario'].split(' ')[0] for r in regs])), 'saldo': '0.0h'})
+        dias = len(set([r['horario'].split(' ')[0] for r in regs]))
+        relatorio.append({'id': c['id'], 'nome': c['nome'], 'dias': dias, 'saldo': '0.0h'})
     
     ultimos = conn.execute("SELECT * FROM registros ORDER BY id DESC LIMIT 10").fetchall()
     conn.close()
