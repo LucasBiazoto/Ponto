@@ -4,7 +4,6 @@ from datetime import datetime
 from flask import Flask, render_template, request, redirect, url_for, send_file, jsonify
 
 app = Flask(__name__)
-app.secret_key = 'dra_thamiris_luxury_secret_final'
 
 def get_db_connection():
     conn = sqlite3.connect('ponto.db')
@@ -38,7 +37,7 @@ def index():
 @app.route('/bater_ponto', methods=['POST'])
 def bater_ponto():
     nome, tipo, lat, lon = request.form.get('nome'), request.form.get('tipo'), request.form.get('lat'), request.form.get('lon')
-    status_local = "✅ OK"
+    status_local = "✅ Na Clínica"
     if lat and lon:
         dist = ((float(lat) - (-23.5255))**2 + (float(lon) - (-46.5273))**2)**0.5
         if dist > 0.002: status_local = "📍 Fora da Clínica"
@@ -47,10 +46,13 @@ def bater_ponto():
     conn.execute("INSERT INTO registros (nome, tipo, horario, data_texto, localizacao) VALUES (?, ?, ?, ?, ?)", 
                  (nome, tipo, agora.strftime("%d/%m/%Y %H:%M:%S"), agora.strftime("%d/%m/%Y"), status_local))
     conn.commit(); conn.close()
-    return jsonify({"msg_destaque": "Bom trabalho meu bem" if tipo == "Entrada" else "Bom descanso meu bem", "msg_sub": status_local})
+    # Mensagens personalizadas conforme solicitado
+    msg = "Bom trabalho meu bem" if tipo == "Entrada" else "Bom descanso meu bem"
+    return jsonify({"msg_destaque": msg, "msg_sub": status_local})
 
 @app.route('/painel_gestao')
 def painel_gestao():
+    # Sistema de senha simples e direto
     if request.args.get('senha') != '8340':
         return render_template('login_admin.html'), 403
     
@@ -87,13 +89,6 @@ def cadastrar():
 def excluir_colaboradora(id):
     conn = get_db_connection()
     conn.execute("DELETE FROM colaboradoras WHERE id = ?", (id,))
-    conn.commit(); conn.close()
-    return redirect(url_for('painel_gestao', senha='8340'))
-
-@app.route('/excluir_ponto/<int:id>')
-def excluir_ponto(id):
-    conn = get_db_connection()
-    conn.execute("DELETE FROM registros WHERE id = ?", (id,))
     conn.commit(); conn.close()
     return redirect(url_for('painel_gestao', senha='8340'))
 
