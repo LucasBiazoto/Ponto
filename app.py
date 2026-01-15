@@ -5,7 +5,7 @@ from flask import Flask, render_template, request, redirect, url_for, send_file,
 
 app = Flask(__name__)
 
-# Configuração do Fuso Horário de Brasília
+# Configuração do Fuso Horário de Brasília (UTC-3)
 def get_agora_brasil():
     fuso = timezone(timedelta(hours=-3))
     return datetime.now(fuso)
@@ -38,7 +38,6 @@ def calcular_jornada(entrada_str, saida_str):
             fim = datetime.strptime(saida_str, formato)
             diff = fim - inicio
             horas = diff.total_seconds() / 3600
-            # Considera jornada de 6h (ajuste se for diferente)
             return round(horas, 2), round(horas - 6.0, 2)
         except: continue
     return 0, 0
@@ -96,6 +95,7 @@ def painel_gestao():
         
         if total_saldo_colaboradora > 0: total_extras_decimal += total_saldo_colaboradora
         relatorio.append({
+            'id': c['id'],
             'nome': c['nome'], 
             'dias': dias, 
             'saldo_decimal': total_saldo_colaboradora,
@@ -104,7 +104,6 @@ def painel_gestao():
     
     ultimos = conn.execute("SELECT * FROM registros ORDER BY id DESC LIMIT 50").fetchall()
     conn.close()
-    
     return render_template('admin.html', relatorio=relatorio, ultimos=ultimos, colaboradoras=colab_lista, mes_sel=mes, presentes=presentes, total_extras=formatar_horas_bonito(total_extras_decimal))
 
 @app.route('/excluir_colaboradora/<int:id>')
@@ -157,4 +156,4 @@ def excluir_ponto(id):
 
 if __name__ == '__main__':
     init_db()
-    app.run(debug=True) 
+    app.run(debug=True)

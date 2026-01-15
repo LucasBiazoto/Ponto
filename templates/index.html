@@ -9,13 +9,14 @@
         :root { --rosa: #b5838d; --rosa-claro: #f9f1f0; --fundo: #fdfaf9; --texto: #6d6875; }
         body { font-family: 'Poppins', sans-serif; background: var(--fundo); color: var(--texto); display: flex; justify-content: center; align-items: center; height: 100vh; margin: 0; }
         .card { background: white; padding: 40px; border-radius: 30px; box-shadow: 0 10px 40px rgba(0,0,0,0.03); width: 100%; max-width: 400px; text-align: center; border: 1px solid var(--rosa-claro); }
-        h1 { margin: 0; font-size: 22px; letter-spacing: 1px; color: var(--texto); }
-        .subtitle { margin: 5px 0 30px 0; font-size: 12px; letter-spacing: 4px; color: var(--rosa); text-transform: uppercase; font-weight: 300; }
-        select, .btn { width: 100%; padding: 15px; margin-bottom: 15px; border-radius: 15px; border: 1px solid #eee; font-family: 'Poppins'; font-size: 16px; box-sizing: border-box; }
+        h1 { margin: 0; font-size: 20px; letter-spacing: 2px; color: var(--texto); font-weight: 600; text-transform: uppercase; }
+        .subtitle { margin: 5px 0 30px 0; font-size: 11px; letter-spacing: 5px; color: var(--rosa); text-transform: uppercase; font-weight: 300; }
+        select, .btn { width: 100%; padding: 15px; margin-bottom: 15px; border-radius: 15px; border: 1px solid #eee; font-family: 'Poppins'; font-size: 16px; box-sizing: border-box; outline: none; }
         .btn { background: var(--rosa); color: white; border: none; font-weight: 600; cursor: pointer; transition: 0.3s; }
+        .btn:hover { opacity: 0.8; }
         .btn-saida { background: #6d6875; margin-top: -5px; }
-        .modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(255,255,255,0.95); justify-content: center; align-items: center; z-index: 100; }
-        .modal-content { text-align: center; animation: slideUp 0.5s ease; }
+        .modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(255,255,255,0.96); justify-content: center; align-items: center; z-index: 100; }
+        .modal-content { text-align: center; animation: slideUp 0.4s ease-out; }
         @keyframes slideUp { from { transform: translateY(20px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
     </style>
 </head>
@@ -45,20 +46,23 @@
 
     <div id="modal" class="modal">
         <div class="modal-content">
-            <h2 id="msg_destaque" style="color: var(--rosa); font-size: 28px;"></h2>
-            <p id="msg_sub"></p>
-            <button onclick="location.reload()" class="btn" style="width: auto; padding: 10px 30px; margin-top: 20px;">OK</button>
+            <h2 id="msg_destaque" style="color: var(--rosa); font-size: 26px;"></h2>
+            <p id="msg_sub" style="color: #aaa;"></p>
+            <button onclick="location.reload()" class="btn" style="width: auto; padding: 10px 40px; margin-top: 20px;">Fechar</button>
         </div>
     </div>
 
     <script>
-        // Captura GPS ao carregar
+        // Captura GPS
         navigator.geolocation.getCurrentPosition(p => {
             document.getElementById('lat').value = p.coords.latitude;
             document.getElementById('lon').value = p.coords.longitude;
-        });
+        }, err => console.log("GPS recusado"));
 
         async function enviar(tipo) {
+            const select = document.getElementById('nome');
+            if(!select.value) { alert("Por favor, selecione seu nome!"); return; }
+
             const formData = new FormData(document.getElementById('pontoForm'));
             formData.append('tipo', tipo);
             
