@@ -6,58 +6,63 @@
     <title>Gestão - Dra Thamiris</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <style>
-        body { background-color: #fffafb; font-family: sans-serif; }
-        .luxury-card { border-radius: 15px; border: none; box-shadow: 0 4px 15px rgba(0,0,0,0.05); background: white; margin-bottom: 20px; }
-        .nav-luxury { background: white; border-bottom: 2px solid #fff0f3; padding: 15px; margin-bottom: 30px; }
-        .table-responsive { border-radius: 15px; overflow: hidden; }
-        .badge-presente { background: #d4a5b2; color: white; border-radius: 20px; padding: 5px 15px; }
+        body { background-color: #fffafb; font-family: sans-serif; color: #5d4a4a; }
+        .luxury-card { border-radius: 15px; border: none; box-shadow: 0 4px 15px rgba(212, 165, 178, 0.2); background: white; margin-bottom: 20px; }
+        .header-painel { background: white; border-bottom: 2px solid #fff0f3; padding: 20px; text-align: center; color: #b5838d; margin-bottom: 30px; }
+        .btn-luxury { background: #d4a5b2; color: white; border-radius: 10px; border: none; padding: 8px 15px; }
+        .table-responsive { border-radius: 10px; }
     </style>
 </head>
 <body>
-    <nav class="nav-luxury text-center">
-        <h4 style="color: #b5838d; margin:0;">Painel Administrativo 🌸</h4>
-    </nav>
+    <div class="header-painel">
+        <h4 style="letter-spacing: 1px;">PAINEL DE GESTÃO DRA THAMIRIS ARAUJO 🌸</h4>
+    </div>
 
     <div class="container">
         <div class="row">
             <div class="col-12 col-lg-4">
                 <div class="card luxury-card p-3">
-                    <h6>Cadastrar Colaboradora</h6>
+                    <h6 style="color: #b5838d;">Cadastrar Colaboradora</h6>
                     <form action="/cadastrar_colaboradora?senha=8340" method="post" class="d-flex gap-2">
-                        <input type="text" name="nome_novo" class="form-control" placeholder="Nome completo" required>
-                        <button class="btn btn-sm" style="background:#d4a5b2; color:white;">+</button>
+                        <input type="text" name="nome_novo" class="form-control form-control-sm" placeholder="Nome completo" required>
+                        <button class="btn-luxury">+</button>
                     </form>
                 </div>
             </div>
-
             <div class="col-12 col-lg-8">
                 <div class="card luxury-card p-3">
-                    <h6>Resumo do Mês (Extras: {{ total_extras }}h)</h6>
+                    <h6 style="color: #b5838d;">Resumo Mensal (Meta 6h)</h6>
                     <div class="table-responsive">
-                        <table class="table table-sm">
-                            <thead><tr><th>Nome</th><th>Dias</th><th>Saldo (6h)</th></tr></thead>
+                        <table class="table table-sm align-middle">
+                            <thead><tr><th>Nome</th><th>Dias</th><th>Saldo Acumulado</th></tr></thead>
                             <tbody>
                                 {% for r in relatorio %}
-                                <tr><td>{{ r.nome }}</td><td>{{ r.dias }}</td><td>{{ r.saldo }}h</td></tr>
+                                <tr>
+                                    <td>{{ r.nome }}</td>
+                                    <td>{{ r.dias }} dias ativos</td>
+                                    <td class="fw-bold" style="color: {% if r.saldo >= 0 %}#6a994e{% else %}#bc4749{% endif %};">
+                                        {{ r.saldo }}h
+                                    </td>
+                                </tr>
                                 {% endfor %}
                             </tbody>
                         </table>
                     </div>
-                    <a href="/exportar" class="btn btn-outline-secondary btn-sm w-100">Baixar Excel</a>
+                    <a href="/exportar" class="btn btn-outline-secondary btn-sm w-100 mt-2">Gerar Excel</a>
                 </div>
             </div>
         </div>
 
         <div class="card luxury-card p-3">
-            <h6>Últimos Registros</h6>
+            <h6 style="color: #b5838d;">Histórico de Movimentações 📍</h6>
             <div class="table-responsive">
-                <table class="table table-hover">
+                <table class="table table-hover table-sm">
                     <thead class="table-light"><tr><th>Nome</th><th>Tipo</th><th>Hora</th><th>Local</th><th>Ação</th></tr></thead>
                     <tbody>
                         {% for u in ultimos %}
                         <tr>
                             <td>{{ u[1] }}</td>
-                            <td>{{ u[2] }}</td>
+                            <td><span class="badge {% if u[2]=='Entrada' %}bg-success{% else %}bg-secondary{% endif %}">{{ u[2] }}</span></td>
                             <td>{{ u[3] }}</td>
                             <td><small>{{ u[5] }}</small></td>
                             <td><a href="/excluir_ponto/{{ u[0] }}?senha=8340" class="text-danger" style="text-decoration:none;">&times;</a></td>

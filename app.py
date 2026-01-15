@@ -5,7 +5,7 @@ from datetime import datetime
 from flask import Flask, render_template, request, redirect, url_for, send_file, jsonify
 
 app = Flask(__name__)
-app.secret_key = 'dra_thamiris_luxury_final_revisado'
+app.secret_key = 'dra_thamiris_luxury_final_2026'
 
 # --- CONFIGURAÇÃO DE BANCO DE DADOS ---
 def get_db_connection():
@@ -26,7 +26,7 @@ def init_db():
     conn.commit()
     conn.close()
 
-# --- LÓGICA DE CÁLCULO ---
+# --- LÓGICA DE CÁLCULO (Jornada de 6h) ---
 def calcular_jornada(entrada_str, saida_str):
     for formato in ("%d/%m/%Y %H:%M:%S", "%d/%m/%Y %H:%M"):
         try:
@@ -82,14 +82,16 @@ def bater_ponto():
 
 @app.route('/painel_gestao')
 def painel_gestao():
-    # --- PROTEÇÃO POR SENHA ---
+    # --- TRAVA DE SEGURANÇA MÁXIMA ---
     senha_digitada = request.args.get('senha')
     if senha_digitada != '8340':
         return """
-        <body style="background:#fff5f8; font-family:sans-serif; text-align:center; padding:50px;">
-            <h2 style="color:#d4a5b2;">🌸 Acesso Restrito</h2>
-            <p>Por favor, acesse o link oficial com a senha de gestão.</p>
-            <a href="/" style="color:#b5838d;">Voltar ao Início</a>
+        <body style="background:#fff5f8; font-family:sans-serif; text-align:center; padding:100px 20px;">
+            <div style="background:white; display:inline-block; padding:40px; border-radius:20px; box-shadow:0 10px 30px rgba(212,165,178,0.3);">
+                <h2 style="color:#d4a5b2; margin-bottom:10px;">🌸 Acesso Restrito</h2>
+                <p style="color:#5d4a4a;">Esta área é exclusiva para a gestão da Dra. Thamiris Araujo.</p>
+                <a href="/" style="display:inline-block; margin-top:20px; color:#b5838d; text-decoration:none; font-weight:bold; border:1px solid #d4a5b2; padding:10px 20px; border-radius:10px;">Voltar ao Início</a>
+            </div>
         </body>
         """, 403
 
@@ -101,15 +103,12 @@ def painel_gestao():
     cursor.execute("SELECT * FROM colaboradoras ORDER BY nome ASC")
     colab_lista = cursor.fetchall()
     
-    relatorio = []; presentes = []; total_extras_mes = 0.0
+    relatorio = []; total_extras_mes = 0.0
     
     for c in colab_lista:
         n = c['nome']
         cursor.execute("SELECT tipo, horario FROM registros WHERE nome = ? AND horario LIKE ?", (n, f"%{filtro}%"))
         regs = cursor.fetchall()
-        
-        if regs and regs[-1]['tipo'] == 'Entrada' and regs[-1]['horario'].startswith(datetime.now().strftime("%d/%m/%Y")):
-            presentes.append(n)
             
         datas = sorted(list(set([r['horario'].split(' ')[0] for r in regs])))
         total_saldo = 0.0; dias = 0
@@ -123,13 +122,13 @@ def painel_gestao():
         total_extras_mes += total_saldo
         relatorio.append({'nome': n, 'dias': dias, 'saldo': round(total_saldo, 2)})
     
-    cursor.execute("SELECT * FROM registros ORDER BY id DESC LIMIT 50")
+    cursor.execute("SELECT * FROM registros ORDER BY id DESC LIMIT 100")
     ultimos = cursor.fetchall()
     conn.close()
     
     return render_template('admin.html', relatorio=relatorio, ultimos=ultimos, 
                            colaboradoras=colab_lista, mes_sel=mes, 
-                           presentes=presentes, total_extras=round(total_extras_mes, 1), 
+                           total_extras=round(total_extras_mes, 1), 
                            senha_ativa='8340')
 
 @app.route('/cadastrar_colaboradora', methods=['POST'])
@@ -143,16 +142,6 @@ def cadastrar():
             conn.commit()
         except: pass
         conn.close()
-    return redirect(url_for('painel_gestao', senha='8340'))
-
-@app.route('/lancar_manual', methods=['POST'])
-def lancar_manual():
-    n = request.form.get('nome'); t = request.form.get('tipo'); dt = request.form.get('data_hora').strip()
-    conn = get_db_connection()
-    cursor = conn.cursor()
-    cursor.execute("INSERT INTO registros (nome, tipo, horario, data_texto, localizacao) VALUES (?, ?, ?, ?, ?)", 
-                   (n, t, dt, dt.split(' ')[0], "📝 Manual (OK)"))
-    conn.commit(); conn.close()
     return redirect(url_for('painel_gestao', senha='8340'))
 
 @app.route('/exportar')
