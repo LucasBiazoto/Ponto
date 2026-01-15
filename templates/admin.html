@@ -10,13 +10,14 @@
         .luxury-card { border-radius: 15px; border: none; box-shadow: 0 4px 15px rgba(212, 165, 178, 0.2); background: white; margin-bottom: 20px; }
         .header-painel { background: white; border-bottom: 2px solid #fff0f3; padding: 20px; text-align: center; color: #b5838d; margin-bottom: 30px; }
         .btn-luxury { background: #d4a5b2; color: white; border-radius: 10px; border: none; padding: 8px 15px; }
-        .table-responsive { border-radius: 10px; }
+        .table-responsive { border-radius: 10px; overflow-x: auto; }
     </style>
 </head>
 <body>
     <div class="header-painel">
         <h4 style="letter-spacing: 1px;">PAINEL DE GESTÃO DRA THAMIRIS ARAUJO 🌸</h4>
     </div>
+
     <div class="container">
         <div class="row">
             <div class="col-12 col-lg-4">
@@ -33,15 +34,13 @@
                     <h6 style="color: #b5838d;">Resumo Mensal (Meta 6h)</h6>
                     <div class="table-responsive">
                         <table class="table table-sm align-middle">
-                            <thead><tr><th>Nome</th><th>Dias</th><th>Saldo Acumulado</th></tr></thead>
+                            <thead><tr><th>Nome</th><th>Dias</th><th>Saldo</th></tr></thead>
                             <tbody>
                                 {% for r in relatorio %}
                                 <tr>
                                     <td>{{ r.nome }}</td>
-                                    <td>{{ r.dias }} dias ativos</td>
-                                    <td class="fw-bold" style="color: {% if r.saldo >= 0 %}#6a994e{% else %}#bc4749{% endif %};">
-                                        {{ r.saldo }}h
-                                    </td>
+                                    <td>{{ r.dias }}</td>
+                                    <td class="fw-bold">{{ r.saldo }}h</td>
                                 </tr>
                                 {% endfor %}
                             </tbody>
@@ -50,6 +49,7 @@
                 </div>
             </div>
         </div>
+
         <div class="card luxury-card p-3">
             <h6 style="color: #b5838d;">Histórico de Movimentações 📍</h6>
             <div class="table-responsive">
