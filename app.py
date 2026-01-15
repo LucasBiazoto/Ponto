@@ -5,7 +5,7 @@ from flask import Flask, render_template, request, redirect, url_for, send_file,
 
 app = Flask(__name__)
 
-# Configuração do Fuso Horário de Brasília (UTC-3)
+# Fuso Horário de Brasília (UTC-3)
 def get_agora_brasil():
     fuso = timezone(timedelta(hours=-3))
     return datetime.now(fuso)
@@ -71,7 +71,10 @@ def bater_ponto():
 
 @app.route('/painel_gestao')
 def painel_gestao():
-    if request.args.get('senha') != '8340': return redirect(url_for('index'))
+    # TRAVA REAL DE SEGURANÇA
+    if request.args.get('senha') != '8340':
+        return redirect(url_for('index'))
+    
     agora_br = get_agora_brasil()
     mes = request.args.get('mes', agora_br.strftime("%m"))
     filtro = f"/{mes}/2026"
@@ -95,9 +98,7 @@ def painel_gestao():
         
         if total_saldo_colaboradora > 0: total_extras_decimal += total_saldo_colaboradora
         relatorio.append({
-            'id': c['id'],
-            'nome': c['nome'], 
-            'dias': dias, 
+            'id': c['id'], 'nome': c['nome'], 'dias': dias, 
             'saldo_decimal': total_saldo_colaboradora,
             'saldo_formatado': formatar_horas_bonito(total_saldo_colaboradora)
         })
