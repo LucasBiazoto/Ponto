@@ -17,10 +17,23 @@ def get_db_connection():
 
 def init_db():
     conn = get_db_connection()
+    # Cria as tabelas se não existirem
     conn.execute('''CREATE TABLE IF NOT EXISTS registros 
                  (id INTEGER PRIMARY KEY AUTOINCREMENT, nome TEXT, tipo TEXT, horario TEXT, data_texto TEXT, localizacao TEXT)''')
     conn.execute('''CREATE TABLE IF NOT EXISTS colaboradoras 
                  (id INTEGER PRIMARY KEY AUTOINCREMENT, nome TEXT UNIQUE)''')
+    
+    # --- AJUSTE DE FUNCIONÁRIOS ---
+    # Remove o Lucas (limpeza de teste)
+    conn.execute("DELETE FROM colaboradoras WHERE nome = 'Lucas moreira biazoto'")
+    conn.execute("DELETE FROM colaboradoras WHERE nome = 'Lucas Moreira Biazoto'")
+    
+    # Garante que a Esther Julia esteja cadastrada
+    try:
+        conn.execute("INSERT OR IGNORE INTO colaboradoras (nome) VALUES ('Esther Julia')")
+    except:
+        pass
+        
     conn.commit()
     conn.close()
 
@@ -34,12 +47,10 @@ def formatar_horas_bonito(decimal_horas):
 def calcular_jornada(entrada_str, saida_str):
     formato = "%d/%m/%Y %H:%M"
     try:
-        # Pega apenas os primeiros 16 caracteres (data + hora:min)
         inicio = datetime.strptime(entrada_str[:16], formato)
         fim = datetime.strptime(saida_str[:16], formato)
         diff = fim - inicio
         horas = diff.total_seconds() / 3600
-        # Retorna total trabalhado e o saldo (base 6h)
         return round(horas, 2), round(horas - 6.0, 2)
     except:
         return 0, 0
@@ -67,7 +78,6 @@ def bater_ponto():
         status_local = "❓ Sem GPS"
     
     agora = get_agora_brasil()
-    # Grava sem os segundos conforme solicitado
     horario_ponto = agora.strftime("%d/%m/%Y %H:%M")
     
     conn = get_db_connection()
@@ -77,7 +87,6 @@ def bater_ponto():
     conn.close()
     
     msg = "Bom trabalho meu bem" if tipo == "Entrada" else "Bom descanso meu bem"
-    # Note que o status_local não é enviado no JSON de resposta para o funcionário
     return jsonify({
         "status": "SUCESSO", 
         "msg_destaque": msg, 
@@ -100,11 +109,9 @@ def painel_gestao():
     for c in colab_lista:
         regs = conn.execute("SELECT tipo, horario FROM registros WHERE nome = ? AND horario LIKE ?", (c['nome'], f"%/{mes}/2026%")).fetchall()
         
-        # Verifica quem está na clínica hoje
         if regs and regs[-1]['tipo'] == 'Entrada' and regs[-1]['horario'].startswith(agora_br.strftime("%d/%m/%Y")):
             presentes.append(c['nome'])
         
-        # Cálculo de Saldo
         datas = sorted(list(set([r['horario'].split(' ')[0] for r in regs])))
         total_saldo_individual = 0.0; dias_trabalhados = 0
         for d in datas:
