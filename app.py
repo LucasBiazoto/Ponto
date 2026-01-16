@@ -21,11 +21,13 @@ def init_db():
     conn.execute('''CREATE TABLE IF NOT EXISTS colaboradoras 
                  (id INTEGER PRIMARY KEY AUTOINCREMENT, nome TEXT UNIQUE)''')
     
-    # Garante Esther Julia e remove Lucas (ajuste solicitado)
+    # --- COMANDO PARA LIMPAR TESTES E REINICIAR COM ESTHER ---
     conn.execute("DELETE FROM colaboradoras WHERE nome LIKE 'Lucas%'")
     try:
         conn.execute("INSERT OR IGNORE INTO colaboradoras (nome) VALUES ('Esther Julia')")
     except: pass
+    # -------------------------------------------------------
+    
     conn.commit()
     conn.close()
 
@@ -78,8 +80,6 @@ def bater_ponto():
 def painel_gestao():
     if request.args.get('senha') != '8340': return redirect(url_for('index'))
     agora_br = get_agora_brasil()
-    
-    # Filtros de Mês e Ano atualizados
     mes = request.args.get('mes', agora_br.strftime("%m"))
     ano = request.args.get('ano', agora_br.strftime("%Y"))
     
@@ -107,8 +107,6 @@ def painel_gestao():
     ultimos = conn.execute("SELECT * FROM registros ORDER BY id DESC LIMIT 50").fetchall()
     conn.close()
     return render_template('admin.html', relatorio=relatorio, ultimos=ultimos, colaboradoras=colab_lista, mes_sel=mes, ano_sel=ano, presentes=presentes, total_extras=formatar_horas_bonito(total_extras_periodo))
-
-# ... (restante das rotas de exclusão e backup permanecem as mesmas)
 
 @app.route('/excluir_colaboradora/<int:id>')
 def excluir_colaboradora(id):
