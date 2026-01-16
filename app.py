@@ -60,7 +60,7 @@ def bater_ponto():
     nome = request.form.get('nome'); tipo = request.form.get('tipo')
     lat = request.form.get('lat'); lon = request.form.get('lon')
     CLINICA_LAT, CLINICA_LON = -23.5255, -46.5273
-    status_local = "✅ OK"
+    status_local = "✅ Ok"
     if lat and lon:
         distancia = ((float(lat) - CLINICA_LAT)**2 + (float(lon) - CLINICA_LON)**2)**0.5
         if distancia > 0.005: status_local = "📍 Fora"
