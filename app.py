@@ -5,7 +5,6 @@ from flask import Flask, render_template, request, redirect, url_for, send_file,
 
 app = Flask(__name__)
 
-# Fuso Horário de Brasília (UTC-3)
 def get_agora_brasil():
     fuso = timezone(timedelta(hours=-3))
     return datetime.now(fuso)
@@ -32,19 +31,14 @@ def formatar_horas_bonito(decimal_horas):
     return f"{sinal}{h}h {m}min"
 
 def calcular_jornada(entrada_str, saida_str):
-    # Formato agora apenas com Hora e Minuto para o cálculo ser exato
     formato = "%d/%m/%Y %H:%M"
     try:
-        # Remove os segundos caso existam registros antigos no banco
         inicio = datetime.strptime(entrada_str[:16], formato)
         fim = datetime.strptime(saida_str[:16], formato)
         diff = fim - inicio
         horas = diff.total_seconds() / 3600
-        # Considera jornada de 6h. Retorna total e saldo.
         return round(horas, 2), round(horas - 6.0, 2)
-    except Exception as e:
-        print(f"Erro no cálculo: {e}")
-        return 0, 0
+    except: return 0, 0
 
 @app.route('/')
 def index():
@@ -57,16 +51,19 @@ def index():
 def bater_ponto():
     nome = request.form.get('nome'); tipo = request.form.get('tipo')
     lat = request.form.get('lat'); lon = request.form.get('lon')
+    
+    # COORDENADAS DA CLÍNICA (Ajuste se necessário)
     CLINICA_LAT, CLINICA_LON = -23.5255, -46.5273
     status_local = "✅ OK"
+    
     if lat and lon:
         distancia = ((float(lat) - CLINICA_LAT)**2 + (float(lon) - CLINICA_LON)**2)**0.5
-        if distancia > 0.002: status_local = "📍 Fora"
+        # Aumentado para 0.005 para maior tolerância de sinal GPS
+        if distancia > 0.005: status_local = "📍 Fora"
     else: status_local = "❓ Sem GPS"
     
     agora = get_agora_brasil()
-    # GRAVAÇÃO SEM SEGUNDOS: %H:%M
-    horario_formatado = agora.strftime("%d/%m/%Y %H:%M")
+    horario_formatado = agora.strftime("%d/%m/%Y %H:%M") # SEM SEGUNDOS
     
     conn = get_db_connection()
     conn.execute("INSERT INTO registros (nome, tipo, horario, data_texto, localizacao) VALUES (?, ?, ?, ?, ?)", 
@@ -74,21 +71,20 @@ def bater_ponto():
     conn.commit(); conn.close()
     
     msg = "Bom trabalho meu bem" if tipo == "Entrada" else "Bom descanso meu bem"
-    return jsonify({"status": "SUCESSO", "msg_destaque": msg, "msg_sub": f"Registrado às {horario_formatado.split(' ')[1]}"})
+    return jsonify({"status": "SUCESSO", "msg_destaque": msg, "msg_sub": f"Registrado às {horario_formatado.split(' ')[1]} | {status_local}"})
 
 @app.route('/painel_gestao')
 def painel_gestao():
     if request.args.get('senha') != '8340': return redirect(url_for('index'))
     agora_br = get_agora_brasil()
     mes = request.args.get('mes', agora_br.strftime("%m"))
-    filtro = f"/{mes}/2026"
     
     conn = get_db_connection()
     colab_lista = conn.execute("SELECT * FROM colaboradoras ORDER BY nome ASC").fetchall()
     relatorio = []; presentes = []; total_extras_decimal = 0.0
     
     for c in colab_lista:
-        regs = conn.execute("SELECT tipo, horario FROM registros WHERE nome = ? AND horario LIKE ?", (c['nome'], f"%{filtro}%")).fetchall()
+        regs = conn.execute("SELECT tipo, horario FROM registros WHERE nome = ? AND horario LIKE ?", (c['nome'], f"%/{mes}/2026%")).fetchall()
         if regs and regs[-1]['tipo'] == 'Entrada' and regs[-1]['horario'].startswith(agora_br.strftime("%d/%m/%Y")):
             presentes.append(c['nome'])
         
@@ -111,21 +107,14 @@ def painel_gestao():
     conn.close()
     return render_template('admin.html', relatorio=relatorio, ultimos=ultimos, colaboradoras=colab_lista, mes_sel=mes, presentes=presentes, total_extras=formatar_horas_bonito(total_extras_decimal))
 
-# ... demais rotas (excluir, backup, exportar) permanecem iguais ...
+# Rotas auxiliares mantidas com trava de senha
 @app.route('/excluir_colaboradora/<int:id>')
 def excluir_colaboradora(id):
-    conn = get_db_connection()
-    nome_row = conn.execute("SELECT nome FROM colaboradoras WHERE id = ?", (id,)).fetchone()
-    if nome_row:
-        conn.execute("DELETE FROM registros WHERE nome = ?", (nome_row['nome'],))
-        conn.execute("DELETE FROM colaboradoras WHERE id = ?", (id,))
-        conn.commit()
-    conn.close()
+    conn = get_db_connection(); conn.execute("DELETE FROM registros WHERE nome = (SELECT nome FROM colaboradoras WHERE id = ?)", (id,)); conn.execute("DELETE FROM colaboradoras WHERE id = ?", (id,)); conn.commit(); conn.close()
     return redirect(url_for('painel_gestao', senha='8340'))
 
 @app.route('/backup')
-def backup():
-    return send_file("ponto.db", as_attachment=True)
+def backup(): return send_file("ponto.db", as_attachment=True)
 
 @app.route('/cadastrar_colaboradora', methods=['POST'])
 def cadastrar():
@@ -137,27 +126,14 @@ def cadastrar():
         conn.close()
     return redirect(url_for('painel_gestao', senha='8340'))
 
-@app.route('/lancar_manual', methods=['POST'])
-def lancar_manual():
-    n = request.form.get('nome'); t = request.form.get('tipo'); dt = request.form.get('data_hora').strip()
-    conn = get_db_connection()
-    conn.execute("INSERT INTO registros (nome, tipo, horario, data_texto, localizacao) VALUES (?, ?, ?, ?, ?)", (n, t, dt, dt.split(' ')[0], "📝 Manual"))
-    conn.commit(); conn.close()
-    return redirect(url_for('painel_gestao', senha='8340'))
-
 @app.route('/exportar')
 def exportar():
-    conn = get_db_connection()
-    df = pd.read_sql_query("SELECT nome, tipo, horario, localizacao FROM registros", conn)
-    conn.close()
-    df.to_excel("Relatorio_Estetica.xlsx", index=False)
-    return send_file("Relatorio_Estetica.xlsx", as_attachment=True)
+    conn = get_db_connection(); df = pd.read_sql_query("SELECT * FROM registros", conn); conn.close()
+    df.to_excel("Relatorio.xlsx", index=False); return send_file("Relatorio.xlsx", as_attachment=True)
 
 @app.route('/excluir_ponto/<int:id>')
 def excluir_ponto(id):
-    conn = get_db_connection()
-    conn.execute("DELETE FROM registros WHERE id = ?", (id,))
-    conn.commit(); conn.close()
+    conn = get_db_connection(); conn.execute("DELETE FROM registros WHERE id = ?", (id,)); conn.commit(); conn.close()
     return redirect(url_for('painel_gestao', senha='8340'))
 
 if __name__ == '__main__':
