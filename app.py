@@ -5,6 +5,7 @@ from flask import Flask, render_template, request, redirect, url_for, send_file,
 
 app = Flask(__name__)
 
+# Configuração do Fuso Horário de Brasília (UTC-3)
 def get_agora_brasil():
     fuso = timezone(timedelta(hours=-3))
     return datetime.now(fuso)
@@ -33,12 +34,15 @@ def formatar_horas_bonito(decimal_horas):
 def calcular_jornada(entrada_str, saida_str):
     formato = "%d/%m/%Y %H:%M"
     try:
+        # Pega apenas os primeiros 16 caracteres (data + hora:min)
         inicio = datetime.strptime(entrada_str[:16], formato)
         fim = datetime.strptime(saida_str[:16], formato)
         diff = fim - inicio
         horas = diff.total_seconds() / 3600
+        # Retorna total trabalhado e o saldo (base 6h)
         return round(horas, 2), round(horas - 6.0, 2)
-    except: return 0, 0
+    except:
+        return 0, 0
 
 @app.route('/')
 def index():
@@ -52,88 +56,128 @@ def bater_ponto():
     nome = request.form.get('nome'); tipo = request.form.get('tipo')
     lat = request.form.get('lat'); lon = request.form.get('lon')
     
-    # COORDENADAS DA CLÍNICA (Ajuste se necessário)
+    # COORDENADAS DA CLÍNICA (Raio de tolerância de ~400 metros)
     CLINICA_LAT, CLINICA_LON = -23.5255, -46.5273
     status_local = "✅ OK"
     
     if lat and lon:
         distancia = ((float(lat) - CLINICA_LAT)**2 + (float(lon) - CLINICA_LON)**2)**0.5
-        # Aumentado para 0.005 para maior tolerância de sinal GPS
         if distancia > 0.005: status_local = "📍 Fora"
-    else: status_local = "❓ Sem GPS"
+    else:
+        status_local = "❓ Sem GPS"
     
     agora = get_agora_brasil()
-    horario_formatado = agora.strftime("%d/%m/%Y %H:%M") # SEM SEGUNDOS
+    # Grava sem os segundos conforme solicitado
+    horario_ponto = agora.strftime("%d/%m/%Y %H:%M")
     
     conn = get_db_connection()
     conn.execute("INSERT INTO registros (nome, tipo, horario, data_texto, localizacao) VALUES (?, ?, ?, ?, ?)", 
-                 (nome, tipo, horario_formatado, agora.strftime("%d/%m/%Y"), status_local))
-    conn.commit(); conn.close()
+                 (nome, tipo, horario_ponto, agora.strftime("%d/%m/%Y"), status_local))
+    conn.commit()
+    conn.close()
     
     msg = "Bom trabalho meu bem" if tipo == "Entrada" else "Bom descanso meu bem"
-    return jsonify({"status": "SUCESSO", "msg_destaque": msg, "msg_sub": f"Registrado às {horario_formatado.split(' ')[1]} | {status_local}"})
+    # Note que o status_local não é enviado no JSON de resposta para o funcionário
+    return jsonify({
+        "status": "SUCESSO", 
+        "msg_destaque": msg, 
+        "msg_sub": f"Horário: {horario_ponto.split(' ')[1]}"
+    })
 
 @app.route('/painel_gestao')
 def painel_gestao():
-    if request.args.get('senha') != '8340': return redirect(url_for('index'))
+    if request.args.get('senha') != '8340':
+        return redirect(url_for('index'))
+    
     agora_br = get_agora_brasil()
-    mes = request.args.get('mes', agora_br.strftime("%m"))
+    mes_atual = agora_br.strftime("%m")
+    mes = request.args.get('mes', mes_atual)
     
     conn = get_db_connection()
     colab_lista = conn.execute("SELECT * FROM colaboradoras ORDER BY nome ASC").fetchall()
-    relatorio = []; presentes = []; total_extras_decimal = 0.0
+    relatorio = []; presentes = []; total_extras_periodo = 0.0
     
     for c in colab_lista:
         regs = conn.execute("SELECT tipo, horario FROM registros WHERE nome = ? AND horario LIKE ?", (c['nome'], f"%/{mes}/2026%")).fetchall()
+        
+        # Verifica quem está na clínica hoje
         if regs and regs[-1]['tipo'] == 'Entrada' and regs[-1]['horario'].startswith(agora_br.strftime("%d/%m/%Y")):
             presentes.append(c['nome'])
         
+        # Cálculo de Saldo
         datas = sorted(list(set([r['horario'].split(' ')[0] for r in regs])))
-        total_saldo_colaboradora = 0.0; dias = 0
+        total_saldo_individual = 0.0; dias_trabalhados = 0
         for d in datas:
             e = [r['horario'] for r in regs if r['horario'].startswith(d) and r['tipo'] == 'Entrada']
             s = [r['horario'] for r in regs if r['horario'].startswith(d) and r['tipo'] == 'Saída']
             if e and s:
-                dias += 1; _, saldo = calcular_jornada(e[0], s[-1]); total_saldo_colaboradora += saldo
+                dias_trabalhados += 1
+                _, saldo = calcular_jornada(e[0], s[-1])
+                total_saldo_individual += saldo
         
-        total_extras_decimal += total_saldo_colaboradora
+        total_extras_periodo += total_saldo_individual
         relatorio.append({
-            'id': c['id'], 'nome': c['nome'], 'dias': dias, 
-            'saldo_decimal': total_saldo_colaboradora,
-            'saldo_formatado': formatar_horas_bonito(total_saldo_colaboradora)
+            'id': c['id'],
+            'nome': c['nome'],
+            'dias': dias_trabalhados,
+            'saldo_decimal': total_saldo_individual,
+            'saldo_formatado': formatar_horas_bonito(total_saldo_individual)
         })
     
-    ultimos = conn.execute("SELECT * FROM registros ORDER BY id DESC LIMIT 50").fetchall()
+    ultimos_registros = conn.execute("SELECT * FROM registros ORDER BY id DESC LIMIT 50").fetchall()
     conn.close()
-    return render_template('admin.html', relatorio=relatorio, ultimos=ultimos, colaboradoras=colab_lista, mes_sel=mes, presentes=presentes, total_extras=formatar_horas_bonito(total_extras_decimal))
+    
+    return render_template('admin.html', relatorio=relatorio, ultimos=ultimos_registros, colaboradoras=colab_lista, mes_sel=mes, presentes=presentes, total_extras=formatar_horas_bonito(total_extras_periodo))
 
-# Rotas auxiliares mantidas com trava de senha
 @app.route('/excluir_colaboradora/<int:id>')
 def excluir_colaboradora(id):
-    conn = get_db_connection(); conn.execute("DELETE FROM registros WHERE nome = (SELECT nome FROM colaboradoras WHERE id = ?)", (id,)); conn.execute("DELETE FROM colaboradoras WHERE id = ?", (id,)); conn.commit(); conn.close()
+    conn = get_db_connection()
+    nome_colab = conn.execute("SELECT nome FROM colaboradoras WHERE id = ?", (id,)).fetchone()
+    if nome_colab:
+        conn.execute("DELETE FROM registros WHERE nome = ?", (nome_colab['nome'],))
+        conn.execute("DELETE FROM colaboradoras WHERE id = ?", (id,))
+        conn.commit()
+    conn.close()
     return redirect(url_for('painel_gestao', senha='8340'))
-
-@app.route('/backup')
-def backup(): return send_file("ponto.db", as_attachment=True)
 
 @app.route('/cadastrar_colaboradora', methods=['POST'])
 def cadastrar():
     nome = request.form.get('nome_novo')
     if nome:
         conn = get_db_connection()
-        try: conn.execute("INSERT INTO colaboradoras (nome) VALUES (?)", (nome.strip(),)); conn.commit()
+        try:
+            conn.execute("INSERT INTO colaboradoras (nome) VALUES (?)", (nome.strip(),))
+            conn.commit()
         except: pass
         conn.close()
     return redirect(url_for('painel_gestao', senha='8340'))
 
+@app.route('/lancar_manual', methods=['POST'])
+def lancar_manual():
+    n = request.form.get('nome'); t = request.form.get('tipo'); dt = request.form.get('data_hora').strip()
+    conn = get_db_connection()
+    conn.execute("INSERT INTO registros (nome, tipo, horario, data_texto, localizacao) VALUES (?, ?, ?, ?, ?)", 
+                 (n, t, dt, dt.split(' ')[0], "📝 Manual"))
+    conn.commit(); conn.close()
+    return redirect(url_for('painel_gestao', senha='8340'))
+
 @app.route('/exportar')
 def exportar():
-    conn = get_db_connection(); df = pd.read_sql_query("SELECT * FROM registros", conn); conn.close()
-    df.to_excel("Relatorio.xlsx", index=False); return send_file("Relatorio.xlsx", as_attachment=True)
+    conn = get_db_connection()
+    df = pd.read_sql_query("SELECT nome, tipo, horario, localizacao FROM registros", conn)
+    conn.close()
+    df.to_excel("Relatorio_Estetica.xlsx", index=False)
+    return send_file("Relatorio_Estetica.xlsx", as_attachment=True)
+
+@app.route('/backup')
+def backup():
+    return send_file("ponto.db", as_attachment=True)
 
 @app.route('/excluir_ponto/<int:id>')
 def excluir_ponto(id):
-    conn = get_db_connection(); conn.execute("DELETE FROM registros WHERE id = ?", (id,)); conn.commit(); conn.close()
+    conn = get_db_connection()
+    conn.execute("DELETE FROM registros WHERE id = ?", (id,))
+    conn.commit(); conn.close()
     return redirect(url_for('painel_gestao', senha='8340'))
 
 if __name__ == '__main__':
