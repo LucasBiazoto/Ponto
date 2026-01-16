@@ -3,106 +3,111 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Gestão - Dra Thamiris Araujo</title>
+    <title>Painel de Gestão - Dra Thamiris Araujo</title>
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600&display=swap');
-        :root { --rosa: #b5838d; --rosa-claro: #f9f1f0; --fundo: #fdfaf9; --texto: #6d6875; }
-        body { font-family: 'Poppins', sans-serif; background: var(--fundo); color: var(--texto); margin: 0; padding: 20px; }
-        .container { max-width: 900px; margin: 0 auto; }
-        .card { background: white; padding: 25px; border-radius: 20px; box-shadow: 0 4px 15px rgba(0,0,0,0.02); margin-bottom: 20px; border: 1px solid var(--rosa-claro); }
-        h1, h2, h3 { color: var(--rosa); margin-top: 0; }
-        table { width: 100%; border-collapse: collapse; margin-top: 10px; font-size: 14px; }
-        th, td { padding: 12px; text-align: left; border-bottom: 1px solid var(--rosa-claro); }
-        th { background: var(--rosa-claro); color: var(--rosa); }
-        .btn { background: var(--rosa); color: white; padding: 10px 15px; border: none; border-radius: 10px; cursor: pointer; text-decoration: none; font-size: 13px; display: inline-block; }
-        select, input { padding: 10px; border-radius: 10px; border: 1px solid #eee; font-family: 'Poppins'; }
-        
-        /* Classes para cores de saldo que removem os erros do VS Code */
-        .saldo-positivo { color: #2e7d32; font-weight: 600; }
-        .saldo-negativo { color: #c62828; font-weight: 600; }
-        
-        .status-trabalhando { font-size: 10px; color: #2e7d32; background: #e8f5e9; padding: 2px 8px; border-radius: 10px; margin-left: 5px; }
-        footer { margin-top: 50px; text-align: center; }
-        footer p { font-size: 12px; color: #aaa; margin: 0; }
-        footer a { color: var(--rosa); text-decoration: none; opacity: 0.6; }
+        :root { --rosa: #b5838d; --rosa-claro: #f9f1f0; --cinza: #6d6875; --fundo: #fdfaf9; }
+        body { font-family: 'Poppins', sans-serif; background-color: var(--fundo); color: #6d6875; margin: 0; padding: 20px; }
+        .container { max-width: 1000px; margin: 0 auto; }
+        .card { background: white; padding: 30px; border-radius: 30px; box-shadow: 0 10px 30px rgba(0,0,0,0.03); margin-bottom: 25px; border: 1px solid var(--rosa-claro); }
+        h1, h2, h3 { color: var(--rosa); font-weight: 600; }
+        table { width: 100%; border-collapse: collapse; margin-top: 15px; }
+        th, td { padding: 15px; text-align: left; border-bottom: 1px solid var(--rosa-claro); font-size: 14px; }
+        th { color: var(--rosa); background: var(--rosa-claro); border-radius: 10px; }
+        .btn { padding: 12px 25px; border-radius: 15px; border: none; cursor: pointer; font-family: 'Poppins'; font-weight: 600; text-decoration: none; display: inline-block; transition: 0.3s; font-size: 14px; }
+        .btn-rosa { background: var(--rosa); color: white; }
+        .btn-cinza { background: var(--cinza); color: white; }
+        .btn-excel { background: #28a745; color: white; padding: 8px 15px; border-radius: 8px; font-size: 12px; }
+        input, select { padding: 15px; border-radius: 15px; border: 1px solid var(--rosa-claro); width: 100%; box-sizing: border-box; font-family: 'Poppins'; outline: none; }
+        .saldo-pos { color: #28a745; font-weight: 600; background: #e8f5e9; padding: 5px 10px; border-radius: 8px; }
+        .saldo-neg { color: #dc3545; font-weight: 600; background: #fdecea; padding: 5px 10px; border-radius: 8px; }
     </style>
 </head>
 <body>
     <div class="container">
         <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
-            <h1>Painel de Gestão</h1>
-            <a href="/" style="text-decoration: none; color: var(--rosa); font-weight: 600;">← Voltar ao Ponto</a>
+            <h1 style="font-size: 24px;">Painel de Gestão</h1>
+            <a href="/" style="color: var(--rosa); text-decoration: none; font-weight: 600;">← Voltar ao Ponto</a>
         </div>
 
         <div class="card">
-            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">
+            <div style="display: flex; justify-content: space-between; align-items: center;">
                 <h2>Resumo Mensal 🌸</h2>
                 <form action="/painel_gestao" method="get">
                     <input type="hidden" name="senha" value="8340">
-                    <select name="mes" onchange="this.form.submit()">
+                    <select name="mes" onchange="this.form.submit()" style="width: auto; padding: 5px 15px;">
                         <option value="01" {% if mes_sel == '01' %}selected{% endif %}>Janeiro</option>
                         <option value="02" {% if mes_sel == '02' %}selected{% endif %}>Fevereiro</option>
-                        <option value="03" {% if mes_sel == '03' %}selected{% endif %}>Março</option>
                     </select>
                 </form>
             </div>
             <table>
                 <thead>
-                    <tr><th>Nome</th><th>Dias</th><th>Saldo (Base 6h)</th><th>Ações</th></tr>
+                    <tr><th>Nome</th><th>Dias</th><th>Saldo (6h)</th><th>Ação</th></tr>
                 </thead>
                 <tbody>
                     {% for r in relatorio %}
                     <tr>
-                        <td>{{ r.nome }} {% if r.nome in presentes %}<span class="status-trabalhando">Na Clínica</span>{% endif %}</td>
-                        <td>{{ r.dias }}</td>
-                        <td class="{% if '-' in r.saldo_formatado %}saldo-negativo{% else %}saldo-positivo{% endif %}">
-                            {{ r.saldo_formatado }}
-                        </td>
-                        <td><a href="/excluir_colaboradora/{{ r.id }}" onclick="return confirm('Deseja excluir?')">🗑️</a></td>
+                        <td>{{ r.nome }}</td>
+                        <td>{{ r.dias }} dias</td>
+                        <td><span class="{% if '-' in r.saldo_formatado %}saldo-neg{% else %}saldo-pos{% endif %}">{{ r.saldo_formatado }}</span></td>
+                        <td><a href="/excluir_colaboradora/{{ r.id }}" style="text-decoration: none;">🗑️</a></td>
                     </tr>
                     {% endfor %}
                 </tbody>
             </table>
-            <p style="margin-top: 15px; font-weight: 600; font-size: 14px;">Total Geral de Extras: {{ total_extras }}</p>
+            <p style="margin-top: 20px; font-weight: 600;">Total Geral de Extras: {{ total_extras }}</p>
         </div>
 
-        <div class="card">
-            <h3>Lançamento Manual e Equipe</h3>
-            <form action="/cadastrar_colaboradora" method="post" style="display: flex; gap: 10px; margin-bottom: 20px;">
-                <input type="text" name="nome_novo" placeholder="Nova Colaboradora" required style="flex: 1;">
-                <button type="submit" class="btn">Cadastrar</button>
-            </form>
-            <div style="display: flex; gap: 10px;">
-                <a href="/exportar" class="btn">Exportar Excel</a>
-                <a href="/backup" class="btn" style="background: #6d6875;">Backup Banco (.db)</a>
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px;">
+            <div class="card">
+                <h3>Nova Colaboradora</h3>
+                <form action="/cadastrar_colaboradora" method="post">
+                    <input type="text" name="nome_novo" placeholder="Nome Completo" required style="margin-bottom: 15px;">
+                    <button type="submit" class="btn btn-rosa" style="width: 100%;">Salvar Cadastro</button>
+                </form>
+            </div>
+            <div class="card">
+                <h3>Lançamento Manual</h3>
+                <form action="/lancar_manual" method="post">
+                    <select name="nome" style="margin-bottom: 10px;">
+                        {% for c in colaboradoras %}<option value="{{ c.nome }}">{{ c.nome }}</option>{% endfor %}
+                    </select>
+                    <input type="text" name="data_hora" placeholder="DD/MM/AAAA HH:MM" style="margin-bottom: 10px;">
+                    <select name="tipo" style="margin-bottom: 10px;">
+                        <option value="Entrada">Entrada</option>
+                        <option value="Saída">Saída</option>
+                    </select>
+                    <button type="submit" class="btn btn-cinza" style="width: 100%;">Inserir Ponto</button>
+                </form>
             </div>
         </div>
 
         <div class="card">
-            <h3>Histórico Recente</h3>
+            <div style="display: flex; justify-content: space-between; align-items: center;">
+                <h3>Histórico Recente 📍</h3>
+                <div style="display: flex; gap: 10px;">
+                    <a href="/exportar" class="btn-excel">📊 Excel</a>
+                    <a href="/backup" class="btn-excel" style="background: var(--cinza);">💾 Banco</a>
+                </div>
+            </div>
             <table>
                 <thead>
-                    <tr><th>Nome</th><th>Tipo</th><th>Horário</th><th>Local</th><th>Ação</th></tr>
+                    <tr><th>Nome</th><th>Tipo</th><th>Horário</th><th>Status</th><th>Ação</th></tr>
                 </thead>
                 <tbody>
                     {% for r in ultimos %}
                     <tr>
-                        <td>{{ r.nome }}</td><td>{{ r.tipo }}</td><td>{{ r.horario }}</td><td>{{ r.localizacao }}</td>
-                        <td><a href="/excluir_ponto/{{ r.id }}" style="text-decoration: none;">❌</a></td>
+                        <td>{{ r.nome }}</td>
+                        <td><span style="background: #eee; padding: 2px 8px; border-radius: 5px; font-size: 10px;">{{ r.tipo|upper }}</span></td>
+                        <td>{{ r.horario }}</td>
+                        <td style="font-size: 12px;">{{ r.localizacao }}</td>
+                        <td><a href="/excluir_ponto/{{ r.id }}" style="color: #dc3545; text-decoration: none; font-size: 12px;">Excluir</a></td>
                     </tr>
                     {% endfor %}
                 </tbody>
             </table>
         </div>
-
-        <footer>
-            <p>Desenvolvido por Lucas Biazoto</p>
-            <a href="https://github.com/LucasBiazoto" target="_blank">
-                <svg height="28" width="28" viewBox="0 0 16 16" fill="currentColor" style="margin-top: 10px;">
-                    <path d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.013 8.013 0 0016 8c0-4.42-3.58-8-8-8z"></path>
-                </svg>
-            </a>
-        </footer>
     </div>
 </body>
 </html>
