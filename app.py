@@ -5,7 +5,7 @@ from flask import Flask, render_template, request, redirect, url_for, send_file,
 
 app = Flask(__name__)
 
-# Configuração de Fuso Horário (Brasil/São Paulo)
+# 1. Configuração de Fuso Horário (Brasil/São Paulo)
 def get_agora_brasil():
     fuso = timezone(timedelta(hours=-3))
     return datetime.now(fuso)
@@ -15,7 +15,7 @@ def get_db_connection():
     conn.row_factory = sqlite3.Row
     return conn
 
-# Inicialização do Banco de Dados com a correção da Esther Julia
+# 2. Inicialização com Limpeza Definitiva (Garante Esther e remove Lucas)
 def init_db():
     conn = get_db_connection()
     conn.execute('''CREATE TABLE IF NOT EXISTS registros 
@@ -23,13 +23,10 @@ def init_db():
     conn.execute('''CREATE TABLE IF NOT EXISTS colaboradoras 
                  (id INTEGER PRIMARY KEY AUTOINCREMENT, nome TEXT UNIQUE)''')
     
-    # --- LOGICA DE FIXAÇÃO DE COLABORADORA ---
-    # Remove nomes de teste (Lucas) e garante a Esther Julia
-    conn.execute("DELETE FROM colaboradoras WHERE nome LIKE 'Lucas%'")
-    try:
-        conn.execute("INSERT OR IGNORE INTO colaboradoras (nome) VALUES ('Esther Julia')")
-    except:
-        pass
+    # LIMPEZA: Remove qualquer um que não seja a Esther Julia
+    conn.execute("DELETE FROM colaboradoras WHERE nome != 'Esther Julia'")
+    # GARANTIA: Insere a Esther Julia como única colaboradora fixa
+    conn.execute("INSERT OR IGNORE INTO colaboradoras (nome) VALUES ('Esther Julia')")
     
     conn.commit()
     conn.close()
@@ -48,7 +45,7 @@ def calcular_jornada(entrada_str, saida_str):
         fim = datetime.strptime(saida_str[:16], formato)
         diff = fim - inicio
         horas = diff.total_seconds() / 3600
-        # Jornada de 6 horas
+        # Jornada padrão de 6 horas
         return round(horas, 2), round(horas - 6.0, 2)
     except:
         return 0, 0
@@ -86,7 +83,6 @@ def bater_ponto():
     conn.commit()
     conn.close()
     
-    # Mensagens Personalizadas
     msg = "Bom trabalho meu bem" if tipo == "Entrada" else "Bom descanso meu bem"
     return jsonify({"status":"SUCESSO","msg_destaque":msg,"msg_sub":f"Horário: {horario_ponto.split(' ')[1]}"})
 
@@ -96,25 +92,17 @@ def painel_gestao():
         return redirect(url_for('index'))
     
     agora_br = get_agora_brasil()
-    # Filtros de Mês e Ano
     mes = request.args.get('mes', agora_br.strftime("%m"))
     ano = request.args.get('ano', agora_br.strftime("%Y"))
     
     conn = get_db_connection()
     colab_lista = conn.execute("SELECT * FROM colaboradoras ORDER BY nome ASC").fetchall()
     relatorio = []
-    presentes = []
     total_extras_periodo = 0.0
-    
     termo_busca = f"%/{mes}/{ano}%"
     
     for c in colab_lista:
         regs = conn.execute("SELECT tipo, horario FROM registros WHERE nome = ? AND horario LIKE ?", (c['nome'], termo_busca)).fetchall()
-        
-        # Verifica se está presente hoje
-        if regs and regs[-1]['tipo'] == 'Entrada' and regs[-1]['horario'].startswith(agora_br.strftime("%d/%m/%Y")):
-            presentes.append(c['nome'])
-        
         datas = sorted(list(set([r['horario'].split(' ')[0] for r in regs])))
         total_saldo_ind = 0.0
         dias_trabalhados = 0
@@ -139,48 +127,11 @@ def painel_gestao():
     ultimos = conn.execute("SELECT * FROM registros ORDER BY id DESC LIMIT 50").fetchall()
     conn.close()
     
-    return render_template('admin.html', 
-                           relatorio=relatorio, 
-                           ultimos=ultimos, 
-                           colaboradoras=colab_lista, 
-                           mes_sel=mes, 
-                           ano_sel=ano,
-                           presentes=presentes, 
-                           total_extras=formatar_horas_bonito(total_extras_periodo))
+    return render_template('admin.html', relatorio=relatorio, ultimos=ultimos, mes_sel=mes, ano_sel=ano)
 
-@app.route('/excluir_colaboradora/<int:id>')
-def excluir_colaboradora(id):
-    conn = get_db_connection()
-    conn.execute("DELETE FROM registros WHERE nome = (SELECT nome FROM colaboradoras WHERE id = ?)", (id,))
-    conn.execute("DELETE FROM colaboradoras WHERE id = ?", (id,))
-    conn.commit()
-    conn.close()
-    return redirect(url_for('painel_gestao', senha='8340'))
-
-@app.route('/cadastrar_colaboradora', methods=['POST'])
-def cadastrar():
-    n = request.form.get('nome_novo')
-    if n:
-        conn = get_db_connection()
-        try:
-            conn.execute("INSERT OR IGNORE INTO colaboradoras (nome) VALUES (?)", (n.strip(),))
-            conn.commit()
-        except:
-            pass
-        conn.close()
-    return redirect(url_for('painel_gestao', senha='8340'))
-
-@app.route('/lancar_manual', methods=['POST'])
-def lancar_manual():
-    n = request.form.get('nome')
-    t = request.form.get('tipo')
-    dt = request.form.get('data_hora').strip()
-    conn = get_db_connection()
-    conn.execute("INSERT INTO registros (nome, tipo, horario, data_texto, localizacao) VALUES (?, ?, ?, ?, ?)", 
-                 (n, t, dt, dt.split(' ')[0], "📝 Manual"))
-    conn.commit()
-    conn.close()
-    return redirect(url_for('painel_gestao', senha='8340'))
+@app.route('/backup')
+def backup():
+    return send_file("ponto.db", as_attachment=True)
 
 @app.route('/exportar')
 def exportar():
@@ -189,10 +140,6 @@ def exportar():
     conn.close()
     df.to_excel("Relatorio_Pontos.xlsx", index=False)
     return send_file("Relatorio_Pontos.xlsx", as_attachment=True)
-
-@app.route('/backup')
-def backup():
-    return send_file("ponto.db", as_attachment=True)
 
 @app.route('/excluir_ponto/<int:id>')
 def excluir_ponto(id):
