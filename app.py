@@ -14,25 +14,13 @@ def get_db_connection():
 
 def init_db():
     conn = get_db_connection()
-    conn.execute('''CREATE TABLE IF NOT EXISTS colaboradores (
-                        id INTEGER PRIMARY KEY AUTOINCREMENT,
-                        nome TEXT NOT NULL)''')
-    
-    conn.execute('''CREATE TABLE IF NOT EXISTS pontos (
-                        id INTEGER PRIMARY KEY AUTOINCREMENT,
-                        nome TEXT NOT NULL,
-                        horario TEXT NOT NULL,
-                        tipo TEXT NOT NULL,
-                        localizacao TEXT)''')
-    
-    # Garante Esther Julia como única funcionária fixa
-    conn.execute("DELETE FROM colaboradores WHERE nome = 'Lucas Moreira Biazoto'")
+    conn.execute('CREATE TABLE IF NOT EXISTS colaboradores (id INTEGER PRIMARY KEY AUTOINCREMENT, nome TEXT NOT NULL)')
+    conn.execute('CREATE TABLE IF NOT EXISTS pontos (id INTEGER PRIMARY KEY AUTOINCREMENT, nome TEXT NOT NULL, horario TEXT NOT NULL, tipo TEXT NOT NULL, localizacao TEXT)')
+    # Fixa Esther Julia
     conn.execute("INSERT OR IGNORE INTO colaboradores (id, nome) VALUES (1, 'Esther Julia')")
-    
     conn.commit()
     conn.close()
 
-# Inicializa o banco ao rodar o app
 with app.app_context():
     init_db()
 
@@ -45,85 +33,45 @@ def index():
 
 @app.route('/bater_ponto', methods=['POST'])
 def bater_ponto():
-    nome = request.form['nome']
-    tipo = request.form['tipo']
-    localizacao = request.form.get('localizacao', 'Manual/Não informada')
-    
+    nome = request.form.get('nome')
+    tipo = request.form.get('tipo')
     # Se vier do formulário manual, usa o horário digitado, senão usa o atual
-    horario_form = request.form.get('horario_manual')
-    if horario_form:
+    horario_manual = request.form.get('horario_manual')
+    
+    if horario_manual:
         try:
-            # Converte de YYYY-MM-DDTHH:MM para DD/MM/YYYY HH:MM:SS
-            dt = datetime.strptime(horario_form, '%Y-%m-%dT%H:%M')
+            dt = datetime.strptime(horario_manual, '%Y-%m-%dT%H:%M')
             horario = dt.strftime('%d/%m/%Y %H:%M:%S')
+            loc = "Lançamento Manual"
         except:
             horario = datetime.now().strftime('%d/%m/%Y %H:%M:%S')
+            loc = "Erro no formato manual"
     else:
         horario = datetime.now().strftime('%d/%m/%Y %H:%M:%S')
-    
+        loc = request.form.get('localizacao', 'Não informada')
+
     conn = get_db_connection()
     conn.execute('INSERT INTO pontos (nome, horario, tipo, localizacao) VALUES (?, ?, ?, ?)',
-                 (nome, horario, tipo, localizacao))
+                 (nome, horario, tipo, loc))
     conn.commit()
     conn.close()
     
-    # Se for manual, volta para o painel, se for batida normal, vai para sucesso
-    if horario_form:
+    if horario_manual:
         return redirect(url_for('painel_gestao', senha='8340'))
     
-    mensagem = "Bom trabalho meu bem" if tipo == "Entrada" else "Bom descanso meu bem"
-    return render_template('sucesso.html', mensagem=mensagem)
+    msg = "Bom trabalho meu bem" if tipo == "Entrada" else "Bom descanso meu bem"
+    return render_template('sucesso.html', mensagem=msg)
 
 @app.route('/painel_gestao')
 def painel_gestao():
     senha = request.args.get('senha')
-    if senha != '8340':
-        return "Acesso Negado", 403
-    
-    mes_filtro = request.args.get('mes', datetime.now().strftime('%m'))
-    ano_filtro = request.args.get('ano', datetime.now().strftime('%Y'))
+    if senha != '8340': return "Acesso Negado", 403
     
     conn = get_db_connection()
     colaboradores = conn.execute('SELECT * FROM colaboradores').fetchall()
     pontos = conn.execute('SELECT * FROM pontos ORDER BY id DESC').fetchall()
-    
-    relatorio = []
-    for colab in colaboradores:
-        pontos_colab = [p for p in pontos if p['nome'] == colab['nome'] and p['horario'][3:10] == f"{mes_filtro}/{ano_filtro}"]
-        # Inverte para cálculo cronológico
-        pontos_calc = pontos_colab[::-1]
-        
-        total_segundos = 0
-        dias_trabalhados = set()
-        
-        for i in range(0, len(pontos_calc)-1, 2):
-            if pontos_calc[i]['tipo'] == 'Entrada' and pontos_calc[i+1]['tipo'] == 'Saída':
-                try:
-                    fmt = '%d/%m/%Y %H:%M:%S'
-                    e = datetime.strptime(pontos_calc[i]['horario'], fmt)
-                    s = datetime.strptime(pontos_calc[i+1]['horario'], fmt)
-                    total_segundos += (s - e).total_seconds()
-                    dias_trabalhados.add(pontos_calc[i]['horario'][:10])
-                except: continue
-        
-        abs_saldo = abs(int(total_segundos - (len(dias_trabalhados) * 6 * 3600)))
-        sinal = "-" if (total_segundos - (len(dias_trabalhados) * 6 * 3600)) < 0 else "+"
-        
-        relatorio.append({
-            'nome': colab['nome'],
-            'dias': len(dias_trabalhados),
-            'saldo_formatado': f"{sinal}{abs_saldo // 3600}h {(abs_saldo % 3600) // 60}min"
-        })
     conn.close()
-    return render_template('admin.html', relatorio=relatorio, ultimos=pontos[:15], colaboradores=colaboradores)
-
-@app.route('/exportar')
-def exportar():
-    conn = get_db_connection()
-    df = pd.read_sql_query("SELECT * FROM pontos", conn)
-    conn.close()
-    df.to_excel('Relatorio_DraThamiris.xlsx', index=False)
-    return send_file('Relatorio_DraThamiris.xlsx', as_attachment=True)
+    return render_template('admin.html', relatorio=[], ultimos=pontos[:10], colaboradores=colaboradores)
 
 if __name__ == '__main__':
     port = int(os.environ.get("PORT", 5000))
