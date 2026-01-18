@@ -1,144 +1,152 @@
+import os
 import sqlite3
+from datetime import datetime, timedelta
+from flask import Flask, render_template, request, redirect, url_for, send_file
 import pandas as pd
-from datetime import datetime, timedelta, timezone
-from flask import Flask, render_template, request, redirect, url_for, send_file, jsonify
 
 app = Flask(__name__)
-
-def get_agora_brasil():
-    fuso = timezone(timedelta(hours=-3))
-    return datetime.now(fuso)
+DATABASE = 'database.db'
 
 def get_db_connection():
-    conn = sqlite3.connect('ponto.db')
+    conn = sqlite3.connect(DATABASE)
     conn.row_factory = sqlite3.Row
     return conn
 
 def init_db():
     conn = get_db_connection()
-    conn.execute('''CREATE TABLE IF NOT EXISTS registros 
-                 (id INTEGER PRIMARY KEY AUTOINCREMENT, nome TEXT, tipo TEXT, horario TEXT, data_texto TEXT, localizacao TEXT)''')
-    conn.execute('''CREATE TABLE IF NOT EXISTS colaboradoras 
-                 (id INTEGER PRIMARY KEY AUTOINCREMENT, nome TEXT UNIQUE)''')
-    # Mantém apenas a Esther se o banco estiver vazio ou com lixo
-    conn.execute("INSERT OR IGNORE INTO colaboradoras (nome) VALUES ('Esther Julia')")
+    # Tabela de colaboradores
+    conn.execute('''CREATE TABLE IF NOT EXISTS colaboradores (
+                        id INTEGER PRIMARY KEY AUTOINCREMENT,
+                        nome TEXT NOT None)''')
+    
+    # Tabela de pontos
+    conn.execute('''CREATE TABLE IF NOT EXISTS pontos (
+                        id INTEGER PRIMARY KEY AUTOINCREMENT,
+                        nome TEXT NOT NULL,
+                        horario TEXT NOT NULL,
+                        tipo TEXT NOT NULL,
+                        localizacao TEXT)''')
+    
+    # GARANTE ESTHER JULIA COMO DEFINITIVA
+    # Remove qualquer resquício do nome de teste e insere a Esther
+    conn.execute("DELETE FROM colaboradores WHERE nome = 'Lucas Moreira Biazoto'")
+    conn.execute("INSERT OR IGNORE INTO colaboradores (id, nome) VALUES (1, 'Esther Julia')")
+    
     conn.commit()
     conn.close()
-
-def formatar_horas_bonito(decimal_horas):
-    sinal = "+" if decimal_horas >= 0 else "-"
-    total_minutos = abs(int(round(decimal_horas * 60)))
-    h = total_minutos // 60
-    m = total_minutos % 60
-    return f"{sinal}{h}h {m}min"
-
-def calcular_jornada(entrada_str, saida_str):
-    formato = "%d/%m/%Y %H:%M"
-    try:
-        inicio = datetime.strptime(entrada_str[:16], formato)
-        fim = datetime.strptime(saida_str[:16], formato)
-        diff = fim - inicio
-        horas = diff.total_seconds() / 3600
-        return round(horas, 2), round(horas - 6.0, 2)
-    except: return 0, 0
 
 @app.route('/')
 def index():
     conn = get_db_connection()
-    colab = [row['nome'] for row in conn.execute("SELECT nome FROM colaboradoras ORDER BY nome ASC").fetchall()]
+    colaboradores = conn.execute('SELECT * FROM colaboradores').fetchall()
     conn.close()
-    return render_template('index.html', colaboradoras=colab)
+    return render_template('index.html', colaboradores=colaboradores)
 
 @app.route('/bater_ponto', methods=['POST'])
 def bater_ponto():
-    nome = request.form.get('nome'); tipo = request.form.get('tipo')
-    lat = request.form.get('lat'); lon = request.form.get('lon')
-    CLINICA_LAT, CLINICA_LON = -23.5255, -46.5273
-    status_local = "✅ OK"
-    if lat and lon:
-        distancia = ((float(lat) - CLINICA_LAT)**2 + (float(lon) - CLINICA_LON)**2)**0.5
-        if distancia > 0.005: status_local = "📍 Fora"
-    else: status_local = "❓ Sem GPS"
-    agora = get_agora_brasil()
-    horario_ponto = agora.strftime("%d/%m/%Y %H:%M")
+    nome = request.form['nome']
+    tipo = request.form['tipo']
+    localizacao = request.form.get('localizacao', 'Não informada')
+    horario = datetime.now().strftime('%d/%m/%Y %H:%M:%S')
+    
     conn = get_db_connection()
-    conn.execute("INSERT INTO registros (nome, tipo, horario, data_texto, localizacao) VALUES (?, ?, ?, ?, ?)", 
-                 (nome, tipo, horario_ponto, agora.strftime("%d/%m/%Y"), status_local))
-    conn.commit(); conn.close()
-    msg = "Bom trabalho meu bem" if tipo == "Entrada" else "Bom descanso meu bem"
-    return jsonify({"status":"SUCESSO","msg_destaque":msg,"msg_sub":f"Horário: {horario_ponto.split(' ')[1]}"})
+    conn.execute('INSERT INTO pontos (nome, horario, tipo, localizacao) VALUES (?, ?, ?, ?)',
+                 (nome, horario, tipo, localizacao))
+    conn.commit()
+    conn.close()
+    
+    mensagem = "Bom trabalho meu bem" if tipo == "Entrada" else "Bom descanso meu bem"
+    return render_template('sucesso.html', mensagem=mensagem)
 
 @app.route('/painel_gestao')
 def painel_gestao():
-    if request.args.get('senha') != '8340': return redirect(url_for('index'))
-    agora_br = get_agora_brasil()
-    mes = request.args.get('mes', agora_br.strftime("%m"))
-    ano = request.args.get('ano', agora_br.strftime("%Y"))
+    senha = request.args.get('senha')
+    if senha != '8340':
+        return "Acesso Negado", 403
+    
+    mes_filtro = request.args.get('mes', datetime.now().strftime('%m'))
+    ano_filtro = request.args.get('ano', datetime.now().strftime('%Y'))
+    
     conn = get_db_connection()
-    colab_lista = conn.execute("SELECT * FROM colaboradoras ORDER BY nome ASC").fetchall()
+    colaboradores = conn.execute('SELECT * FROM colaboradores').fetchall()
+    pontos = conn.execute('SELECT * FROM pontos ORDER BY id DESC').fetchall()
+    
     relatorio = []
-    termo_busca = f"%/{mes}/{ano}%"
-    for c in colab_lista:
-        regs = conn.execute("SELECT tipo, horario FROM registros WHERE nome = ? AND horario LIKE ?", (c['nome'], termo_busca)).fetchall()
-        datas = sorted(list(set([r['horario'].split(' ')[0] for r in regs])))
-        total_saldo_ind = 0.0; dias_trabalhados = 0
-        for d in datas:
-            e = [r['horario'] for r in regs if r['horario'].startswith(d) and r['tipo'] == 'Entrada']
-            s = [r['horario'] for r in regs if r['horario'].startswith(d) and r['tipo'] == 'Saída']
-            if e and s:
-                dias_trabalhados += 1
-                _, saldo = calcular_jornada(e[0], s[-1])
-                total_saldo_ind += saldo
-        relatorio.append({'id': c['id'], 'nome': c['nome'], 'dias': dias_trabalhados, 'saldo_formatado': formatar_horas_bonito(total_saldo_ind)})
-    ultimos = conn.execute("SELECT * FROM registros ORDER BY id DESC LIMIT 50").fetchall()
+    for colab in colaboradores:
+        pontos_colab = [p for p in pontos if p['nome'] == colab['nome'] and p['horario'][3:10] == f"{mes_filtro}/{ano_filtro}"]
+        
+        # Lógica de cálculo de saldo (Carga horária: 6h)
+        total_segundos = 0
+        dias_trabalhados = set()
+        
+        for i in range(0, len(pontos_colab)-1, 2):
+            if pontos_colab[i]['tipo'] == 'Entrada' and pontos_colab[i+1]['tipo'] == 'Saída':
+                fmt = '%d/%m/%Y %H:%M:%S'
+                e = datetime.strptime(pontos_colab[i]['horario'], fmt)
+                s = datetime.strptime(pontos_colab[i+1]['horario'], fmt)
+                total_segundos += (s - e).total_seconds()
+                dias_trabalhados.add(pontos_colab[i]['horario'][:10])
+        
+        horas_devidas = len(dias_trabalhados) * 6 * 3600
+        saldo_segundos = total_segundos - horas_devidas
+        
+        sinal = "-" if saldo_segundos < 0 else "+"
+        abs_saldo = abs(int(saldo_segundos))
+        h = abs_saldo // 3600
+        m = (abs_saldo % 3600) // 60
+        
+        relatorio.append({
+            'id': colab['id'],
+            'nome': colab['nome'],
+            'dias': len(dias_trabalhados),
+            'saldo_formatado': f"{sinal}{h}h {m}min"
+        })
+        
     conn.close()
-    return render_template('admin.html', relatorio=relatorio, ultimos=ultimos)
+    return render_template('admin.html', relatorio=relatorio, ultimos=pontos[:10])
 
-# --- NOVAS ROTAS QUE ESTAVAM FALTANDO ---
 @app.route('/cadastrar_colaboradora', methods=['POST'])
-def cadastrar_colaboradora():
-    nome = request.form.get('nome')
-    if nome:
-        conn = get_db_connection()
-        conn.execute("INSERT OR IGNORE INTO colaboradoras (nome) VALUES (?)", (nome,))
-        conn.commit(); conn.close()
+def cadastrar():
+    nome = request.form['nome']
+    conn = get_db_connection()
+    conn.execute('INSERT INTO colaboradores (nome) VALUES (?)', (nome,))
+    conn.commit()
+    conn.close()
     return redirect(url_for('painel_gestao', senha='8340'))
 
 @app.route('/inserir_ponto_manual', methods=['POST'])
-def inserir_ponto_manual():
-    nome = request.form.get('nome'); horario = request.form.get('horario'); tipo = request.form.get('tipo')
-    if nome and horario:
-        conn = get_db_connection()
-        conn.execute("INSERT INTO registros (nome, tipo, horario, data_texto, localizacao) VALUES (?, ?, ?, ?, ?)",
-                     (nome, tipo, horario, horario.split(' ')[0], "✍️ Manual"))
-        conn.commit(); conn.close()
+def manual():
+    nome = request.form['nome']
+    horario = request.form['horario'] + ":00"
+    tipo = request.form['tipo']
+    conn = get_db_connection()
+    conn.execute('INSERT INTO pontos (nome, horario, tipo, localizacao) VALUES (?, ?, ?, ?)',
+                 (nome, horario, tipo, "Inserção Manual"))
+    conn.commit()
+    conn.close()
     return redirect(url_for('painel_gestao', senha='8340'))
 
 @app.route('/excluir_colaboradora/<int:id>')
-def excluir_colaboradora(id):
+def excluir_colab(id):
     conn = get_db_connection()
-    conn.execute("DELETE FROM colaboradoras WHERE id = ?", (id,))
-    conn.commit(); conn.close()
-    return redirect(url_for('painel_gestao', senha='8340'))
-
-@app.route('/excluir_ponto/<int:id>')
-def excluir_ponto(id):
-    conn = get_db_connection()
-    conn.execute("DELETE FROM registros WHERE id = ?", (id,))
-    conn.commit(); conn.close()
+    conn.execute('DELETE FROM colaboradores WHERE id = ?', (id,))
+    conn.commit()
+    conn.close()
     return redirect(url_for('painel_gestao', senha='8340'))
 
 @app.route('/backup')
-def backup(): return send_file("ponto.db", as_attachment=True)
+def backup():
+    return send_file(DATABASE, as_attachment=True)
 
 @app.route('/exportar')
 def exportar():
     conn = get_db_connection()
-    df = pd.read_sql_query("SELECT * FROM registros", conn)
+    df = pd.read_sql_query("SELECT * FROM pontos", conn)
     conn.close()
-    df.to_excel("Relatorio_Pontos.xlsx", index=False)
-    return send_file("Relatorio_Pontos.xlsx", as_attachment=True)
+    df.to_excel('relatorio_pontos.xlsx', index=False)
+    return send_file('relatorio_pontos.xlsx', as_attachment=True)
 
 if __name__ == '__main__':
     init_db()
-    app.run(debug=True)
+    port = int(os.environ.get("PORT", 5000))
+    app.run(host='0.0.0.0', port=port)

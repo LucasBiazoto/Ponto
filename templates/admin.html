@@ -8,23 +8,22 @@
     <style>
         :root { --nude-fundo: #fdf5f5; --rosa-suave: #d4a3a3; --rosa-texto: #8b5e5e; --branco: #ffffff; }
         body { background-color: var(--nude-fundo); font-family: 'Segoe UI', sans-serif; color: var(--rosa-texto); padding-top: 20px; }
-        .header-gestao { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; padding: 0 15px; }
+        .header-gestao { display: flex; justify-content: space-between; align-items: center; margin-bottom: 25px; padding: 0 15px; }
         .header-gestao h2 { color: var(--rosa-suave); font-weight: bold; margin: 0; }
-        .btn-top { text-decoration: none; color: white; background: var(--rosa-suave); padding: 8px 15px; border-radius: 12px; font-size: 0.85rem; font-weight: bold; transition: 0.3s; }
-        .btn-top:hover { opacity: 0.8; color: white; }
+        .btn-top { text-decoration: none; color: white; background: var(--rosa-suave); padding: 8px 15px; border-radius: 12px; font-size: 0.85rem; font-weight: bold; }
         .card { border: none; border-radius: 25px; background: var(--branco); padding: 25px; box-shadow: 0 10px 30px rgba(0,0,0,0.02); margin-bottom: 20px; }
         .card-title { font-size: 1.2rem; color: var(--rosa-suave); font-weight: bold; margin-bottom: 20px; }
         .form-select, .form-control { border: 1px solid #f2e6e6; background-color: #fcf8f8; border-radius: 10px; padding: 10px; color: var(--rosa-texto); }
         .btn-rosa { background-color: var(--rosa-suave); color: white; border-radius: 12px; border: none; padding: 10px; font-weight: bold; width: 100%; }
-        .table { color: var(--rosa-texto); font-size: 0.9rem; }
-        .status-badge { background-color: #e8f5e9; color: #2e7d32; padding: 4px 12px; border-radius: 8px; font-weight: bold; }
-        .filtro-container { display: flex; gap: 8px; }
+        .status-badge { padding: 4px 12px; border-radius: 8px; font-weight: bold; }
+        .saldo-positivo { background-color: #e8f5e9; color: #2e7d32; }
+        .saldo-negativo { background-color: #ffebee; color: #c62828; } /* Vermelho para negativo */
     </style>
 </head>
 <body>
     <div class="container">
         <div class="header-gestao">
-            <h2>Painel de Gestão 🌸</h2>
+            <h2>Painel de Gestão Dra Thamiris Araujo 🌸</h2>
             <div class="d-flex gap-2">
                 <a href="/" class="btn-top">🏠 Início</a>
                 <a href="/exportar" class="btn-top">📊 Excel</a>
@@ -35,7 +34,7 @@
         <div class="card">
             <div class="d-flex justify-content-between align-items-center mb-3">
                 <h4 class="card-title m-0">Resumo Mensal</h4>
-                <form method="GET" class="filtro-container">
+                <form method="GET" class="d-flex gap-2">
                     <input type="hidden" name="senha" value="8340">
                     <select name="mes" class="form-select form-select-sm">
                         <option value="01">Janeiro</option><option value="02">Fevereiro</option>
@@ -45,10 +44,7 @@
                         <option value="09">Setembro</option><option value="10">Outubro</option>
                         <option value="11">Novembro</option><option value="12">Dezembro</option>
                     </select>
-                    <select name="ano" class="form-select form-select-sm">
-                        <option value="2026">2026</option><option value="2025">2025</option>
-                    </select>
-                    <button type="submit" class="btn btn-sm btn-outline-secondary" style="border-radius: 10px;">Filtrar</button>
+                    <button type="submit" class="btn btn-sm btn-outline-secondary">Filtrar</button>
                 </form>
             </div>
             <div class="table-responsive">
@@ -58,7 +54,11 @@
                         {% for r in relatorio %}
                         <tr>
                             <td>{{ r.nome }}</td><td>{{ r.dias }} dias</td>
-                            <td><span class="status-badge">{{ r.saldo_formatado }}</span></td>
+                            <td>
+                                <span class="status-badge {% if '-' in r.saldo_formatado %}saldo-negativo{% else %}saldo-positivo{% endif %}">
+                                    {{ r.saldo_formatado }}
+                                </span>
+                            </td>
                             <td><a href="/excluir_colaboradora/{{ r.id }}" class="text-decoration-none">🗑️</a></td>
                         </tr>
                         {% endfor %}
@@ -90,24 +90,6 @@
                     </div>
                 </form>
             </div></div>
-        </div>
-
-        <div class="card">
-            <h4 class="card-title">📍 Histórico de Batidas (GPS)</h4>
-            <div class="table-responsive">
-                <table class="table table-sm">
-                    <thead><tr><th>Data/Hora</th><th>Nome</th><th>Tipo</th><th>Localização</th><th>Ação</th></tr></thead>
-                    <tbody>
-                        {% for p in ultimos %}
-                        <tr>
-                            <td>{{ p.horario }}</td><td>{{ p.nome }}</td><td>{{ p.tipo }}</td>
-                            <td><small>{{ p.localizacao }}</small></td>
-                            <td><a href="/excluir_ponto/{{ p.id }}" class="text-danger">❌</a></td>
-                        </tr>
-                        {% endfor %}
-                    </tbody>
-                </table>
-            </div>
         </div>
     </div>
 </body>
