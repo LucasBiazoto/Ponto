@@ -1,6 +1,6 @@
 import os
 import sqlite3
-from datetime import datetime, timedelta
+from datetime import datetime
 from flask import Flask, render_template, request, redirect, url_for, send_file
 import pandas as pd
 
@@ -14,12 +14,10 @@ def get_db_connection():
 
 def init_db():
     conn = get_db_connection()
-    # Tabela de colaboradores
     conn.execute('''CREATE TABLE IF NOT EXISTS colaboradores (
                         id INTEGER PRIMARY KEY AUTOINCREMENT,
-                        nome TEXT NOT None)''')
+                        nome TEXT NOT NULL)''')
     
-    # Tabela de pontos
     conn.execute('''CREATE TABLE IF NOT EXISTS pontos (
                         id INTEGER PRIMARY KEY AUTOINCREMENT,
                         nome TEXT NOT NULL,
@@ -27,8 +25,7 @@ def init_db():
                         tipo TEXT NOT NULL,
                         localizacao TEXT)''')
     
-    # GARANTE ESTHER JULIA COMO DEFINITIVA
-    # Remove qualquer resquício do nome de teste e insere a Esther
+    # Remove Lucas e garante Esther Julia como única fixa
     conn.execute("DELETE FROM colaboradores WHERE nome = 'Lucas Moreira Biazoto'")
     conn.execute("INSERT OR IGNORE INTO colaboradores (id, nome) VALUES (1, 'Esther Julia')")
     
@@ -75,7 +72,6 @@ def painel_gestao():
     for colab in colaboradores:
         pontos_colab = [p for p in pontos if p['nome'] == colab['nome'] and p['horario'][3:10] == f"{mes_filtro}/{ano_filtro}"]
         
-        # Lógica de cálculo de saldo (Carga horária: 6h)
         total_segundos = 0
         dias_trabalhados = set()
         
@@ -141,6 +137,7 @@ def backup():
 @app.route('/exportar')
 def exportar():
     conn = get_db_connection()
+    # CORREÇÃO: Nome da tabela alterado para 'pontos'
     df = pd.read_sql_query("SELECT * FROM pontos", conn)
     conn.close()
     df.to_excel('relatorio_pontos.xlsx', index=False)
