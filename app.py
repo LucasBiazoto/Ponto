@@ -16,7 +16,7 @@ def init_db():
     conn = get_db_connection()
     conn.execute('CREATE TABLE IF NOT EXISTS colaboradores (id INTEGER PRIMARY KEY AUTOINCREMENT, nome TEXT NOT NULL)')
     conn.execute('CREATE TABLE IF NOT EXISTS pontos (id INTEGER PRIMARY KEY AUTOINCREMENT, nome TEXT NOT NULL, horario TEXT NOT NULL, tipo TEXT NOT NULL, localizacao TEXT)')
-    # Fixa Esther Julia
+    # Esta linha garante que a Esther Julia sempre exista no sistema
     conn.execute("INSERT OR IGNORE INTO colaboradores (id, nome) VALUES (1, 'Esther Julia')")
     conn.commit()
     conn.close()
@@ -44,7 +44,7 @@ def bater_ponto():
             loc = "Lançamento Manual"
         except:
             horario = datetime.now().strftime('%d/%m/%Y %H:%M:%S')
-            loc = "Erro no formato manual"
+            loc = "Erro formato"
     else:
         horario = datetime.now().strftime('%d/%m/%Y %H:%M:%S')
         loc = request.form.get('localizacao', 'Não informada')
@@ -88,7 +88,6 @@ def painel_gestao():
     colaboradores = conn.execute('SELECT * FROM colaboradores').fetchall()
     pontos = conn.execute('SELECT * FROM pontos ORDER BY id DESC').fetchall()
     conn.close()
-    # Enviamos 'colaboradores' para que o formulário manual consiga listar os nomes
     return render_template('admin.html', relatorio=[], ultimos=pontos[:15], colaboradores=colaboradores)
 
 @app.route('/backup')
