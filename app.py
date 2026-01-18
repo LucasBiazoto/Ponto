@@ -5,8 +5,7 @@ from flask import Flask, render_template, request, redirect, url_for, send_file
 import pandas as pd
 
 app = Flask(__name__)
-# Nome exato do arquivo que aparece no seu VS Code
-DATABASE = 'ponto.db' 
+DATABASE = 'ponto.db'
 
 def get_db_connection():
     conn = sqlite3.connect(DATABASE)
@@ -15,7 +14,7 @@ def get_db_connection():
 
 def init_db():
     conn = get_db_connection()
-    # Criação das tabelas com nomes corretos
+    # Criação das tabelas fundamentais
     conn.execute('''CREATE TABLE IF NOT EXISTS colaboradores (
                         id INTEGER PRIMARY KEY AUTOINCREMENT,
                         nome TEXT NOT NULL)''')
@@ -27,7 +26,7 @@ def init_db():
                         tipo TEXT NOT NULL,
                         localizacao TEXT)''')
     
-    # Remove nomes de teste e fixa Esther Julia definitivamente
+    # Limpeza e fixação da Esther Julia
     conn.execute("DELETE FROM colaboradores WHERE nome = 'Lucas Moreira Biazoto'")
     conn.execute("INSERT OR IGNORE INTO colaboradores (id, nome) VALUES (1, 'Esther Julia')")
     
@@ -36,10 +35,13 @@ def init_db():
 
 @app.route('/')
 def index():
-    conn = get_db_connection()
-    colaboradores = conn.execute('SELECT * FROM colaboradores').fetchall()
-    conn.close()
-    return render_template('index.html', colaboradores=colaboradores)
+    try:
+        conn = get_db_connection()
+        colaboradores = conn.execute('SELECT * FROM colaboradores').fetchall()
+        conn.close()
+        return render_template('index.html', colaboradores=colaboradores)
+    except:
+        return "Erro ao carregar banco de dados. Por favor, faça deploy com 'Clear Cache'."
 
 @app.route('/bater_ponto', methods=['POST'])
 def bater_ponto():
@@ -68,25 +70,30 @@ def painel_gestao():
     
     conn = get_db_connection()
     colaboradores = conn.execute('SELECT * FROM colaboradores').fetchall()
-    # CORREÇÃO: Busca na tabela 'pontos' (não registros)
-    pontos = conn.execute('SELECT * FROM pontos ORDER BY id DESC').fetchall()
+    pontos = conn.execute('SELECT * FROM pontos ORDER BY id ASC').fetchall()
     
     relatorio = []
     for colab in colaboradores:
+        # Filtra pontos do mês e colaborador atual
         pontos_colab = [p for p in pontos if p['nome'] == colab['nome'] and p['horario'][3:10] == f"{mes_filtro}/{ano_filtro}"]
         
         total_segundos = 0
         dias_trabalhados = set()
         
-        # Lógica de cálculo de horas (Carga 6h)
-        for i in range(0, len(pontos_colab)-1, 2):
-            if pontos_colab[i]['tipo'] == 'Entrada' and pontos_colab[i+1]['tipo'] == 'Saída':
-                fmt = '%d/%m/%Y %H:%M:%S'
+        # Cálculo de horas seguro contra erros
+        for i in range(0, len(pontos_colab)-1):
+            p1 = pontos_colab[i]
+            p2 = pontos_colab[i+1]
+            
+            if p1['tipo'] == 'Entrada' and p2['tipo'] == 'Saída':
                 try:
-                    e = datetime.strptime(pontos_colab[i]['horario'], fmt)
-                    s = datetime.strptime(pontos_colab[i+1]['horario'], fmt)
-                    total_segundos += (s - e).total_seconds()
-                    dias_trabalhados.add(pontos_colab[i]['horario'][:10])
+                    fmt = '%d/%m/%Y %H:%M:%S'
+                    e = datetime.strptime(p1['horario'], fmt)
+                    s = datetime.strptime(p2['horario'], fmt)
+                    diff = (s - e).total_seconds()
+                    if diff > 0:
+                        total_segundos += diff
+                        dias_trabalhados.add(p1['horario'][:10])
                 except:
                     continue
         
@@ -106,7 +113,7 @@ def painel_gestao():
         })
         
     conn.close()
-    return render_template('admin.html', relatorio=relatorio, ultimos=pontos[:10])
+    return render_template('admin.html', relatorio=relatorio, ultimos=pontos[::-1][:15])
 
 @app.route('/backup')
 def backup():
@@ -115,11 +122,10 @@ def backup():
 @app.route('/exportar')
 def exportar():
     conn = get_db_connection()
-    # CORREÇÃO: Nome da tabela unificado para 'pontos'
     df = pd.read_sql_query("SELECT * FROM pontos", conn)
     conn.close()
-    df.to_excel('Relatorio_Pontos.xlsx', index=False)
-    return send_file('Relatorio_Pontos.xlsx', as_attachment=True)
+    df.to_excel('Relatorio.xlsx', index=False)
+    return send_file('Relatorio.xlsx', as_attachment=True)
 
 if __name__ == '__main__':
     init_db()
