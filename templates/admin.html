@@ -10,14 +10,15 @@
         body { background-color: var(--nude-fundo); font-family: 'Segoe UI', sans-serif; color: var(--rosa-texto); padding-top: 20px; }
         .header-gestao { display: flex; justify-content: space-between; align-items: center; margin-bottom: 25px; padding: 0 15px; }
         .header-gestao h2 { color: var(--rosa-suave); font-weight: bold; margin: 0; }
-        .btn-top { text-decoration: none; color: white; background: var(--rosa-suave); padding: 8px 15px; border-radius: 12px; font-size: 0.85rem; font-weight: bold; }
+        .btn-top { text-decoration: none; color: white; background: var(--rosa-suave); padding: 8px 15px; border-radius: 12px; font-size: 0.85rem; font-weight: bold; transition: 0.3s; }
+        .btn-top:hover { opacity: 0.8; color: white; }
         .card { border: none; border-radius: 25px; background: var(--branco); padding: 25px; box-shadow: 0 10px 30px rgba(0,0,0,0.02); margin-bottom: 20px; }
         .card-title { font-size: 1.2rem; color: var(--rosa-suave); font-weight: bold; margin-bottom: 20px; }
         .form-select, .form-control { border: 1px solid #f2e6e6; background-color: #fcf8f8; border-radius: 10px; padding: 10px; color: var(--rosa-texto); }
-        .btn-rosa { background-color: var(--rosa-suave); color: white; border-radius: 12px; border: none; padding: 10px; font-weight: bold; width: 100%; }
+        .btn-rosa { background-color: var(--rosa-suave); color: white; border-radius: 12px; border: none; padding: 10px; font-weight: bold; width: 100%; cursor: pointer; }
         .status-badge { padding: 4px 12px; border-radius: 8px; font-weight: bold; }
         .saldo-positivo { background-color: #e8f5e9; color: #2e7d32; }
-        .saldo-negativo { background-color: #ffebee; color: #c62828; } /* Vermelho para negativo */
+        .saldo-negativo { background-color: #ffebee; color: #c62828; }
     </style>
 </head>
 <body>
@@ -59,7 +60,7 @@
                                     {{ r.saldo_formatado }}
                                 </span>
                             </td>
-                            <td><a href="/excluir_colaboradora/{{ r.id }}" class="text-decoration-none">🗑️</a></td>
+                            <td><a href="/excluir_colaboradora/{{ r.id }}" class="text-decoration-none" onclick="return confirm('Excluir esta colaboradora?')">🗑️</a></td>
                         </tr>
                         {% endfor %}
                     </tbody>
@@ -75,17 +76,26 @@
                     <button type="submit" class="btn-rosa">Cadastrar</button>
                 </form>
             </div></div>
+
             <div class="col-md-7"><div class="card">
                 <h4 class="card-title">Lançamento Manual</h4>
-                <form action="/inserir_ponto_manual" method="POST" class="row g-2">
+                <form action="/bater_ponto" method="POST" class="row g-2">
                     <div class="col-6">
-                        <select name="nome" class="form-select">
-                            {% for c in relatorio %}<option value="{{ c.nome }}">{{ c.nome }}</option>{% endfor %}
+                        <select name="nome" class="form-select" required>
+                            <option value="">Selecione...</option>
+                            {% for c in colaboradores %}
+                                <option value="{{ c.nome }}">{{ c.nome }}</option>
+                            {% endfor %}
                         </select>
                     </div>
-                    <div class="col-6"><input type="text" name="horario" class="form-control" placeholder="DD/MM/AAAA HH:MM"></div>
+                    <div class="col-6">
+                        <input type="datetime-local" name="horario_manual" class="form-control" required>
+                    </div>
                     <div class="col-12 mt-2">
-                        <select name="tipo" class="form-select mb-2"><option value="Entrada">Entrada</option><option value="Saída">Saída</option></select>
+                        <select name="tipo" class="form-select mb-2">
+                            <option value="Entrada">Entrada</option>
+                            <option value="Saída">Saída</option>
+                        </select>
                         <button type="submit" class="btn-rosa">Inserir Registro</button>
                     </div>
                 </form>

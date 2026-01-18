@@ -35,7 +35,6 @@ def index():
 def bater_ponto():
     nome = request.form.get('nome')
     tipo = request.form.get('tipo')
-    # Se vier do formulário manual, usa o horário digitado, senão usa o atual
     horario_manual = request.form.get('horario_manual')
     
     if horario_manual:
@@ -62,6 +61,24 @@ def bater_ponto():
     msg = "Bom trabalho meu bem" if tipo == "Entrada" else "Bom descanso meu bem"
     return render_template('sucesso.html', mensagem=msg)
 
+@app.route('/cadastrar_colaboradora', methods=['POST'])
+def cadastrar_colaboradora():
+    nome = request.form.get('nome')
+    if nome:
+        conn = get_db_connection()
+        conn.execute('INSERT INTO colaboradores (nome) VALUES (?)', (nome,))
+        conn.commit()
+        conn.close()
+    return redirect(url_for('painel_gestao', senha='8340'))
+
+@app.route('/excluir_colaboradora/<int:id>')
+def excluir_colaboradora(id):
+    conn = get_db_connection()
+    conn.execute('DELETE FROM colaboradores WHERE id = ?', (id,))
+    conn.commit()
+    conn.close()
+    return redirect(url_for('painel_gestao', senha='8340'))
+
 @app.route('/painel_gestao')
 def painel_gestao():
     senha = request.args.get('senha')
@@ -71,7 +88,20 @@ def painel_gestao():
     colaboradores = conn.execute('SELECT * FROM colaboradores').fetchall()
     pontos = conn.execute('SELECT * FROM pontos ORDER BY id DESC').fetchall()
     conn.close()
-    return render_template('admin.html', relatorio=[], ultimos=pontos[:10], colaboradores=colaboradores)
+    # Enviamos 'colaboradores' para que o formulário manual consiga listar os nomes
+    return render_template('admin.html', relatorio=[], ultimos=pontos[:15], colaboradores=colaboradores)
+
+@app.route('/backup')
+def backup():
+    return send_file(DATABASE, as_attachment=True)
+
+@app.route('/exportar')
+def exportar():
+    conn = get_db_connection()
+    df = pd.read_sql_query("SELECT * FROM pontos", conn)
+    conn.close()
+    df.to_excel('Relatorio_DraThamiris.xlsx', index=False)
+    return send_file('Relatorio_DraThamiris.xlsx', as_attachment=True)
 
 if __name__ == '__main__':
     port = int(os.environ.get("PORT", 5000))
