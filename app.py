@@ -5,7 +5,8 @@ from flask import Flask, render_template, request, redirect, url_for, send_file
 import pandas as pd
 
 app = Flask(__name__)
-DATABASE = 'ponto_final.db' 
+# Usando um novo nome de banco para garantir que não haja conflitos antigos
+DATABASE = 'ponto_estetica.db' 
 
 def get_db_connection():
     conn = sqlite3.connect(DATABASE)
@@ -14,7 +15,16 @@ def get_db_connection():
 
 def init_db():
     conn = get_db_connection()
-    conn.execute('CREATE TABLE IF NOT EXISTS pontos (id INTEGER PRIMARY KEY AUTOINCREMENT, nome TEXT NOT NULL, horario TEXT NOT NULL, tipo TEXT NOT NULL, localizacao TEXT)')
+    # Criamos apenas a tabela de registros de ponto
+    conn.execute('''
+        CREATE TABLE IF NOT EXISTS pontos (
+            id INTEGER PRIMARY KEY AUTOINCREMENT, 
+            nome TEXT NOT NULL, 
+            horario TEXT NOT NULL, 
+            tipo TEXT NOT NULL, 
+            localizacao TEXT
+        )
+    ''')
     conn.commit()
     conn.close()
 
@@ -23,9 +33,9 @@ with app.app_context():
 
 @app.route('/')
 def index():
-    # LISTA FIXA: Não depende do banco de dados para mostrar o nome dela
-    colaboradores = [{'nome': 'Esther Julia'}]
-    return render_template('index.html', colaboradores=colaboradores)
+    # LISTA FIXA NO CÓDIGO: Esther Julia sempre aparecerá aqui
+    colaboradoras_fixas = [{'nome': 'Esther Julia'}]
+    return render_template('index.html', colaboradores=colaboradoras_fixas)
 
 @app.route('/bater_ponto', methods=['POST'])
 def bater_ponto():
@@ -66,11 +76,8 @@ def painel_gestao():
     pontos = conn.execute('SELECT * FROM pontos ORDER BY id DESC').fetchall()
     conn.close()
     
-    # LISTA FIXA para o painel de gestão também
-    colaboradores = [{'nome': 'Esther Julia'}]
-    
-    # Aqui você pode manter o relatorio vazio por enquanto ou simplificado
-    return render_template('admin.html', relatorio=[], ultimos=pontos[:20], colaboradores=colaboradores)
+    colaboradoras_fixas = [{'nome': 'Esther Julia'}]
+    return render_template('admin.html', relatorio=[], ultimos=pontos[:20], colaboradores=colaboradoras_fixas)
 
 @app.route('/backup')
 def backup():
