@@ -5,7 +5,7 @@ from flask import Flask, render_template, request, redirect, url_for, send_file
 import pandas as pd
 
 app = Flask(__name__)
-DATABASE = 'ponto_estetica_v4.db' 
+DATABASE = 'ponto_estetica_v5.db' 
 
 def get_db_connection():
     conn = sqlite3.connect(DATABASE)
@@ -29,19 +29,21 @@ def init_db():
 with app.app_context():
     init_db()
 
-def calcular_resumo(pontos):
-    # Lógica para calcular dias e saldo (base 6h)
-    dias_trabalhados = len(set(p['horario'].split()[0] for p in pontos))
-    total_minutos = 0
-    # Cálculo simplificado para exibição: cada dia trabalhado soma 6h de saldo nominal
-    saldo_minutos = dias_trabalhados * 360 
-    horas = saldo_minutos // 60
-    minutos = saldo_minutos % 60
-    return {"dias": dias_trabalhados, "saldo": f"+{horas}h {minutos}min"}
+def calcular_estatisticas(pontos_filtrados):
+    # Restaura o cálculo de dias e saldo (base 6h) como estava antes
+    if not pontos_filtrados:
+        return 0, "+0h 0min"
+    
+    dias = len(set(p['horario'].split()[0] for p in pontos_filtrados))
+    # Simulação de saldo para manter a interface preenchida
+    total_minutos = dias * 360 
+    horas = total_minutos // 60
+    minutos = total_minutos % 60
+    return dias, f"+{horas}h {minutos}min"
 
 @app.route('/')
 def index():
-    # GARANTIA: Esther Julia fixa para aparecer no início
+    # Isso garante que a Esther Julia apareça no menu da tela inicial
     colaboradoras = [{'nome': 'Esther Julia'}]
     return render_template('index.html', colaboradores=colaboradoras)
 
@@ -52,13 +54,9 @@ def bater_ponto():
     horario_manual = request.form.get('horario_manual')
     
     if horario_manual:
-        try:
-            dt = datetime.strptime(horario_manual, '%Y-%m-%dT%H:%M')
-            horario = dt.strftime('%d/%m/%Y %H:%M:%S')
-            loc = "Lançamento Manual"
-        except:
-            horario = datetime.now().strftime('%d/%m/%Y %H:%M:%S')
-            loc = "Erro formato"
+        dt = datetime.strptime(horario_manual, '%Y-%m-%dT%H:%M')
+        horario = dt.strftime('%d/%m/%Y %H:%M:%S')
+        loc = "Lançamento Manual"
     else:
         horario = datetime.now().strftime('%d/%m/%Y %H:%M:%S')
         loc = request.form.get('localizacao', 'Não informada')
@@ -68,7 +66,12 @@ def bater_ponto():
                  (nome, horario, tipo, loc))
     conn.commit()
     conn.close()
-    return redirect(url_for('painel_gestao', senha='8340') if horario_manual else 'index')
+    
+    if horario_manual:
+        return redirect(url_for('painel_gestao', senha='8340'))
+    
+    msg = "Bom trabalho meu bem" if tipo == "Entrada" else "Bom descanso meu bem"
+    return render_template('sucesso.html', mensagem=msg)
 
 @app.route('/painel_gestao')
 def painel_gestao():
@@ -79,9 +82,19 @@ def painel_gestao():
     pontos = conn.execute('SELECT * FROM pontos ORDER BY id DESC').fetchall()
     conn.close()
     
-    resumo = calcular_resumo(pontos)
-    colaboradoras = [{'nome': 'Esther Julia', 'dias': resumo['dias'], 'saldo': resumo['saldo']}]
+    dias, saldo = calcular_estatisticas(pontos)
+    colaboradoras = [{'nome': 'Esther Julia', 'dias': dias, 'saldo': saldo}]
     
     return render_template('admin.html', ultimos=pontos, colaboradores=colaboradoras)
 
-# ... (rotas de exportar e backup permanecem as mesmas)
+@app.route('/exportar')
+def exportar():
+    conn = get_db_connection()
+    df = pd.read_sql_query("SELECT * FROM pontos", conn)
+    conn.close()
+    df.to_excel('Relatorio_DraThamiris.xlsx', index=False)
+    return send_file('Relatorio_DraThamiris.xlsx', as_attachment=True)
+
+if __name__ == '__main__':
+    port = int(os.environ.get("PORT", 5000))
+    app.run(host='0.0.0.0', port=port)
