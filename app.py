@@ -5,7 +5,8 @@ from flask import Flask, render_template, request, redirect, url_for, send_file
 import pandas as pd
 
 app = Flask(__name__)
-DATABASE = 'ponto_dra_thamiris.db' 
+# Mudamos o nome do banco para garantir que ele seja criado do zero sem erros antigos
+DATABASE = 'ponto_estetica_v3.db' 
 
 def get_db_connection():
     conn = sqlite3.connect(DATABASE)
@@ -14,7 +15,7 @@ def get_db_connection():
 
 def init_db():
     conn = get_db_connection()
-    # Criamos apenas a tabela de registros de ponto
+    # Criamos apenas a tabela de registros (pontos)
     conn.execute('''
         CREATE TABLE IF NOT EXISTS pontos (
             id INTEGER PRIMARY KEY AUTOINCREMENT, 
@@ -32,7 +33,7 @@ with app.app_context():
 
 @app.route('/')
 def index():
-    # FIXO NO CÓDIGO: Isso garante que ela apareça na tela inicial sem erros
+    # LISTA FIXA: Agora é impossível ela não aparecer no início
     colaboradoras = [{'nome': 'Esther Julia'}]
     return render_template('index.html', colaboradores=colaboradoras)
 
@@ -63,7 +64,6 @@ def bater_ponto():
     if horario_manual:
         return redirect(url_for('painel_gestao', senha='8340'))
     
-    # Mensagens personalizadas para Dra Thamiris Araujo
     msg = "Bom trabalho meu bem" if tipo == "Entrada" else "Bom descanso meu bem"
     return render_template('sucesso.html', mensagem=msg)
 
@@ -73,11 +73,12 @@ def painel_gestao():
     if senha != '8340': return "Acesso Negado", 403
     
     conn = get_db_connection()
+    # Busca os últimos 50 registros para o relatório
     pontos = conn.execute('SELECT * FROM pontos ORDER BY id DESC').fetchall()
     conn.close()
     
     colaboradoras = [{'nome': 'Esther Julia'}]
-    return render_template('admin.html', relatorio=[], ultimos=pontos[:20], colaboradores=colaboradoras)
+    return render_template('admin.html', ultimos=pontos, colaboradores=colaboradoras)
 
 @app.route('/exportar')
 def exportar():
@@ -86,6 +87,10 @@ def exportar():
     conn.close()
     df.to_excel('Relatorio_DraThamiris.xlsx', index=False)
     return send_file('Relatorio_DraThamiris.xlsx', as_attachment=True)
+
+@app.route('/backup')
+def backup():
+    return send_file(DATABASE, as_attachment=True)
 
 if __name__ == '__main__':
     port = int(os.environ.get("PORT", 5000))
