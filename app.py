@@ -5,7 +5,8 @@ from flask import Flask, render_template, request, redirect, url_for, send_file
 import pandas as pd
 
 app = Flask(__name__)
-DATABASE = 'ponto.db'
+# NOVO NOME DE BANCO: Força a criação de um arquivo novo e limpo para evitar o erro 500
+DATABASE = 'ponto_v2.db' 
 
 def get_db_connection():
     conn = sqlite3.connect(DATABASE)
@@ -14,7 +15,7 @@ def get_db_connection():
 
 def init_db():
     conn = get_db_connection()
-    # Criação das tabelas fundamentais
+    # Cria as tabelas necessárias
     conn.execute('''CREATE TABLE IF NOT EXISTS colaboradores (
                         id INTEGER PRIMARY KEY AUTOINCREMENT,
                         nome TEXT NOT NULL)''')
@@ -26,7 +27,7 @@ def init_db():
                         tipo TEXT NOT NULL,
                         localizacao TEXT)''')
     
-    # Limpeza e fixação da Esther Julia
+    # Garante Esther Julia como única funcionária fixa
     conn.execute("DELETE FROM colaboradores WHERE nome = 'Lucas Moreira Biazoto'")
     conn.execute("INSERT OR IGNORE INTO colaboradores (id, nome) VALUES (1, 'Esther Julia')")
     
@@ -40,8 +41,8 @@ def index():
         colaboradores = conn.execute('SELECT * FROM colaboradores').fetchall()
         conn.close()
         return render_template('index.html', colaboradores=colaboradores)
-    except:
-        return "Erro ao carregar banco de dados. Por favor, faça deploy com 'Clear Cache'."
+    except Exception as e:
+        return f"Erro no sistema: {str(e)}. Por favor, use 'Clear Cache' no Render."
 
 @app.route('/bater_ponto', methods=['POST'])
 def bater_ponto():
@@ -74,26 +75,19 @@ def painel_gestao():
     
     relatorio = []
     for colab in colaboradores:
-        # Filtra pontos do mês e colaborador atual
         pontos_colab = [p for p in pontos if p['nome'] == colab['nome'] and p['horario'][3:10] == f"{mes_filtro}/{ano_filtro}"]
         
         total_segundos = 0
         dias_trabalhados = set()
         
-        # Cálculo de horas seguro contra erros
-        for i in range(0, len(pontos_colab)-1):
-            p1 = pontos_colab[i]
-            p2 = pontos_colab[i+1]
-            
-            if p1['tipo'] == 'Entrada' and p2['tipo'] == 'Saída':
+        for i in range(0, len(pontos_colab)-1, 2):
+            if pontos_colab[i]['tipo'] == 'Entrada' and pontos_colab[i+1]['tipo'] == 'Saída':
                 try:
                     fmt = '%d/%m/%Y %H:%M:%S'
-                    e = datetime.strptime(p1['horario'], fmt)
-                    s = datetime.strptime(p2['horario'], fmt)
-                    diff = (s - e).total_seconds()
-                    if diff > 0:
-                        total_segundos += diff
-                        dias_trabalhados.add(p1['horario'][:10])
+                    e = datetime.strptime(pontos_colab[i]['horario'], fmt)
+                    s = datetime.strptime(pontos_colab[i+1]['horario'], fmt)
+                    total_segundos += (s - e).total_seconds()
+                    dias_trabalhados.add(pontos_colab[i]['horario'][:10])
                 except:
                     continue
         
@@ -113,7 +107,7 @@ def painel_gestao():
         })
         
     conn.close()
-    return render_template('admin.html', relatorio=relatorio, ultimos=pontos[::-1][:15])
+    return render_template('admin.html', relatorio=relatorio, ultimos=pontos[::-1][:10])
 
 @app.route('/backup')
 def backup():
@@ -124,8 +118,8 @@ def exportar():
     conn = get_db_connection()
     df = pd.read_sql_query("SELECT * FROM pontos", conn)
     conn.close()
-    df.to_excel('Relatorio.xlsx', index=False)
-    return send_file('Relatorio.xlsx', as_attachment=True)
+    df.to_excel('Relatorio_Pontos.xlsx', index=False)
+    return send_file('Relatorio_Pontos.xlsx', as_attachment=True)
 
 if __name__ == '__main__':
     init_db()
