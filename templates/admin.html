@@ -1,98 +1,34 @@
-<!DOCTYPE html>
-<html lang="pt-br">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Gestão - Dra Thamiris Araujo</title>
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
-    <style>
-        :root { --nude-fundo: #fdf5f5; --rosa-suave: #d4a3a3; --rosa-texto: #8b5e5e; --branco: #ffffff; }
-        body { background-color: var(--nude-fundo); font-family: 'Segoe UI', sans-serif; color: var(--rosa-texto); padding-top: 20px; }
-        .header-gestao { display: flex; justify-content: space-between; align-items: center; margin-bottom: 25px; padding: 0 15px; }
-        .header-gestao h2 { color: var(--rosa-suave); font-weight: bold; margin: 0; }
-        .btn-top { text-decoration: none; color: white; background: var(--rosa-suave); padding: 8px 15px; border-radius: 12px; font-size: 0.85rem; font-weight: bold; }
-        .card { border: none; border-radius: 25px; background: var(--branco); padding: 25px; box-shadow: 0 10px 30px rgba(0,0,0,0.02); margin-bottom: 20px; }
-        .card-title { font-size: 1.1rem; color: var(--rosa-suave); font-weight: bold; margin-bottom: 20px; }
-        .form-select, .form-control { border: 1px solid #f2e6e6; background-color: #fcf8f8; border-radius: 10px; padding: 10px; color: var(--rosa-texto); }
-        .btn-rosa { background-color: var(--rosa-suave); color: white; border-radius: 12px; border: none; padding: 10px; font-weight: bold; width: 100%; }
-        .badge-ponto { padding: 5px 12px; border-radius: 8px; font-size: 0.75rem; font-weight: bold; }
-        .bg-entrada { background-color: #e8f5e9; color: #2e7d32; }
-        .bg-saida { background-color: #fff3e0; color: #ef6c00; }
-        .bg-saldo { background-color: #fdf5f5; color: var(--rosa-suave); border: 1px solid var(--rosa-suave); }
-    </style>
-</head>
-<body>
-    <div class="container">
-        <div class="header-gestao">
-            <h2>Gestão Dra Thamiris 🌸</h2>
-            <div class="d-flex gap-2">
-                <a href="/" class="btn-top">🏠 Início</a>
-                <a href="/exportar" class="btn-top">📊 Excel</a>
-            </div>
-        </div>
+<div class="d-flex gap-2 mb-4">
+    <select id="filtroMes" class="form-select" style="width: 150px;">
+        <option value="">Todos os Meses</option>
+        {% for m in meses %}
+            <option value="{{ m }}">Mês {{ m }}</option>
+        {% endfor %}
+    </select>
+    <button onclick="filtrar()" class="btn-top">Filtrar</button>
+</div>
 
-        <div class="row">
-            <div class="col-md-4">
-                <div class="card">
-                    <h4 class="card-title">Resumo Esther Julia</h4>
-                    {% for c in colaboradores %}
-                    <div class="d-flex justify-content-between mb-2">
-                        <span>Dias Trabalhados:</span>
-                        <strong>{{ c.dias }}</strong>
-                    </div>
-                    <div class="d-flex justify-content-between mb-4">
-                        <span>Saldo Total:</span>
-                        <span class="badge badge-ponto bg-saldo">{{ c.saldo }}</span>
-                    </div>
-                    {% endfor %}
-                    <hr>
-                    <h4 class="card-title mt-3">Lançamento Manual</h4>
-                    <form action="/bater_ponto" method="POST">
-                        <select name="nome" class="form-select mb-2" required>
-                            {% for c in colaboradores %}
-                                <option value="{{ c.nome }}">{{ c.nome }}</option>
-                            {% endfor %}
-                        </select>
-                        <input type="datetime-local" name="horario_manual" class="form-control mb-2" required>
-                        <select name="tipo" class="form-select mb-3">
-                            <option value="Entrada">Entrada</option>
-                            <option value="Saída">Saída</option>
-                        </select>
-                        <button type="submit" class="btn-rosa">Inserir Registro</button>
-                    </form>
-                </div>
-            </div>
+<div class="card mb-4">
+    <h4 class="card-title">Resumo Esther Julia (Saldo e Extras)</h4>
+    <table class="table">
+        <thead>
+            <tr><th>Nome</th><th>Dias</th><th>Saldo Acumulado</th></tr>
+        </thead>
+        <tbody>
+            {% for c in colaboradores %}
+            <tr>
+                <td><strong>{{ c.nome }}</strong></td>
+                <td>{{ c.dias }} dias</td>
+                <td><span class="badge bg-success" style="font-size: 1rem;">{{ c.saldo }}</span></td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
 
-            <div class="col-md-8">
-                <div class="card">
-                    <h4 class="card-title">Últimos Registros</h4>
-                    <div class="table-responsive">
-                        <table class="table align-middle small">
-                            <thead>
-                                <tr>
-                                    <th>Data/Hora</th>
-                                    <th>Tipo</th>
-                                    <th>Localização</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                {% for p in ultimos %}
-                                <tr>
-                                    <td>{{ p.horario }}</td>
-                                    <td>
-                                        <span class="badge badge-ponto {% if p.tipo == 'Entrada' %}bg-entrada{% else %}bg-saida{% endif %}">
-                                            {{ p.tipo }}
-                                        </span>
-                                    </td>
-                                    <td class="text-muted">{{ p.localizacao }}</td>
-                                </tr>
-                                {% endfor %}
-                            </tbody>
-                        </table>
-                    </div>
-                </div>
-            </div>
-        </div>
-    </div>
-</body>
-</html>
+<script>
+function filtrar() {
+    const mes = document.getElementById('filtroMes').value;
+    window.location.href = `/painel_gestao?senha=8340&mes=${mes}`;
+}
+</script>

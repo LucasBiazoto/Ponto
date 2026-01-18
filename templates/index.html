@@ -1,48 +1,28 @@
-<!DOCTYPE html>
-<html lang="pt-br">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Ponto - Dra Thamiris Araujo</title>
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
-    <style>
-        :root { --nude-fundo: #fdf5f5; --rosa-suave: #d4a3a3; --rosa-texto: #8b5e5e; --branco: #ffffff; }
-        body { background-color: var(--nude-fundo); font-family: 'Segoe UI', sans-serif; height: 100vh; display: flex; align-items: center; justify-content: center; color: var(--rosa-texto); }
-        .card-ponto { border: none; border-radius: 35px; background: var(--branco); padding: 40px; box-shadow: 0 15px 35px rgba(212, 163, 163, 0.1); width: 100%; max-width: 400px; text-align: center; }
-        .logo-clinica { color: var(--rosa-suave); font-weight: bold; font-size: 1.5rem; margin-bottom: 30px; }
-        .form-select { border: 1px solid #f2e6e6; background-color: #fcf8f8; border-radius: 15px; padding: 12px; color: var(--rosa-texto); margin-bottom: 20px; }
-        .btn-ponto { background-color: var(--rosa-suave); color: white; border-radius: 15px; border: none; padding: 15px; font-weight: bold; width: 100%; transition: 0.3s; margin-top: 10px; }
-        .btn-ponto:hover { opacity: 0.9; transform: translateY(-2px); }
-        .btn-saida { background-color: transparent; border: 2px solid var(--rosa-suave); color: var(--rosa-suave); }
-        .footer-link { margin-top: 25px; font-size: 0.8rem; }
-        .footer-link a { color: #d4a3a3; text-decoration: none; opacity: 0.6; }
-    </style>
-</head>
-<body>
-    <div class="card-ponto">
-        <div class="logo-clinica">Dra Thamiris Araujo 🌸</div>
-        <form action="/bater_ponto" method="POST">
-            <select name="nome" class="form-select" required>
-                <option value="" disabled selected>Quem está chegando? ✨</option>
-                {% for c in colaboradores %}
-                    <option value="{{ c.nome }}">{{ c.nome }}</option>
-                {% endfor %}
-            </select>
+<form action="/bater_ponto" method="POST" id="formPonto">
+    <select name="nome" class="form-select" required>
+        {% for c in colaboradores %}
+            <option value="{{ c.nome }}">{{ c.nome }}</option>
+        {% endfor %}
+    </select>
+    <input type="hidden" name="localizacao" id="localizacao">
+    <input type="hidden" name="tipo" id="tipo_ponto">
+    
+    <button type="button" class="btn-ponto" onclick="enviarPonto('Entrada')">Bater Entrada</button>
+    <button type="button" class="btn-ponto btn-saida" onclick="enviarPonto('Saída')">Bater Saída</button>
+</form>
 
-            <input type="hidden" name="tipo" id="tipo_ponto" value="Entrada">
-            
-            <button type="submit" class="btn-ponto" onclick="document.getElementById('tipo_ponto').value='Entrada'">
-                Bater Entrada
-            </button>
-            
-            <button type="submit" class="btn-ponto btn-saida" onclick="document.getElementById('tipo_ponto').value='Saída'">
-                Bater Saída
-            </button>
-        </form>
-
-        <div class="footer-link">
-            <a href="/painel_gestao?senha=8340">Painel Administrativo</a>
-        </div>
-    </div>
-</body>
-</html>
+<script>
+function enviarPonto(tipo) {
+    document.getElementById('tipo_ponto').value = tipo;
+    if (navigator.geolocation) {
+        navigator.geolocation.getCurrentPosition(pos => {
+            document.getElementById('localizacao').value = `${pos.coords.latitude}, ${pos.coords.longitude}`;
+            document.getElementById('formPonto').submit();
+        }, () => {
+            document.getElementById('formPonto').submit(); // Envia mesmo sem GPS
+        });
+    } else {
+        document.getElementById('formPonto').submit();
+    }
+}
+</script>
