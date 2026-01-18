@@ -5,8 +5,7 @@ from flask import Flask, render_template, request, redirect, url_for, send_file
 import pandas as pd
 
 app = Flask(__name__)
-# Usando um novo nome de banco para garantir que não haja conflitos antigos
-DATABASE = 'ponto_estetica.db' 
+DATABASE = 'ponto_dra_thamiris.db' 
 
 def get_db_connection():
     conn = sqlite3.connect(DATABASE)
@@ -33,9 +32,9 @@ with app.app_context():
 
 @app.route('/')
 def index():
-    # LISTA FIXA NO CÓDIGO: Esther Julia sempre aparecerá aqui
-    colaboradoras_fixas = [{'nome': 'Esther Julia'}]
-    return render_template('index.html', colaboradores=colaboradoras_fixas)
+    # FIXO NO CÓDIGO: Isso garante que ela apareça na tela inicial sem erros
+    colaboradoras = [{'nome': 'Esther Julia'}]
+    return render_template('index.html', colaboradores=colaboradoras)
 
 @app.route('/bater_ponto', methods=['POST'])
 def bater_ponto():
@@ -64,6 +63,7 @@ def bater_ponto():
     if horario_manual:
         return redirect(url_for('painel_gestao', senha='8340'))
     
+    # Mensagens personalizadas para Dra Thamiris Araujo
     msg = "Bom trabalho meu bem" if tipo == "Entrada" else "Bom descanso meu bem"
     return render_template('sucesso.html', mensagem=msg)
 
@@ -76,12 +76,8 @@ def painel_gestao():
     pontos = conn.execute('SELECT * FROM pontos ORDER BY id DESC').fetchall()
     conn.close()
     
-    colaboradoras_fixas = [{'nome': 'Esther Julia'}]
-    return render_template('admin.html', relatorio=[], ultimos=pontos[:20], colaboradores=colaboradoras_fixas)
-
-@app.route('/backup')
-def backup():
-    return send_file(DATABASE, as_attachment=True)
+    colaboradoras = [{'nome': 'Esther Julia'}]
+    return render_template('admin.html', relatorio=[], ultimos=pontos[:20], colaboradores=colaboradoras)
 
 @app.route('/exportar')
 def exportar():
