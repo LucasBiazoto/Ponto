@@ -6,15 +6,21 @@
     <title>Painel Dra Thamiris Araujo</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <style>
-        :root { --rosa-fundo: #fff5f8; --rosa-card: #ffffff; --rosa-primario: #f06292; --rosa-texto: #ad1457; }
-        body { background-color: var(--rosa-fundo); font-family: 'Segoe UI', sans-serif; color: var(--rosa-texto); }
-        .navbar { background-color: var(--rosa-primario) !important; padding: 15px; border-radius: 0 0 20px 20px; }
-        .card { border: none; border-radius: 25px; box-shadow: 0 10px 20px rgba(240, 98, 146, 0.1); background: white; margin-bottom: 25px; padding: 25px; }
-        .btn-pink { background-color: var(--rosa-primario); color: white; border-radius: 12px; border: none; padding: 10px 20px; font-weight: 600; transition: 0.3s; }
-        .btn-pink:hover { background-color: #e91e63; color: white; transform: translateY(-2px); }
-        .form-control, .form-select { border-radius: 12px; border: 1px solid #fce4ec; padding: 12px; }
-        .table { --bs-table-bg: transparent; }
-        .navbar-brand { font-weight: bold; font-size: 1.4rem; }
+        :root { 
+            --rosa-fundo: #fff9fb; /* Rosa bem clarinho para o fundo */
+            --rosa-barra: #f48fb1; /* Rosa suave para a barra superior */
+            --rosa-botao: #ec407a; /* Rosa vibrante apenas nos botões */
+            --texto: #880e4f; 
+        }
+        body { background-color: var(--rosa-fundo); font-family: 'Segoe UI', sans-serif; color: var(--texto); }
+        .navbar { background-color: var(--rosa-barra) !important; padding: 12px; border-radius: 0 0 15px 15px; }
+        .card { border: none; border-radius: 20px; box-shadow: 0 5px 15px rgba(0,0,0,0.05); background: white; margin-bottom: 20px; padding: 20px; }
+        .btn-pink { background-color: var(--rosa-botao); color: white; border-radius: 10px; border: none; font-weight: 600; padding: 8px 20px; transition: 0.3s; }
+        .btn-pink:hover { background-color: #d81b60; color: white; }
+        .form-control, .form-select { border-radius: 10px; border: 1px solid #f8bbd0; padding: 10px; }
+        /* Ajuste específico para os filtros ficarem um ao lado do outro */
+        .filtro-container { display: flex; gap: 10px; align-items: center; }
+        .filtro-container select { width: 130px !important; }
     </style>
 </head>
 <body>
@@ -22,8 +28,8 @@
         <div class="container d-flex justify-content-between align-items-center">
             <span class="navbar-brand">🌸 Gestão de Ponto - Dra Thamiris Araujo</span>
             <div>
-                <a href="/exportar" class="btn btn-light btn-sm me-2">📊 Exportar Excel</a>
-                <a href="/backup" class="btn btn-outline-light btn-sm">💾 Backup Sistema</a>
+                <a href="/exportar" class="btn btn-light btn-sm me-1">📊 Exportar</a>
+                <a href="/backup" class="btn btn-outline-light btn-sm">💾 Backup</a>
             </div>
         </div>
     </nav>
@@ -32,7 +38,7 @@
         <div class="row">
             <div class="col-md-5">
                 <div class="card">
-                    <h5 class="mb-4">✨ Nova Colaboradora</h5>
+                    <h6 class="mb-3">✨ Nova Colaboradora</h6>
                     <form action="/cadastrar_colaboradora" method="POST" class="d-flex gap-2">
                         <input type="text" name="nome" class="form-control" placeholder="Nome Completo" required>
                         <button type="submit" class="btn btn-pink">Cadastrar</button>
@@ -41,7 +47,7 @@
             </div>
             <div class="col-md-7">
                 <div class="card">
-                    <h5 class="mb-4">✍️ Lançamento Manual</h5>
+                    <h6 class="mb-3">✍️ Lançamento Manual</h6>
                     <form action="/inserir_ponto_manual" method="POST" class="row g-2">
                         <div class="col-6">
                             <select name="nome" class="form-select">
@@ -49,11 +55,8 @@
                             </select>
                         </div>
                         <div class="col-6"><input type="text" name="horario" class="form-control" placeholder="DD/MM/AAAA HH:MM"></div>
-                        <div class="col-12">
-                            <select name="tipo" class="form-select mb-3">
-                                <option value="Entrada">Entrada</option>
-                                <option value="Saída">Saída</option>
-                            </select>
+                        <div class="col-12 d-flex gap-2">
+                            <select name="tipo" class="form-select"><option value="Entrada">Entrada</option><option value="Saída">Saída</option></select>
                             <button type="submit" class="btn btn-pink w-100">Inserir Ponto</button>
                         </div>
                     </form>
@@ -62,11 +65,13 @@
         </div>
 
         <div class="card">
-            <div class="d-flex justify-content-between align-items-center mb-4">
-                <h5>💰 Saldo de Horas</h5>
-                <form method="GET" class="d-flex gap-2">
+            <div class="d-flex justify-content-between align-items-center mb-3">
+                <h6 class="m-0">💰 Saldo de Horas</h6>
+                <form method="GET" class="filtro-container">
                     <input type="hidden" name="senha" value="8340">
-                    <select name="mes" class="form-select form-select-sm"><option value="01">Janeiro</option></select>
+                    <select name="mes" class="form-select form-select-sm">
+                        <option value="01">Janeiro</option><option value="02">Fevereiro</option>
+                    </select>
                     <select name="ano" class="form-select form-select-sm"><option value="2026">2026</option></select>
                     <button type="submit" class="btn btn-pink btn-sm">Filtrar</button>
                 </form>
@@ -79,10 +84,7 @@
                         <tr>
                             <td>{{ r.nome }}</td><td>{{ r.dias }} dias</td>
                             <td><strong>{{ r.saldo_formatado }}</strong></td>
-                            <td>
-                                <a href="/excluir_colaboradora/{{ r.id }}" class="text-danger">Apagar Nome</a>
-                                <a href="#" class="ms-3 text-danger">❌</a>
-                            </td>
+                            <td><a href="/excluir_colaboradora/{{ r.id }}" class="text-danger text-decoration-none">Apagar Nome</a></td>
                         </tr>
                         {% endfor %}
                     </tbody>
@@ -91,10 +93,10 @@
         </div>
 
         <div class="card">
-            <h5 class="mb-4">📍 Histórico de Registros (GPS)</h5>
+            <h6 class="mb-3">📍 Histórico (GPS)</h6>
             <div class="table-responsive">
-                <table class="table table-hover">
-                    <thead><tr><th>Data/Hora</th><th>Nome</th><th>Tipo</th><th>Localização</th><th>Ação</th></tr></thead>
+                <table class="table table-sm">
+                    <thead><tr><th>Data/Hora</th><th>Nome</th><th>Tipo</th><th>Localização</th><th></th></tr></thead>
                     <tbody>
                         {% for p in ultimos %}
                         <tr>
