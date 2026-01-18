@@ -5,7 +5,8 @@ from flask import Flask, render_template, request, redirect, url_for, send_file
 import pandas as pd
 
 app = Flask(__name__)
-DATABASE = 'database.db'
+# CORREÇÃO DEFINITIVA: Alinhado com o nome que aparece no seu VS Code
+DATABASE = 'ponto.db' 
 
 def get_db_connection():
     conn = sqlite3.connect(DATABASE)
@@ -14,6 +15,7 @@ def get_db_connection():
 
 def init_db():
     conn = get_db_connection()
+    # Criação das tabelas se não existirem
     conn.execute('''CREATE TABLE IF NOT EXISTS colaboradores (
                         id INTEGER PRIMARY KEY AUTOINCREMENT,
                         nome TEXT NOT NULL)''')
@@ -25,7 +27,7 @@ def init_db():
                         tipo TEXT NOT NULL,
                         localizacao TEXT)''')
     
-    # Remove Lucas e garante Esther Julia como única fixa
+    # Limpeza de dados de teste e fixação da Esther Julia
     conn.execute("DELETE FROM colaboradores WHERE nome = 'Lucas Moreira Biazoto'")
     conn.execute("INSERT OR IGNORE INTO colaboradores (id, nome) VALUES (1, 'Esther Julia')")
     
@@ -66,6 +68,7 @@ def painel_gestao():
     
     conn = get_db_connection()
     colaboradores = conn.execute('SELECT * FROM colaboradores').fetchall()
+    # CORREÇÃO: Busca na tabela 'pontos'
     pontos = conn.execute('SELECT * FROM pontos ORDER BY id DESC').fetchall()
     
     relatorio = []
@@ -80,8 +83,10 @@ def painel_gestao():
                 fmt = '%d/%m/%Y %H:%M:%S'
                 e = datetime.strptime(pontos_colab[i]['horario'], fmt)
                 s = datetime.strptime(pontos_colab[i+1]['horario'], fmt)
-                total_segundos += (s - e).total_seconds()
-                dias_trabalhados.add(pontos_colab[i]['horario'][:10])
+                total_seconds = (s - e).total_seconds()
+                if total_seconds > 0:
+                    total_segundos += total_seconds
+                    dias_trabalhados.add(pontos_colab[i]['horario'][:10])
         
         horas_devidas = len(dias_trabalhados) * 6 * 3600
         saldo_segundos = total_segundos - horas_devidas
@@ -137,7 +142,7 @@ def backup():
 @app.route('/exportar')
 def exportar():
     conn = get_db_connection()
-    # CORREÇÃO: Nome da tabela alterado para 'pontos'
+    # CORREÇÃO: Nome da tabela garantido como 'pontos'
     df = pd.read_sql_query("SELECT * FROM pontos", conn)
     conn.close()
     df.to_excel('relatorio_pontos.xlsx', index=False)
