@@ -5,7 +5,7 @@ from flask import Flask, render_template, request, redirect, url_for, send_file
 import pandas as pd
 
 app = Flask(__name__)
-# NOVO NOME DE BANCO: Força a criação de um arquivo novo e limpo para evitar o erro 500
+# Mantemos o nome v2 para garantir que o arquivo seja novo e limpo
 DATABASE = 'ponto_v2.db' 
 
 def get_db_connection():
@@ -15,7 +15,7 @@ def get_db_connection():
 
 def init_db():
     conn = get_db_connection()
-    # Cria as tabelas necessárias
+    # CRUCIAL: Criação das tabelas se não existirem
     conn.execute('''CREATE TABLE IF NOT EXISTS colaboradores (
                         id INTEGER PRIMARY KEY AUTOINCREMENT,
                         nome TEXT NOT NULL)''')
@@ -27,12 +27,16 @@ def init_db():
                         tipo TEXT NOT NULL,
                         localizacao TEXT)''')
     
-    # Garante Esther Julia como única funcionária fixa
+    # Limpa nomes antigos e fixa Esther Julia definitivamente
     conn.execute("DELETE FROM colaboradores WHERE nome = 'Lucas Moreira Biazoto'")
     conn.execute("INSERT OR IGNORE INTO colaboradores (id, nome) VALUES (1, 'Esther Julia')")
     
     conn.commit()
     conn.close()
+
+# Executa a inicialização do banco IMEDIATAMENTE ao abrir o app
+with app.app_context():
+    init_db()
 
 @app.route('/')
 def index():
@@ -42,7 +46,9 @@ def index():
         conn.close()
         return render_template('index.html', colaboradores=colaboradores)
     except Exception as e:
-        return f"Erro no sistema: {str(e)}. Por favor, use 'Clear Cache' no Render."
+        # Se falhar, tenta inicializar o banco novamente e recarregar
+        init_db()
+        return redirect(url_for('index'))
 
 @app.route('/bater_ponto', methods=['POST'])
 def bater_ponto():
@@ -71,7 +77,7 @@ def painel_gestao():
     
     conn = get_db_connection()
     colaboradores = conn.execute('SELECT * FROM colaboradores').fetchall()
-    pontos = conn.execute('SELECT * FROM pontos ORDER BY id ASC').fetchall()
+    pontos = conn.execute('SELECT * FROM pontos ORDER BY id DESC').fetchall()
     
     relatorio = []
     for colab in colaboradores:
@@ -87,7 +93,8 @@ def painel_gestao():
                     e = datetime.strptime(pontos_colab[i]['horario'], fmt)
                     s = datetime.strptime(pontos_colab[i+1]['horario'], fmt)
                     total_segundos += (s - e).total_seconds()
-                    dias_trabalhados.add(pontos_colab[i]['horario'][:10])
+                    dias_trabal_nome = pontos_colab[i]['horario'][:10]
+                    dias_trabalhados.add(dias_trabal_nome)
                 except:
                     continue
         
@@ -118,10 +125,9 @@ def exportar():
     conn = get_db_connection()
     df = pd.read_sql_query("SELECT * FROM pontos", conn)
     conn.close()
-    df.to_excel('Relatorio_Pontos.xlsx', index=False)
-    return send_file('Relatorio_Pontos.xlsx', as_attachment=True)
+    df.to_excel('Relatorio_DraThamiris.xlsx', index=False)
+    return send_file('Relatorio_DraThamiris.xlsx', as_attachment=True)
 
 if __name__ == '__main__':
-    init_db()
     port = int(os.environ.get("PORT", 5000))
     app.run(host='0.0.0.0', port=port)
