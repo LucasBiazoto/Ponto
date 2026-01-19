@@ -1,62 +1,26 @@
-<!DOCTYPE html>
-<html lang="pt-br">
-<head>
-    <meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Gestão - Dra Thamiris Araujo</title>
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
-    <style>
-        body { background: #fdf5f5; color: #8b5e5e; padding: 20px; }
-        .card { border-radius: 20px; border: none; box-shadow: 0 5px 15px rgba(0,0,0,0.03); margin-bottom: 20px; }
-        .rosa { color: #d4a3a3; }
-    </style>
-</head>
-<body>
-    <div class="container">
-        <h2 class="rosa mb-4">Gestão Dra Thamiris 🌸</h2>
-        
-        <div class="row">
-            <div class="col-md-4">
-                <div class="card p-3">
-                    <h5>Resumo Mensal</h5>
-                    <select id="filtroMes" class="form-select mb-2" onchange="window.location.href='/painel_gestao?senha=8340&mes='+this.value">
-                        <option value="">Filtrar Mês</option>
-                        {% for m in meses %}<option value="{{m}}">Mês {{m}}</option>{% endfor %}
-                    </select>
-                    {% for c in colaboradores %}
-                        <p>Dias: <strong>{{ c.dias }}</strong></p>
-                        <p>Saldo (6h): <span class="badge bg-success">{{ c.saldo }}</span></p>
-                    {% endfor %}
-                    <hr>
-                    <h5>Lançamento Manual</h5>
-                    <form action="/bater_ponto" method="POST">
-                        <input type="hidden" name="nome" value="Esther Julia">
-                        <input type="datetime-local" name="horario_manual" class="form-control mb-2" required>
-                        <select name="tipo" class="form-select mb-2">
-                            <option value="Entrada">Entrada</option>
-                            <option value="Saída">Saída</option>
-                        </select>
-                        <button class="btn btn-secondary w-100">Registrar</button>
-                    </form>
-                </div>
-            </div>
-            <div class="col-md-8">
-                <div class="card p-3">
-                    <h5>Histórico de Pontos</h5>
-                    <table class="table small">
-                        <thead><tr><th>Data/Hora</th><th>Tipo</th><th>Local</th></tr></thead>
-                        <tbody>
-                            {% for p in ultimos %}
-                            <tr>
-                                <td>{{p.horario}}</td>
-                                <td>{{p.tipo}}</td>
-                                <td>{{p.localizacao}}</td>
-                            </tr>
-                            {% endfor %}
-                        </tbody>
-                    </table>
-                </div>
-            </div>
+<div class="card p-3 mb-4">
+    <h5 class="rosa">Filtros e Resumo</h5>
+    <div class="d-flex gap-3 align-items-end">
+        <div>
+            <label class="small">Selecione o Mês:</label>
+            <select id="filtroMes" class="form-select">
+                <option value="">Todos</option>
+                {% for m in meses %}<option value="{{m}}">Mês {{m}}</option>{% endfor %}
+            </select>
         </div>
+        <button onclick="filtrar()" class="btn btn-rosa" style="width: auto; padding: 8px 20px;">Filtrar</button>
     </div>
-</body>
-</html>
+    <div class="mt-4">
+        {% for c in colaboradores %}
+            <p>Dias Trabalhados: <strong>{{ c.dias }}</strong></p>
+            <p>Saldo Acumulado (Horas Extras): <span class="badge bg-success" style="font-size: 1rem;">{{ c.saldo }}</span></p>
+        {% endfor %}
+    </div>
+</div>
+
+<script>
+function filtrar() {
+    const mes = document.getElementById('filtroMes').value;
+    window.location.href = `/painel_gestao?senha=8340&mes=${mes}`;
+}
+</script>

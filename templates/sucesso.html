@@ -1,0 +1,22 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sucesso - Dra Thamiris Araujo</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <style>
+        body { background: #fdf5f5; height: 100vh; display: flex; align-items: center; justify-content: center; font-family: 'Segoe UI', sans-serif; }
+        .card { background: white; padding: 50px; border-radius: 30px; text-align: center; box-shadow: 0 10px 30px rgba(0,0,0,0.05); }
+        h1 { color: #d4a3a3; font-weight: bold; margin-bottom: 20px; }
+        .btn-voltar { background: #d4a3a3; color: white; border: none; padding: 10px 20px; border-radius: 12px; text-decoration: none; }
+    </style>
+</head>
+<body>
+    <div class="card">
+        <h1>{{ mensagem }} 🌸</h1>
+        <p>Ponto registrado com sucesso!</p>
+        <a href="/" class="btn-voltar">Voltar ao Início</a>
+    </div>
+    <script>setTimeout(() => { window.location.href = "/"; }, 4000);</script>
+</body>
+</html>
