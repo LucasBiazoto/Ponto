@@ -1,35 +1,24 @@
 import os
 import sqlite3
-from datetime import datetime
-from flask import Flask, render_template, request, redirect, url_for, send_file
+from datetime import datetime, timedelta
+from flask import Flask, render_template, request, redirect, url_for, send_file, flash
 import pandas as pd
 
 app = Flask(__name__)
+app.secret_key = "thamiris_secret"
 DATABASE = 'ponto_estetica_2026.db'
+
+# Coordenadas Spot Offices Penha (Exemplo aproximado para validação)
+EMPRESA_LAT, EMPRESA_LON = -23.5234, -46.5442 
 
 def get_db_connection():
     conn = sqlite3.connect(DATABASE)
     conn.row_factory = sqlite3.Row
     return conn
 
-def init_db():
-    conn = get_db_connection()
-    conn.execute('''CREATE TABLE IF NOT EXISTS pontos 
-        (id INTEGER PRIMARY KEY AUTOINCREMENT, nome TEXT, horario TEXT, tipo TEXT, localizacao TEXT)''')
-    conn.commit()
-    conn.close()
-
-with app.app_context():
-    init_db()
-
-@app.route('/')
-def index():
-    # Esther Julia fixa para aparecer sempre no início
-    return render_template('index.html', colaboradores=[{'nome': 'Esther Julia'}])
-
 @app.route('/bater_ponto', methods=['POST'])
 def bater_ponto():
-    nome = request.form.get('nome')
+    nome = "Esther Julia"
     tipo = request.form.get('tipo')
     loc = request.form.get('localizacao', 'Não informada')
     h_manual = request.form.get('horario_manual')
@@ -47,51 +36,61 @@ def bater_ponto():
     conn.commit()
     conn.close()
 
-    if h_manual:
-        return redirect(url_for('painel_gestao', senha='8340'))
+    if h_manual: return redirect(url_for('painel_gestao', senha='8340'))
     
     msg = "Bom trabalho meu bem" if tipo == "Entrada" else "Bom descanso meu bem"
     return render_template('sucesso.html', mensagem=msg)
 
+@app.route('/excluir_ponto/<int:id>')
+def excluir_ponto(id):
+    conn = get_db_connection()
+    conn.execute('DELETE FROM pontos WHERE id = ?', (id,))
+    conn.commit()
+    conn.close()
+    return redirect(url_for('painel_gestao', senha='8340'))
+
 @app.route('/painel_gestao')
 def painel_gestao():
-    # Segurança por senha restaurada
-    if request.args.get('senha') != '8340':
-        return "Acesso Negado", 403
+    if request.args.get('senha') != '8340': return "Acesso Negado", 403
     
-    mes_selecionado = request.args.get('mes', '')
+    mes_sel = request.args.get('mes', datetime.now().strftime('%m'))
     conn = get_db_connection()
-    pontos_raw = conn.execute('SELECT * FROM pontos ORDER BY id DESC').fetchall()
+    pontos = conn.execute('SELECT * FROM pontos ORDER BY id DESC').fetchall()
     conn.close()
 
-    # Filtro de meses para 2026
-    if mes_selecionado:
-        pontos = [p for p in pontos_raw if f"/{mes_selecionado}/2026" in p['horario']]
-    else:
-        pontos = pontos_raw
-
-    # Cálculo de estatísticas (Dias e Saldo base 6h)
-    dias = len(set(p['horario'].split()[0] for p in pontos))
-    saldo = f"+{dias * 6}h 0min"
+    # Filtrar pontos do mês atual/selecionado para cálculo
+    pontos_mes = [p for p in pontos if f"/{mes_sel}/2026" in p['horario']]
     
-    meses_lista = [
-        ('01', 'Janeiro'), ('02', 'Fevereiro'), ('03', 'Março'), ('04', 'Abril'),
-        ('05', 'Maio'), ('06', 'Junho'), ('07', 'Julho'), ('08', 'Agosto'),
-        ('09', 'Setembro'), ('10', 'Outubro'), ('11', 'Novembro'), ('12', 'Dezembro')
-    ]
+    # Lógica de Cálculo de Horas (Base 6h)
+    logica_ponto = {}
+    for p in reversed(pontos_mes):
+        data = p['horario'].split()[0]
+        hora = datetime.strptime(p['horario'], '%d/%m/%Y %H:%M:%S')
+        if data not in logica_ponto: logica_ponto[data] = {'E': None, 'S': None}
+        if p['tipo'] == 'Entrada' and not logica_ponto[data]['E']: logica_ponto[data]['E'] = hora
+        elif p['tipo'] == 'Saída': logica_ponto[data]['S'] = hora
+
+    total_minutos_trabalhados = 0
+    dias_count = 0
+    for data, horas in logica_ponto.items():
+        if horas['E'] and horas['S']:
+            diff = (horas['S'] - horas['E']).total_seconds() / 60
+            total_minutos_trabalhados += diff
+            dias_count += 1
+
+    # Saldo: Minutos trabalhados - (Dias * 360 minutos da jornada de 6h)
+    minutos_devidos = dias_count * 360
+    saldo_total_minutos = total_minutos_trabalhados - minutos_devidos
     
-    return render_template('admin.html', 
-                           ultimos=pontos, 
-                           colaboradores=[{'nome': 'Esther Julia', 'dias': dias, 'saldo': saldo}],
-                           meses=meses_lista)
+    horas_saldo = int(abs(saldo_total_minutos) // 60)
+    min_saldo = int(abs(saldo_total_minutos) % 60)
+    sinal = "+" if saldo_total_minutos >= 0 else "-"
+    txt_saldo = f"{sinal}{horas_saldo}h {min_saldo}min"
 
-@app.route('/exportar')
-def exportar():
-    conn = get_db_connection()
-    df = pd.read_sql_query("SELECT * FROM pontos", conn)
-    conn.close()
-    df.to_excel('Relatorio_DraThamiris.xlsx', index=False)
-    return send_file('Relatorio_DraThamiris.xlsx', as_attachment=True)
+    meses_lista = [('01', 'Janeiro'), ('02', 'Fevereiro'), ('03', 'Março'), ('04', 'Abril'), ('05', 'Maio'), ('06', 'Junho'), ('07', 'Julho'), ('08', 'Agosto'), ('09', 'Setembro'), ('10', 'Outubro'), ('11', 'Novembro'), ('12', 'Dezembro')]
+    
+    return render_template('admin.html', ultimos=pontos, resumo={'dias': dias_count, 'saldo': txt_saldo}, meses=meses_lista, mes_atual=mes_sel)
 
-if __name__ == '__main__':
-    app.run(host='0.0.0.0', port=int(os.environ.get("PORT", 5000)))
+@app.route('/backup')
+def backup():
+    return send_file(DATABASE, as_attachment=True)
