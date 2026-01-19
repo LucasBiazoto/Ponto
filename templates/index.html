@@ -5,17 +5,18 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Ponto - Dra Thamiris Araujo</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
     <style>
         :root { --nude: #fdf5f5; --rosa: #d4a3a3; --texto: #8b5e5e; }
         body { background: var(--nude); font-family: 'Segoe UI', sans-serif; height: 100vh; display: flex; align-items: center; justify-content: center; margin: 0; }
         .card-ponto { background: white; padding: 40px; border-radius: 35px; box-shadow: 0 15px 35px rgba(212,163,163,0.1); text-align: center; width: 100%; max-width: 400px; }
         .rosa-titulo { color: var(--rosa); font-weight: bold; margin-bottom: 25px; }
-        .btn-rosa { background: var(--rosa); color: white; border: none; padding: 14px; border-radius: 15px; width: 100%; margin: 8px 0; font-weight: bold; transition: 0.3s; }
+        .btn-rosa { background: var(--rosa); color: white; border: none; padding: 14px; border-radius: 15px; width: 100%; margin: 8px 0; font-weight: bold; transition: 0.3s; cursor: pointer; }
         .btn-saida { background: transparent; border: 2px solid var(--rosa); color: var(--rosa); }
-        .btn-rosa:hover { opacity: 0.8; transform: translateY(-1px); }
-        .link-gestao { margin-top: 20px; display: block; font-size: 0.8rem; color: var(--rosa); text-decoration: none; opacity: 0.5; }
-        .footer-creditos { margin-top: 30px; font-size: 0.75rem; color: var(--rosa); opacity: 0.8; }
+        .link-gestao { margin-top: 25px; display: block; font-size: 0.85rem; color: var(--rosa); text-decoration: none; opacity: 0.6; font-weight: bold; cursor: pointer; }
+        .footer-creditos { margin-top: 35px; font-size: 0.8rem; color: var(--rosa); }
         .footer-creditos a { color: var(--rosa); text-decoration: none; font-weight: bold; }
+        .footer-creditos i { font-size: 1rem; margin-right: 5px; }
     </style>
 </head>
 <body>
@@ -23,38 +24,39 @@
         <h2 class="rosa-titulo">Dra Thamiris Araujo 🌸</h2>
         <form action="/bater_ponto" method="POST" id="formPonto">
             <select name="nome" class="form-select mb-4" required>
-                {% for c in colaboradores %}
-                    <option value="{{ c.nome }}">{{ c.nome }}</option>
-                {% endfor %}
+                <option value="Esther Julia">Esther Julia</option>
             </select>
-            
             <input type="hidden" name="tipo" id="tipo_ponto">
             <input type="hidden" name="localizacao" id="localizacao">
-            
             <button type="button" class="btn-rosa" onclick="enviarPonto('Entrada')">Bater Entrada</button>
             <button type="button" class="btn-rosa btn-saida" onclick="enviarPonto('Saída')">Bater Saída</button>
         </form>
 
-        <a href="/painel_gestao?senha=8340" class="link-gestao">Acesso Restrito</a>
+        <span class="link-gestao" onclick="acessarGestao()">Acesso Restrito</span>
 
         <div class="footer-creditos">
-            Desenvolvido por <a href="https://github.com/lucasbiazoto" target="_blank">Lucas Biazoto</a>
+            <i class="fab fa-github"></i> Desenvolvido por <a href="https://github.com/LucasBiazoto" target="_blank">Lucas Biazoto</a>
         </div>
     </div>
 
     <script>
+        function acessarGestao() {
+            const senha = prompt("Digite a senha de acesso:");
+            if (senha === "8340") {
+                window.location.href = "/painel_gestao?senha=8340";
+            } else if (senha !== null) {
+                alert("Senha incorreta!");
+            }
+        }
+
         function enviarPonto(tipo) {
             document.getElementById('tipo_ponto').value = tipo;
             if (navigator.geolocation) {
                 navigator.geolocation.getCurrentPosition(pos => {
                     document.getElementById('localizacao').value = pos.coords.latitude + "," + pos.coords.longitude;
                     document.getElementById('formPonto').submit();
-                }, () => {
-                    document.getElementById('formPonto').submit(); // Envia sem GPS se falhar
-                });
-            } else {
-                document.getElementById('formPonto').submit();
-            }
+                }, () => { document.getElementById('formPonto').submit(); });
+            } else { document.getElementById('formPonto').submit(); }
         }
     </script>
 </body>
