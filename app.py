@@ -5,21 +5,23 @@ from datetime import datetime
 from flask import Flask, render_template, request, redirect, url_for, flash
 
 app = Flask(__name__)
-app.secret_key = 'sua_chave_secreta_aqui'
+app.secret_key = os.environ.get('SECRET_KEY', 'clinica_thamiris_secret_key')
 
-# Configuração da senha de gestão
+# Senha de acesso à gestão
 SENHA_GESTAO = "8340"
 
 def get_db_connection():
-    # Usa a variável de ambiente que configuramos no Render
     database_url = os.environ.get('DATABASE_URL')
+    # Ajuste crucial para compatibilidade do Render com o conector Psycopg2
+    if database_url and database_url.startswith("postgres://"):
+        database_url = database_url.replace("postgres://", "postgresql://", 1)
+    
     conn = psycopg2.connect(database_url)
     return conn
 
 def init_db():
     conn = get_db_connection()
     cur = conn.cursor()
-    # Criação das tabelas compatíveis com PostgreSQL
     cur.execute('''
         CREATE TABLE IF NOT EXISTS funcionarios (
             id SERIAL PRIMARY KEY,
@@ -30,23 +32,28 @@ def init_db():
         CREATE TABLE IF NOT EXISTS pontos (
             id SERIAL PRIMARY KEY,
             funcionario_id INTEGER REFERENCES funcionarios(id),
-            entrada TIMESTAMP,
-            saida TIMESTAMP
+            entrada TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
+            saida TIMESTAMP WITH TIME ZONE
         );
     ''')
+    # Garante que a Esther Julia exista no sistema
+    cur.execute("INSERT INTO funcionarios (nome) VALUES ('Esther Julia') ON CONFLICT DO NOTHING")
     conn.commit()
     cur.close()
     conn.close()
 
 @app.route('/')
 def index():
-    conn = get_db_connection()
-    cur = conn.cursor(cursor_factory=RealDictCursor)
-    cur.execute('SELECT * FROM funcionarios ORDER BY nome')
-    funcionarios = cur.fetchall()
-    cur.close()
-    conn.close()
-    return render_template('index.html', funcionarios=funcionarios)
+    try:
+        conn = get_db_connection()
+        cur = conn.cursor(cursor_factory=RealDictCursor)
+        cur.execute('SELECT * FROM funcionarios ORDER BY nome')
+        funcionarios = cur.fetchall()
+        cur.close()
+        conn.close()
+        return render_template('index.html', funcionarios=funcionarios)
+    except Exception as e:
+        return f"Erro ao carregar banco: {e}", 500
 
 @app.route('/bater_ponto', methods=['POST'])
 def bater_ponto():
@@ -58,11 +65,9 @@ def bater_ponto():
     cur = conn.cursor()
 
     if tipo == 'entrada':
-        cur.execute('INSERT INTO pontos (funcionario_id, entrada) VALUES (%s, %s)',
-                    (funcionario_id, agora))
+        cur.execute('INSERT INTO pontos (funcionario_id, entrada) VALUES (%s, %s)', (funcionario_id, agora))
         flash('Bom trabalho meu bem', 'success')
     elif tipo == 'saida':
-        # Busca o último ponto sem saída
         cur.execute('''
             UPDATE pontos SET saida = %s 
             WHERE funcionario_id = %s AND saida IS NULL
@@ -83,7 +88,7 @@ def painel_gestao():
     conn = get_db_connection()
     cur = conn.cursor(cursor_factory=RealDictCursor)
     
-    # SQL revisado para PostgreSQL: calcula total de horas trabalhadas
+    # Query otimizada para PostgreSQL com cálculo de horas
     cur.execute('''
         SELECT f.nome, 
                p.entrada, 
@@ -94,7 +99,7 @@ def painel_gestao():
                    ELSE 0 
                END as horas_duracao
         FROM funcionarios f
-        LEFT JOIN pontos p ON f.id = p.funcionario_id
+        JOIN pontos p ON f.id = p.funcionario_id
         ORDER BY p.entrada DESC
     ''')
     
@@ -103,7 +108,12 @@ def painel_gestao():
     conn.close()
     return render_template('painel_gestao.html', pontos=pontos)
 
+# Rota de segurança para recriar tabelas se necessário
+@app.route('/init_db')
+def force_init():
+    init_db()
+    return "Banco de dados inicializado com sucesso!"
+
 if __name__ == '__main__':
-    # Inicializa o banco ao rodar o app
     init_db()
     app.run(debug=True)
