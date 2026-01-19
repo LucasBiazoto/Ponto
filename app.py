@@ -32,7 +32,7 @@ with app.app_context():
 def calcular_estatisticas(pontos_filtrados):
     if not pontos_filtrados:
         return 0, "+0h 0min"
-    # Conta dias únicos formatando a string de data (DD/MM/YYYY)
+    # Conta dias único formatando a string de data (DD/MM/YYYY)
     dias = len(set(p['horario'].split()[0] for p in pontos_filtrados))
     # Exemplo: Jornada de 6h (360 min). Ajuste conforme a necessidade real.
     total_minutos = dias * 360 
