@@ -1,13 +1,11 @@
 import os
 import sqlite3
-from datetime import datetime, timedelta
+from datetime import datetime
+import pytz  # Importante para o horário de SP
 from flask import Flask, render_template, request, redirect, url_for, send_file
 
 app = Flask(__name__)
-DATABASE = 'ponto_estetica_2026.db'
-
-# Coordenadas aproximadas do Spot Offices Penha para conferência no painel
-LAT_CLINICA, LON_CLINICA = -23.523, -46.544 
+DATABASE = 'ponto_dra_thamiris_v8.db'
 
 def get_db_connection():
     conn = sqlite3.connect(DATABASE)
@@ -23,6 +21,11 @@ def init_db():
 
 with app.app_context():
     init_db()
+
+def obter_horario_sp():
+    # Garante que o horário registrado seja sempre o de São Paulo
+    fuso_sp = pytz.timezone('America/Sao_Paulo')
+    return datetime.now(fuso_sp).strftime('%d/%m/%Y %H:%M:%S')
 
 @app.route('/')
 def index():
@@ -40,7 +43,7 @@ def bater_ponto():
         horario = dt.strftime('%d/%m/%Y %H:%M:%S')
         loc = "Lançamento Manual"
     else:
-        horario = datetime.now().strftime('%d/%m/%Y %H:%M:%S')
+        horario = obter_horario_sp()
 
     conn = get_db_connection()
     conn.execute('INSERT INTO pontos (nome, horario, tipo, localizacao) VALUES (?, ?, ?, ?)',
@@ -55,6 +58,7 @@ def bater_ponto():
 
 @app.route('/excluir_ponto/<int:id>')
 def excluir_ponto(id):
+    # Segurança também na exclusão
     conn = get_db_connection()
     conn.execute('DELETE FROM pontos WHERE id = ?', (id,))
     conn.commit()
@@ -63,16 +67,18 @@ def excluir_ponto(id):
 
 @app.route('/painel_gestao')
 def painel_gestao():
-    if request.args.get('senha') != '8340': return "Acesso Negado", 403
+    # Trava de segurança obrigatória
+    if request.args.get('senha') != '8340':
+        return "<h1>Acesso Negado</h1>", 403
     
     mes_sel = request.args.get('mes', datetime.now().strftime('%m'))
     conn = get_db_connection()
     pontos_todos = conn.execute('SELECT * FROM pontos ORDER BY id DESC').fetchall()
     conn.close()
 
-    pontos_mes = [p for p in pontos_todos if f"/{mes_sel}/2026" in p['horario']]
+    pontos_mes = [p for p in pontos_todos if f"/{mes_sel}/" in p['horario']]
     
-    # Lógica de Cálculo de Horas (Base 6h diárias)
+    # Cálculo de Saldo (Base 6h)
     registro_dia = {}
     for p in reversed(pontos_mes):
         data = p['horario'].split()[0]
@@ -88,7 +94,7 @@ def painel_gestao():
             minutos_trabalhados += (h['S'] - h['E']).total_seconds() / 60
             dias_count += 1
 
-    saldo_minutos = minutos_trabalhados - (dias_count * 360) # 360 min = 6h
+    saldo_minutos = minutos_trabalhados - (dias_count * 360)
     sinal = "+" if saldo_minutos >= 0 else "-"
     abs_min = abs(int(saldo_minutos))
     txt_saldo = f"{sinal}{abs_min // 60}h {abs_min % 60}min"
@@ -99,3 +105,6 @@ def painel_gestao():
 @app.route('/backup')
 def backup():
     return send_file(DATABASE, as_attachment=True)
+
+if __name__ == '__main__':
+    app.run(host='0.0.0.0', port=int(os.environ.get("PORT", 5000)))
