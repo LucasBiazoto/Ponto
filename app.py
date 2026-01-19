@@ -5,9 +5,7 @@ from datetime import datetime
 from flask import Flask, render_template, request, redirect, url_for, flash
 
 app = Flask(__name__)
-app.secret_key = os.environ.get('SECRET_KEY', 'thamiris_araujo_estetica_2026')
-
-SENHA_GESTAO = "8340"
+app.secret_key = 'clinica_thamiris_secret'
 
 def get_db_connection():
     database_url = os.environ.get('DATABASE_URL')
@@ -38,27 +36,26 @@ def index():
     conn = get_db_connection()
     cur = conn.cursor(cursor_factory=RealDictCursor)
     cur.execute('SELECT * FROM funcionarios ORDER BY nome')
-    funcionarios = cur.fetchall()
+    funcs = cur.fetchall()
     cur.close()
     conn.close()
-    return render_template('index.html', funcionarios=funcionarios)
+    return render_template('index.html', funcionarios=funcs)
 
 @app.route('/bater_ponto', methods=['POST'])
 def bater_ponto():
-    funcionario_id = request.form.get('funcionario_id')
+    fid = request.form.get('funcionario_id')
     tipo = request.form.get('tipo')
-    agora = datetime.now()
     conn = get_db_connection()
     cur = conn.cursor()
     try:
         if tipo == 'entrada':
-            cur.execute('INSERT INTO pontos (funcionario_id, entrada) VALUES (%s, %s)', (funcionario_id, agora))
+            cur.execute('INSERT INTO pontos (funcionario_id, entrada) VALUES (%s, %s)', (fid, datetime.now()))
             flash('Bom trabalho meu bem', 'success')
-        elif tipo == 'saida':
-            cur.execute('UPDATE pontos SET saida = %s WHERE funcionario_id = %s AND saida IS NULL', (agora, funcionario_id))
+        else:
+            cur.execute('UPDATE pontos SET saida = %s WHERE funcionario_id = %s AND saida IS NULL', (datetime.now(), fid))
             flash('Bom descanso meu bem', 'success')
         conn.commit()
-    except Exception as e:
+    except Exception:
         conn.rollback()
     finally:
         cur.close()
@@ -67,21 +64,20 @@ def bater_ponto():
 
 @app.route('/painel_gestao')
 def painel_gestao():
-    senha = request.args.get('senha')
-    if senha != SENHA_GESTAO:
-        return "Acesso negado", 403
+    if request.args.get('senha') != "8340":
+        return "Senha Incorreta", 403
     conn = get_db_connection()
     cur = conn.cursor(cursor_factory=RealDictCursor)
     cur.execute('''
-        SELECT f.nome, p.entrada, p.saida
-        FROM funcionarios f
-        JOIN pontos p ON f.id = p.funcionario_id
+        SELECT f.nome, p.entrada, p.saida 
+        FROM funcionarios f 
+        JOIN pontos p ON f.id = p.funcionario_id 
         ORDER BY p.entrada DESC
     ''')
     pontos = cur.fetchall()
     cur.close()
     conn.close()
-    # Usando o nome exato do arquivo que você renomeou no passo 1
+    # AQUI ESTÁ O AJUSTE: O nome deve ser painel_gestao.html
     return render_template('painel_gestao.html', pontos=pontos)
 
 if __name__ == '__main__':
