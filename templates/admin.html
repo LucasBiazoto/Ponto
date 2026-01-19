@@ -9,7 +9,7 @@
         body { background: var(--nude); color: var(--texto); padding: 20px; font-family: 'Segoe UI', sans-serif; }
         .rosa { color: var(--rosa); font-weight: bold; }
         .card { border-radius: 20px; border: none; box-shadow: 0 10px 20px rgba(0,0,0,0.03); margin-bottom: 20px; padding: 20px; background: white; }
-        .btn-rosa { background: var(--rosa); color: white; border: none; border-radius: 10px; padding: 8px 15px; font-weight: bold; text-decoration: none; display: inline-block; }
+        .btn-rosa { background: var(--rosa); color: white; border-radius: 10px; padding: 8px 15px; font-weight: bold; text-decoration: none; border: none; }
         .saldo-positivo { color: #2ecc71; }
         .saldo-negativo { color: #e74c3c; }
     </style>
@@ -35,11 +35,10 @@
                         {% endfor %}
                     </select>
                     
-                    {% set saldo_num = resumo.saldo_minutos %}
-                    <h3 class="{% if saldo_num >= 0 %}saldo-positivo{% else %}saldo-negativo{% endif %}" style="font-size: 2.5rem;">
+                    <h3 class="{% if resumo.saldo_minutos >= 0 %}saldo-positivo{% else %}saldo-negativo{% endif %}" style="font-size: 2.5rem;">
                         {{ resumo.saldo_texto }}
                     </h3>
-                    <p class="text-muted small">Saldo acumulado no mês</p>
+                    <p class="text-muted small">Saldo acumulado em {{ mes_atual }}/2026</p>
                     <hr>
                     <p>Dias trabalhados: <strong>{{ resumo.dias }}</strong></p>
                 </div>
@@ -53,14 +52,14 @@
                             <option value="Entrada">Entrada</option>
                             <option value="Saída">Saída</option>
                         </select>
-                        <button class="btn-rosa w-100">Registrar</button>
+                        <button class="btn-rosa w-100">Registrar Ponto</button>
                     </form>
                 </div>
             </div>
 
             <div class="col-md-8">
                 <div class="card">
-                    <h5 class="rosa">Histórico de Marcações</h5>
+                    <h5 class="rosa">Histórico de Marcações - Mês {{ mes_atual }}</h5>
                     <table class="table table-hover small">
                         <thead>
                             <tr>
@@ -71,7 +70,8 @@
                             </tr>
                         </thead>
                         <tbody>
-                            {% for p in ultimos %}
+                            {# Aqui a tabela exibe apenas o que o Python filtrou #}
+                            {% for p in ultimos_filtrados %}
                             <tr>
                                 <td>{{ p.horario }}</td>
                                 <td><span class="badge {% if p.tipo == 'Entrada' %}bg-success{% else %}bg-secondary{% endif %}">{{ p.tipo }}</span></td>
@@ -81,8 +81,11 @@
                                     {% else %}🚀 Externo{% endif %}
                                 </td>
                                 <td>
-                                    <a href="/excluir_ponto/{{ p.id }}" class="text-danger" onclick="return confirm('Excluir?')">🗑️</a>
-                                </tr>
+                                    <a href="/excluir_ponto/{{ p.id }}" class="text-danger" onclick="return confirm('Excluir este registro?')">🗑️</a>
+                                </td>
+                            </tr>
+                            {% else %}
+                            <tr><td colspan="4" class="text-center">Nenhum registro para este mês.</td></tr>
                             {% endfor %}
                         </tbody>
                     </table>
