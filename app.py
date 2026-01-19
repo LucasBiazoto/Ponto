@@ -5,7 +5,7 @@ from flask import Flask, render_template, request, redirect, url_for, send_file
 import pandas as pd
 
 app = Flask(__name__)
-DATABASE = 'ponto_dra_thamiris_v7.db'
+DATABASE = 'ponto_estetica_2026.db'
 
 def get_db_connection():
     conn = sqlite3.connect(DATABASE)
@@ -24,6 +24,7 @@ with app.app_context():
 
 @app.route('/')
 def index():
+    # Esther Julia fixa para aparecer sempre no início
     return render_template('index.html', colaboradores=[{'nome': 'Esther Julia'}])
 
 @app.route('/bater_ponto', methods=['POST'])
@@ -54,22 +55,43 @@ def bater_ponto():
 
 @app.route('/painel_gestao')
 def painel_gestao():
+    # Segurança por senha restaurada
     if request.args.get('senha') != '8340':
         return "Acesso Negado", 403
     
     mes_selecionado = request.args.get('mes', '')
     conn = get_db_connection()
-    pontos = conn.execute('SELECT * FROM pontos ORDER BY id DESC').fetchall()
+    pontos_raw = conn.execute('SELECT * FROM pontos ORDER BY id DESC').fetchall()
     conn.close()
 
+    # Filtro de meses para 2026
     if mes_selecionado:
-        pontos = [p for p in pontos if f"/{mes_selecionado}/" in p['horario']]
+        pontos = [p for p in pontos_raw if f"/{mes_selecionado}/2026" in p['horario']]
+    else:
+        pontos = pontos_raw
 
-    # Cálculo de dias e saldo
+    # Cálculo de estatísticas (Dias e Saldo base 6h)
     dias = len(set(p['horario'].split()[0] for p in pontos))
-    saldo = f"+{dias * 6}h 0min" # Base 6h por dia
+    saldo = f"+{dias * 6}h 0min"
     
-    meses = [f"{i:02d}" for i in range(1, 13)]
-    return render_template('admin.html', ultimos=pontos, 
-                           colaboradores=[{'nome': 'Esther Julia', 'dias': dias, 'saldo': saldo}], 
-                           meses=meses)
+    meses_lista = [
+        ('01', 'Janeiro'), ('02', 'Fevereiro'), ('03', 'Março'), ('04', 'Abril'),
+        ('05', 'Maio'), ('06', 'Junho'), ('07', 'Julho'), ('08', 'Agosto'),
+        ('09', 'Setembro'), ('10', 'Outubro'), ('11', 'Novembro'), ('12', 'Dezembro')
+    ]
+    
+    return render_template('admin.html', 
+                           ultimos=pontos, 
+                           colaboradores=[{'nome': 'Esther Julia', 'dias': dias, 'saldo': saldo}],
+                           meses=meses_lista)
+
+@app.route('/exportar')
+def exportar():
+    conn = get_db_connection()
+    df = pd.read_sql_query("SELECT * FROM pontos", conn)
+    conn.close()
+    df.to_excel('Relatorio_DraThamiris.xlsx', index=False)
+    return send_file('Relatorio_DraThamiris.xlsx', as_attachment=True)
+
+if __name__ == '__main__':
+    app.run(host='0.0.0.0', port=int(os.environ.get("PORT", 5000)))

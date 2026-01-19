@@ -1,26 +1,71 @@
-<div class="card p-3 mb-4">
-    <h5 class="rosa">Filtros e Resumo</h5>
-    <div class="d-flex gap-3 align-items-end">
-        <div>
-            <label class="small">Selecione o Mês:</label>
-            <select id="filtroMes" class="form-select">
-                <option value="">Todos</option>
-                {% for m in meses %}<option value="{{m}}">Mês {{m}}</option>{% endfor %}
-            </select>
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Gestão - Dra Thamiris Araujo</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <style>
+        body { background: #fdf5f5; color: #8b5e5e; padding: 20px; font-family: 'Segoe UI', sans-serif; }
+        .rosa { color: #d4a3a3; font-weight: bold; }
+        .card { border-radius: 20px; border: none; box-shadow: 0 5px 20px rgba(0,0,0,0.02); margin-bottom: 20px; padding: 20px; }
+        .btn-rosa { background: #d4a3a3; color: white; border-radius: 12px; border: none; padding: 10px; font-weight: bold; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="d-flex justify-content-between align-items-center mb-4">
+            <h2 class="rosa">Gestão Esther Julia 2026 🌸</h2>
+            <a href="/exportar" class="btn btn-outline-secondary btn-sm">Exportar Excel</a>
         </div>
-        <button onclick="filtrar()" class="btn btn-rosa" style="width: auto; padding: 8px 20px;">Filtrar</button>
-    </div>
-    <div class="mt-4">
-        {% for c in colaboradores %}
-            <p>Dias Trabalhados: <strong>{{ c.dias }}</strong></p>
-            <p>Saldo Acumulado (Horas Extras): <span class="badge bg-success" style="font-size: 1rem;">{{ c.saldo }}</span></p>
-        {% endfor %}
-    </div>
-</div>
 
-<script>
-function filtrar() {
-    const mes = document.getElementById('filtroMes').value;
-    window.location.href = `/painel_gestao?senha=8340&mes=${mes}`;
-}
-</script>
+        <div class="row">
+            <div class="col-md-4">
+                <div class="card">
+                    <h5 class="rosa">Filtros e Resumo</h5>
+                    <select class="form-select mb-3" onchange="window.location.href='/painel_gestao?senha=8340&mes='+this.value">
+                        <option value="">Todos os Meses (2026)</option>
+                        {% for valor, nome in meses %}<option value="{{valor}}">{{nome}}</option>{% endfor %}
+                    </select>
+                    {% for c in colaboradores %}
+                        <p class="mb-1">Dias: <strong>{{ c.dias }}</strong></p>
+                        <p>Saldo (Base 6h): <span class="badge bg-success">{{ c.saldo }}</span></p>
+                    {% endfor %}
+                </div>
+
+                <div class="card">
+                    <h5 class="rosa">Lançamento Manual</h5>
+                    <form action="/bater_ponto" method="POST">
+                        <input type="hidden" name="nome" value="Esther Julia">
+                        <input type="datetime-local" name="horario_manual" class="form-control mb-2" required>
+                        <select name="tipo" class="form-select mb-3">
+                            <option value="Entrada">Entrada</option>
+                            <option value="Saída">Saída</option>
+                        </select>
+                        <button class="btn-rosa w-100">Registrar</button>
+                    </form>
+                </div>
+            </div>
+
+            <div class="col-md-8">
+                <div class="card">
+                    <h5 class="rosa">Histórico e Geolocalização</h5>
+                    <div class="table-responsive">
+                        <table class="table table-hover small">
+                            <thead><tr><th>Data/Hora</th><th>Tipo</th><th>Localização (Lat,Lon)</th></tr></thead>
+                            <tbody>
+                                {% for p in ultimos %}
+                                <tr>
+                                    <td>{{p.horario}}</td>
+                                    <td><span class="badge {% if p.tipo=='Entrada' %}bg-success{% else %}bg-secondary{% endif %}">{{p.tipo}}</span></td>
+                                    <td class="text-muted">{{p.localizacao}}</td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</body>
+</html>
