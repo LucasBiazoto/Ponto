@@ -1,9 +1,76 @@
-<form action="/bater_ponto" method="POST">
-    <select name="funcionario_id" class="form-select mb-3">
-        {% for f in funcionarios %}
-        <option value="{{ f.id }}">{{ f.nome }}</option>
-        {% endfor %}
-    </select>
-    <button type="submit" name="tipo" value="entrada" class="btn btn-primary w-100 mb-2">Bater Entrada</button>
-    <button type="submit" name="tipo" value="saida" class="btn btn-outline-primary w-100">Bater Saída</button>
-</form>
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Ponto - Dra Thamiris Araujo</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <style>
+        body { background-color: #fdf2f2; font-family: 'Poppins', sans-serif; color: #5a4a4a; }
+        .container { max-width: 500px; margin-top: 50px; }
+        .card { 
+            border-radius: 20px; 
+            border: none; 
+            box-shadow: 0 10px 30px rgba(212, 163, 163, 0.2);
+            background-color: #ffffff;
+            padding: 20px;
+        }
+        .header-clinica { text-align: center; margin-bottom: 30px; }
+        .header-clinica h1 { color: #d4a3a3; font-weight: 600; font-size: 24px; }
+        .btn-ponto { 
+            background-color: #d4a3a3; 
+            color: white; 
+            border: none; 
+            border-radius: 10px; 
+            padding: 12px;
+            font-weight: 500;
+            transition: 0.3s;
+        }
+        .btn-ponto:hover { background-color: #b88d8d; color: white; }
+        .btn-saida { background-color: white; color: #d4a3a3; border: 2px solid #d4a3a3; }
+        .btn-saida:hover { background-color: #fdf2f2; color: #b88d8d; }
+        .alert-success { 
+            background-color: #f8d7da; 
+            border: none; 
+            color: #842029; 
+            border-radius: 10px; 
+            text-align: center;
+            font-weight: bold;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header-clinica">
+            <h1>🌸 Dra Thamiris Araujo</h1>
+            <p>Estética Avançada</p>
+        </div>
+
+        {% with messages = get_flashed_messages(with_categories=true) %}
+          {% if messages %}
+            {% for category, message in messages %}
+              <div class="alert alert-success">{{ message }}</div>
+            {% endfor %}
+          {% endif %}
+        {% endwith %}
+
+        <div class="card">
+            <form action="/bater_ponto" method="POST">
+                <label class="form-label">Selecione seu nome:</label>
+                <select name="funcionario_id" class="form-select mb-4">
+                    {% for f in funcionarios %}
+                    <option value="{{ f.id }}">{{ f.nome }}</option>
+                    {% endfor %}
+                </select>
+
+                <button type="submit" name="tipo" value="entrada" class="btn btn-ponto w-100 mb-3">Bater Entrada</button>
+                <button type="submit" name="tipo" value="saida" class="btn btn-ponto btn-saida w-100">Bater Saída</button>
+            </form>
+        </div>
+
+        <div class="text-center mt-4">
+            <a href="/painel_gestao?senha=8340" style="color: #d4a3a3; text-decoration: none; font-size: 14px;">Acesso Restrito</a>
+        </div>
+    </div>
+</body>
+</html>
