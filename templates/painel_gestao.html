@@ -3,137 +3,88 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Gestão de Pontos - Dra Thamiris Araujo</title>
+    <title>Painel de Gestão - Dra Thamiris Araujo</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600&display=swap" rel="stylesheet">
     <style>
-        body { 
-            background-color: #fdf2f2; 
-            font-family: 'Poppins', sans-serif; 
-            color: #5a4a4a; 
-        }
-        
-        /* Menu Superior */
-        .navbar-clinica {
-            background-color: #ffffff;
-            box-shadow: 0 2px 10px rgba(212, 163, 163, 0.2);
-            padding: 15px 0;
-            margin-bottom: 30px;
-        }
-        .navbar-brand { 
-            color: #d4a3a3 !important; 
-            font-weight: 600; 
-            font-size: 20px;
-        }
-
-        .container-gestao {
-            background: #ffffff;
-            border-radius: 20px;
-            padding: 30px;
-            box-shadow: 0 10px 30px rgba(212, 163, 163, 0.1);
-        }
-
-        h2 { 
-            color: #d4a3a3; 
-            font-weight: 600; 
-            margin-bottom: 25px;
-            border-bottom: 2px solid #fdf2f2;
-            padding-bottom: 10px;
-        }
-
-        /* Tabela Estilizada */
-        .table { margin-top: 20px; }
-        .thead-rosa { 
-            background-color: #d4a3a3; 
-            color: white; 
-        }
-        .table-hover tbody tr:hover {
-            background-color: #fff9f9;
-        }
-
-        .status-badge {
-            padding: 5px 12px;
-            border-radius: 15px;
-            font-size: 12px;
-            font-weight: 500;
-        }
-        .bg-trabalhando { background-color: #e3f2fd; color: #0d47a1; }
-        .bg-concluido { background-color: #e8f5e9; color: #1b5e20; }
-
-        .btn-voltar {
-            background-color: #d4a3a3;
-            color: white;
-            border-radius: 10px;
-            padding: 8px 20px;
-            text-decoration: none;
-            transition: 0.3s;
-        }
-        .btn-voltar:hover {
-            background-color: #b88d8d;
-            color: white;
-        }
-
-        footer {
-            text-align: center;
-            margin-top: 40px;
-            color: #a0a0a0;
-            font-size: 12px;
-        }
+        body { background-color: #fdf2f2; font-family: 'Poppins', sans-serif; color: #5a4a4a; }
+        .navbar-clinica { background: white; box-shadow: 0 2px 10px rgba(212,163,163,0.1); padding: 15px 0; }
+        .navbar-brand { color: #d4a3a3 !important; font-weight: 600; }
+        .container-main { margin-top: 40px; }
+        .card-resumo { border: none; border-radius: 15px; padding: 20px; box-shadow: 0 5px 15px rgba(212,163,163,0.1); background: white; text-align: center; }
+        .num-destaque { font-size: 28px; color: #d4a3a3; font-weight: 600; }
+        .tabela-container { background: white; border-radius: 20px; padding: 25px; margin-top: 30px; box-shadow: 0 10px 30px rgba(212,163,163,0.05); }
+        .thead-rosa { background-color: #d4a3a3; color: white; }
+        .badge-status { padding: 6px 12px; border-radius: 10px; font-size: 12px; }
+        .status-ativo { background: #e3f2fd; color: #0d47a1; }
+        .status-fim { background: #e8f5e9; color: #1b5e20; }
+        .btn-voltar { background: #d4a3a3; color: white; border: none; border-radius: 10px; padding: 8px 20px; text-decoration: none; }
     </style>
 </head>
 <body>
 
     <nav class="navbar navbar-clinica">
-        <div class="container d-flex justify-content-between align-items-center">
-            <span class="navbar-brand">🌸 Dra Thamiris Araujo</span>
-            <a href="/" class="btn-voltar">Sair do Painel</a>
+        <div class="container d-flex justify-content-between">
+            <span class="navbar-brand">🌸 Dra Thamiris Araujo | Gestão</span>
+            <a href="/" class="btn-voltar">Sair</a>
         </div>
     </nav>
 
-    <div class="container container-gestao">
-        <div class="d-flex justify-content-between align-items-center">
-            <h2>Relatório de Frequência</h2>
-            <button onclick="window.print()" class="btn btn-outline-secondary btn-sm">Imprimir Relatório</button>
-        </div>
-        
-        <div class="table-responsive">
-            <table class="table table-hover">
-                <thead class="thead-rosa">
-                    <tr>
-                        <th>Colaboradora</th>
-                        <th>Entrada</th>
-                        <th>Saída</th>
-                        <th>Status</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    {% for ponto in pontos %}
-                    <tr>
-                        <td style="font-weight: 500;">{{ ponto.nome }}</td>
-                        <td>{{ ponto.entrada.strftime('%d/%m/%Y %H:%M') if ponto.entrada else '---' }}</td>
-                        <td>{{ ponto.saida.strftime('%d/%m/%Y %H:%M') if ponto.saida else '---' }}</td>
-                        <td>
-                            {% if ponto.entrada and not ponto.saida %}
-                                <span class="status-badge bg-trabalhando">Trabalhando</span>
-                            {% elif ponto.entrada and ponto.saida %}
-                                <span class="status-badge bg-concluido">Concluído</span>
-                            {% else %}
-                                <span class="text-muted">Sem registro</span>
-                            {% endif %}
-                        </td>
-                    </tr>
-                    {% else %}
-                    <tr>
-                        <td colspan="4" class="text-center py-4">Nenhum registro encontrado no sistema.</td>
-                    </tr>
-                    {% endfor %}
-                </tbody>
-            </table>
+    <div class="container container-main">
+        <div class="row g-3">
+            <div class="col-md-4">
+                <div class="card-resumo">
+                    <p class="text-muted mb-1">Colaboradoras em Atividade</p>
+                    <div class="num-destaque">
+                        {% set ativas = pontos | selectattr('entrada', 'ne', none) | selectattr('saida', 'eq', none) | list %}
+                        {{ ativas | length }}
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-4">
+                <div class="card-resumo">
+                    <p class="text-muted mb-1">Total de Registros</p>
+                    <div class="num-destaque">{{ pontos | length }}</div>
+                </div>
+            </div>
+            <div class="col-md-4">
+                <div class="card-resumo">
+                    <button onclick="window.print()" class="btn btn-outline-secondary w-100 h-100">Imprimir Relatório</button>
+                </div>
+            </div>
         </div>
 
-        <footer>
-            &copy; 2026 Clínica Dra Thamiris Araujo - Gestão Interna
-        </footer>
+        <div class="tabela-container">
+            <h5 class="mb-4">Histórico de Movimentação</h5>
+            <div class="table-responsive">
+                <table class="table table-hover">
+                    <thead class="thead-rosa">
+                        <tr>
+                            <th>Funcionária</th>
+                            <th>Entrada</th>
+                            <th>Saída</th>
+                            <th>Status</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for p in pontos %}
+                        <tr>
+                            <td><strong>{{ p.nome }}</strong></td>
+                            <td>{{ p.entrada.strftime('%d/%m/%Y %H:%M') if p.entrada else '---' }}</td>
+                            <td>{{ p.saida.strftime('%d/%m/%Y %H:%M') if p.saida else '---' }}</td>
+                            <td>
+                                {% if p.entrada and not p.saida %}
+                                    <span class="badge-status status-ativo">Em Aberto</span>
+                                {% else %}
+                                    <span class="badge-status status-fim">Concluído</span>
+                                {% endif %}
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
     </div>
 
 </body>
