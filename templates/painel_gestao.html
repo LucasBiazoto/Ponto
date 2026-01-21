@@ -2,40 +2,139 @@
 <html lang="pt-br">
 <head>
     <meta charset="UTF-8">
-    <title>Gestão - Dra Thamiris Araujo</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Gestão de Pontos - Dra Thamiris Araujo</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600&display=swap" rel="stylesheet">
     <style>
-        body { background-color: #fdf2f2; font-family: 'Poppins', sans-serif; }
-        .container { margin-top: 50px; background: white; padding: 30px; border-radius: 20px; box-shadow: 0 10px 30px rgba(212,163,163,0.2); }
-        h2 { color: #d4a3a3; font-weight: 600; margin-bottom: 30px; text-align: center; }
-        .table { color: #5a4a4a; }
-        .thead-rosa { background-color: #d4a3a3; color: white; }
-        .btn-voltar { background-color: #d4a3a3; color: white; border: none; margin-bottom: 20px; }
-        .btn-voltar:hover { background-color: #b88d8d; color: white; }
+        body { 
+            background-color: #fdf2f2; 
+            font-family: 'Poppins', sans-serif; 
+            color: #5a4a4a; 
+        }
+        
+        /* Menu Superior */
+        .navbar-clinica {
+            background-color: #ffffff;
+            box-shadow: 0 2px 10px rgba(212, 163, 163, 0.2);
+            padding: 15px 0;
+            margin-bottom: 30px;
+        }
+        .navbar-brand { 
+            color: #d4a3a3 !important; 
+            font-weight: 600; 
+            font-size: 20px;
+        }
+
+        .container-gestao {
+            background: #ffffff;
+            border-radius: 20px;
+            padding: 30px;
+            box-shadow: 0 10px 30px rgba(212, 163, 163, 0.1);
+        }
+
+        h2 { 
+            color: #d4a3a3; 
+            font-weight: 600; 
+            margin-bottom: 25px;
+            border-bottom: 2px solid #fdf2f2;
+            padding-bottom: 10px;
+        }
+
+        /* Tabela Estilizada */
+        .table { margin-top: 20px; }
+        .thead-rosa { 
+            background-color: #d4a3a3; 
+            color: white; 
+        }
+        .table-hover tbody tr:hover {
+            background-color: #fff9f9;
+        }
+
+        .status-badge {
+            padding: 5px 12px;
+            border-radius: 15px;
+            font-size: 12px;
+            font-weight: 500;
+        }
+        .bg-trabalhando { background-color: #e3f2fd; color: #0d47a1; }
+        .bg-concluido { background-color: #e8f5e9; color: #1b5e20; }
+
+        .btn-voltar {
+            background-color: #d4a3a3;
+            color: white;
+            border-radius: 10px;
+            padding: 8px 20px;
+            text-decoration: none;
+            transition: 0.3s;
+        }
+        .btn-voltar:hover {
+            background-color: #b88d8d;
+            color: white;
+        }
+
+        footer {
+            text-align: center;
+            margin-top: 40px;
+            color: #a0a0a0;
+            font-size: 12px;
+        }
     </style>
 </head>
 <body>
-    <div class="container">
-        <a href="/" class="btn btn-voltar">← Voltar</a>
-        <h2>🌸 Relatório de Pontos</h2>
-        <table class="table table-hover">
-            <thead class="thead-rosa">
-                <tr>
-                    <th>Colaboradora</th>
-                    <th>Entrada</th>
-                    <th>Saída</th>
-                </tr>
-            </thead>
-            <tbody>
-                {% for ponto in pontos %}
-                <tr>
-                    <td>{{ ponto.nome }}</td>
-                    <td>{{ ponto.entrada.strftime('%d/%m/%Y %H:%M') if ponto.entrada else '---' }}</td>
-                    <td>{{ ponto.saida.strftime('%d/%m/%Y %H:%M') if ponto.saida else 'Em aberto' }}</td>
-                </tr>
-                {% endfor %}
-            </tbody>
-        </table>
+
+    <nav class="navbar navbar-clinica">
+        <div class="container d-flex justify-content-between align-items-center">
+            <span class="navbar-brand">🌸 Dra Thamiris Araujo</span>
+            <a href="/" class="btn-voltar">Sair do Painel</a>
+        </div>
+    </nav>
+
+    <div class="container container-gestao">
+        <div class="d-flex justify-content-between align-items-center">
+            <h2>Relatório de Frequência</h2>
+            <button onclick="window.print()" class="btn btn-outline-secondary btn-sm">Imprimir Relatório</button>
+        </div>
+        
+        <div class="table-responsive">
+            <table class="table table-hover">
+                <thead class="thead-rosa">
+                    <tr>
+                        <th>Colaboradora</th>
+                        <th>Entrada</th>
+                        <th>Saída</th>
+                        <th>Status</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for ponto in pontos %}
+                    <tr>
+                        <td style="font-weight: 500;">{{ ponto.nome }}</td>
+                        <td>{{ ponto.entrada.strftime('%d/%m/%Y %H:%M') if ponto.entrada else '---' }}</td>
+                        <td>{{ ponto.saida.strftime('%d/%m/%Y %H:%M') if ponto.saida else '---' }}</td>
+                        <td>
+                            {% if ponto.entrada and not ponto.saida %}
+                                <span class="status-badge bg-trabalhando">Trabalhando</span>
+                            {% elif ponto.entrada and ponto.saida %}
+                                <span class="status-badge bg-concluido">Concluído</span>
+                            {% else %}
+                                <span class="text-muted">Sem registro</span>
+                            {% endif %}
+                        </td>
+                    </tr>
+                    {% else %}
+                    <tr>
+                        <td colspan="4" class="text-center py-4">Nenhum registro encontrado no sistema.</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+
+        <footer>
+            &copy; 2026 Clínica Dra Thamiris Araujo - Gestão Interna
+        </footer>
     </div>
+
 </body>
 </html>
