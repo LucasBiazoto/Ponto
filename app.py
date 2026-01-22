@@ -6,7 +6,7 @@ import pytz
 from flask import Flask, render_template, request, redirect, url_for, flash
 
 app = Flask(__name__)
-app.secret_key = 'thamiris_araujo_estetica_2026'
+app.secret_key = 'clinica_thamiris_penha_2026'
 SP_TZ = pytz.timezone('America/Sao_Paulo')
 
 def get_db_connection():
@@ -17,7 +17,7 @@ def get_db_connection():
 
 @app.route('/')
 def index():
-    # Esther Julia sempre fixa na tela
+    # Esther Julia sempre fixa para não sumir da tela principal
     funcionarios = [{'id': 1, 'nome': 'Esther Julia'}]
     conn = get_db_connection()
     if conn:
@@ -36,7 +36,6 @@ def bater_ponto():
     fid = request.form.get('funcionario_id')
     tipo = request.form.get('tipo')
     agora = datetime.now(SP_TZ)
-    
     conn = get_db_connection()
     if conn:
         cur = conn.cursor()
@@ -53,26 +52,39 @@ def bater_ponto():
 
 @app.route('/painel_gestao')
 def painel_gestao():
-    # Valida a senha direto na URL (ex: /painel_gestao?senha=8340)
     if request.args.get('senha') != '8340':
         return "Acesso Negado", 403
         
+    mes = request.args.get('mes')
     pontos = []
     conn = get_db_connection()
     if conn:
-        try:
-            cur = conn.cursor(cursor_factory=RealDictCursor)
-            cur.execute('''
-                SELECT p.id, f.nome, p.entrada, p.saida 
-                FROM funcionarios f 
-                JOIN pontos p ON f.id = p.funcionario_id 
-                ORDER BY p.entrada DESC
-            ''')
-            pontos = cur.fetchall()
-            cur.close()
-            conn.close()
-        except: pass
+        cur = conn.cursor(cursor_factory=RealDictCursor)
+        query = ''' SELECT p.id, f.nome, p.entrada, p.saida 
+                    FROM funcionarios f JOIN pontos p ON f.id = p.funcionario_id '''
+        if mes:
+            query += f" WHERE EXTRACT(MONTH FROM p.entrada) = {mes}"
+        query += " ORDER BY p.entrada DESC"
+        cur.execute(query)
+        pontos = cur.fetchall()
+        cur.close()
+        conn.close()
     return render_template('painel_gestao.html', pontos=pontos)
+
+@app.route('/adicionar_manual', methods=['POST'])
+def adicionar_manual():
+    fid = request.form.get('funcionario_id')
+    entrada = request.form.get('entrada')
+    saida = request.form.get('saida')
+    conn = get_db_connection()
+    if conn:
+        cur = conn.cursor()
+        cur.execute('INSERT INTO pontos (funcionario_id, entrada, saida) VALUES (%s, %s, %s)', 
+                    (fid, entrada, saida if saida else None))
+        conn.commit()
+        cur.close()
+        conn.close()
+    return redirect(url_for('painel_gestao', senha='8340'))
 
 @app.route('/excluir/<int:id>')
 def excluir(id):
@@ -83,7 +95,6 @@ def excluir(id):
         conn.commit()
         cur.close()
         conn.close()
-    # Retorna ao painel mantendo a senha na URL para não dar erro de acesso
     return redirect(url_for('painel_gestao', senha='8340'))
 
 if __name__ == '__main__':
