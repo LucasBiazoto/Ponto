@@ -6,7 +6,7 @@ import pytz
 from flask import Flask, render_template, request, redirect, url_for, flash
 
 app = Flask(__name__)
-app.secret_key = 'clinica_thamiris_penha_2026'
+app.secret_key = 'clinica_thamiris_2026'
 SP_TZ = pytz.timezone('America/Sao_Paulo')
 
 def get_db_connection():
@@ -17,24 +17,12 @@ def get_db_connection():
 
 @app.route('/')
 def index():
-    # Esther Julia sempre fixa para não sumir da tela principal
-    funcionarios = [{'id': 1, 'nome': 'Esther Julia'}]
-    conn = get_db_connection()
-    if conn:
-        try:
-            cur = conn.cursor(cursor_factory=RealDictCursor)
-            cur.execute('SELECT * FROM funcionarios ORDER BY nome')
-            db_funcs = cur.fetchall()
-            if db_funcs: funcionarios = db_funcs
-            cur.close()
-            conn.close()
-        except: pass
-    return render_template('index.html', funcionarios=funcionarios)
+    # Garante Esther Julia fixa na tela inicial
+    return render_template('index.html', funcionarios=[{'id': 1, 'nome': 'Esther Julia'}])
 
 @app.route('/bater_ponto', methods=['POST'])
 def bater_ponto():
-    fid = request.form.get('funcionario_id')
-    tipo = request.form.get('tipo')
+    fid, tipo = request.form.get('funcionario_id'), request.form.get('tipo')
     agora = datetime.now(SP_TZ)
     conn = get_db_connection()
     if conn:
@@ -52,20 +40,15 @@ def bater_ponto():
 
 @app.route('/painel_gestao')
 def painel_gestao():
-    if request.args.get('senha') != '8340':
-        return "Acesso Negado", 403
-        
+    if request.args.get('senha') != '8340': return "Acesso Negado", 403
     mes = request.args.get('mes')
-    pontos = []
     conn = get_db_connection()
+    pontos = []
     if conn:
         cur = conn.cursor(cursor_factory=RealDictCursor)
-        query = ''' SELECT p.id, f.nome, p.entrada, p.saida 
-                    FROM funcionarios f JOIN pontos p ON f.id = p.funcionario_id '''
-        if mes:
-            query += f" WHERE EXTRACT(MONTH FROM p.entrada) = {mes}"
-        query += " ORDER BY p.entrada DESC"
-        cur.execute(query)
+        query = "SELECT p.id, f.nome, p.entrada, p.saida FROM funcionarios f JOIN pontos p ON f.id = p.funcionario_id"
+        if mes: query += f" WHERE EXTRACT(MONTH FROM p.entrada) = {mes}"
+        cur.execute(query + " ORDER BY p.entrada DESC")
         pontos = cur.fetchall()
         cur.close()
         conn.close()
@@ -73,14 +56,11 @@ def painel_gestao():
 
 @app.route('/adicionar_manual', methods=['POST'])
 def adicionar_manual():
-    fid = request.form.get('funcionario_id')
-    entrada = request.form.get('entrada')
-    saida = request.form.get('saida')
+    fid, ent, sai = request.form.get('funcionario_id'), request.form.get('entrada'), request.form.get('saida')
     conn = get_db_connection()
     if conn:
         cur = conn.cursor()
-        cur.execute('INSERT INTO pontos (funcionario_id, entrada, saida) VALUES (%s, %s, %s)', 
-                    (fid, entrada, saida if saida else None))
+        cur.execute('INSERT INTO pontos (funcionario_id, entrada, saida) VALUES (%s, %s, %s)', (fid, ent, sai if sai else None))
         conn.commit()
         cur.close()
         conn.close()
@@ -90,12 +70,5 @@ def adicionar_manual():
 def excluir(id):
     conn = get_db_connection()
     if conn:
-        cur = conn.cursor()
-        cur.execute('DELETE FROM pontos WHERE id = %s', (id,))
-        conn.commit()
-        cur.close()
-        conn.close()
+        cur = conn.cursor(); cur.execute('DELETE FROM pontos WHERE id = %s', (id,)); conn.commit(); cur.close(); conn.close()
     return redirect(url_for('painel_gestao', senha='8340'))
-
-if __name__ == '__main__':
-    app.run(debug=True)
