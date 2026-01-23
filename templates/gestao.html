@@ -1,79 +1,32 @@
-<!DOCTYPE html>
-<html lang="pt-br">
-<head>
-    <meta charset="UTF-8">
-    <title>Gestão Dra. Thamiris</title>
-    <style>
-        body { background: #fff5f7; font-family: sans-serif; padding: 20px; }
-        .topo { background: white; padding: 20px; border-radius: 15px; display: flex; justify-content: space-between; align-items: center; box-shadow: 0 4px 10px rgba(0,0,0,0.05); }
-        .btn { padding: 10px 20px; border-radius: 8px; border: none; background: #d68c9a; color: white; font-weight: bold; cursor: pointer; text-decoration: none; }
-        .card-filtro { background: white; padding: 20px; border-radius: 15px; margin: 20px 0; display: flex; justify-content: space-between; align-items: center; }
-        table { width: 100%; background: white; border-radius: 15px; border-collapse: collapse; overflow: hidden; }
-        th { background: #fce4ec; color: #d68c9a; padding: 15px; }
-        td { padding: 15px; border-bottom: 1px solid #eee; text-align: center; }
-        @media print { .topo, .card-filtro, .acoes { display: none; } }
-    </style>
-</head>
-<body>
-    <div class="topo">
-        <h1 style="color: #d68c9a; margin: 0;">🌸 Gestão Clínica Penha</h1>
-        <a href="/logout" style="color: #d68c9a; text-decoration: none; font-weight: bold;">Sair</a>
-    </div>
+<h1 style="color: #d68c9a; margin: 0;">🌸 Gestão Dra Thamiris Araujo</h1>
 
-    <div class="card-filtro">
-        <form method="GET" action="/gestao" style="display: flex; gap: 10px;">
-            <select name="mes" class="btn" style="background: white; color: #d68c9a; border: 1px solid #d68c9a;">
-                {% for m in ['01','02','03','04','05','06','07','08','09','10','11','12'] %}
-                <option value="{{m}}" {{'selected' if mes_sel == m}}>Mês {{m}}</option>
-                {% endfor %}
-            </select>
-            <button type="submit" class="btn">🔍 Filtrar</button>
-        </form>
-        
-        <div style="text-align: right;">
-            <span style="color: #888;">Saldo Total do Mês: </span>
-            <strong style="font-size: 20px; color: {{ '#27ae60' if '+' in soma_total else '#e74c3c' }};">{{ soma_total }}</strong>
-            <button class="btn" style="margin-left: 15px;" onclick="window.print()">🖨️ PDF</button>
-            <button class="btn" onclick="document.getElementById('m').style.display='block'">➕ Manual</button>
-        </div>
-    </div>
+<table>
+    <thead>
+        <tr>
+            <th>Data</th><th>Colaboradora</th><th>Entrada</th><th>Saída</th><th>Saldo</th><th>Localização</th><th class="acoes">Ações</th>
+        </tr>
+    </thead>
+    <tbody>
+        {% for r in registros %}
+        {% endfor %}
+    </tbody>
+    
+    <tfoot>
+        <tr style="background: #fce4ec; font-weight: bold;">
+            <td colspan="4" style="text-align: right; padding: 15px;">TOTAL DE HORAS EXTRAS NO MÊS:</td>
+            <td style="color: {{ '#27ae60' if '+' in soma_total else '#e74c3c' }}; padding: 15px;">
+                {{ soma_total }}
+            </td>
+            <td colspan="2"></td>
+        </tr>
+    </tfoot>
+</table>
 
-    <table>
-        <thead>
-            <tr>
-                <th>Data</th><th>Colaboradora</th><th>Entrada</th><th>Saída</th><th>Saldo</th><th>Localização</th><th class="acoes">Ações</th>
-            </tr>
-        </thead>
-        <tbody>
-            {% for r in registros %}
-            {% set hex = '#3498db' if r.cor == 'azul' else '#27ae60' if r.cor == 'verde' else '#e74c3c' %}
-            <tr>
-                <td>{{ r.data }}</td>
-                <td><b>{{ r.nome }}</b></td>
-                <td style="color: {{ hex }}; font-weight: bold;">{{ r.e }}</td>
-                <td style="color: {{ hex }}; font-weight: bold;">{{ r.s }}</td>
-                <td style="font-weight: bold;">{{ r.saldo }}</td>
-                <td><small>{{ r.loc }}</small></td>
-                <td class="acoes">
-                    {% if r.id_e is not none %}<a href="/excluir/{{ r.id_e }}" style="text-decoration:none;">📥🗑️</a>{% endif %}
-                    {% if r.id_s is not none %}<a href="/excluir/{{ r.id_s }}" style="text-decoration:none; margin-left: 10px;">📤🗑️</a>{% endif %}
-                </td>
-            </tr>
-            {% endfor %}
-        </tbody>
-    </table>
-
-    <div id="m" style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.5);">
-        <div style="background:white; width:300px; margin:10% auto; padding:25px; border-radius:15px;">
-            <form action="/inserir_manual" method="POST">
-                <input type="date" name="data" required style="width:100%; margin-bottom:10px;">
-                <input type="time" name="hora" required style="width:100%; margin-bottom:10px;">
-                <select name="nome" style="width:100%; margin-bottom:10px;"><option>Esther Julia</option><option>Dra Thamiris Araujo</option></select>
-                <select name="tipo" style="width:100%; margin-bottom:10px;"><option>Entrada</option><option>Saída</option></select>
-                <button type="submit" class="btn" style="width:100%;">Salvar</button>
-                <button type="button" onclick="document.getElementById('m').style.display='none'" style="width:100%; background:none; border:none; color:#888; margin-top:10px; cursor:pointer;">Cancelar</button>
-            </form>
-        </div>
-    </div>
-</body>
-</html>
+<style>
+/* Ajuste para o PDF sair perfeito */
+@media print {
+    .topo button, .card-filtro form, .acoes, .btn-pdf, .btn-manual { display: none !important; }
+    table { border: 1px solid #ddd; width: 100%; }
+    tfoot tr { display: table-row !important; }
+}
+</style>
