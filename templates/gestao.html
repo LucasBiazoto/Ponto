@@ -2,37 +2,46 @@
 <html lang="pt-br">
 <head>
     <meta charset="UTF-8">
-    <title>Relatório - Dra. Thamiris</title>
+    <title>Gestão Dra. Thamiris</title>
     <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
 </head>
-<body>
-    <div class="container" style="max-width: 800px;">
-        <header>
+<body style="background-color: #fff5f7;">
+    <div class="container" style="max-width: 1000px;">
+        <header style="display: flex; justify-content: space-between; align-items: center;">
             <h1>🌸 Relatório de Ponto</h1>
-            <p>Unidade Penha • Dra. Thamiris Araujo</p>
+            <a href="/" class="btn-saida" style="width: auto; padding: 5px 15px; text-decoration: none;">Voltar</a>
         </header>
 
-        <table style="width: 100%; border-collapse: collapse; margin-top: 20px; background: white; border-radius: 10px; overflow: hidden;">
-            <thead style="background: #fce4ec; color: #d68c9a;">
-                <tr>
-                    <th style="padding: 15px; border-bottom: 1px solid #f8d7da;">Colaboradora</th>
-                    <th style="padding: 15px; border-bottom: 1px solid #f8d7da;">Ação</th>
-                    <th style="padding: 15px; border-bottom: 1px solid #f8d7da;">Data e Hora</th>
-                </tr>
-            </thead>
-            <tbody>
-                {% for registro in registros %}
-                <tr>
-                    <td style="padding: 12px; border-bottom: 1px solid #eee;">{{ registro.nome }}</td>
-                    <td style="padding: 12px; border-bottom: 1px solid #eee;">{{ registro.tipo }}</td>
-                    <td style="padding: 12px; border-bottom: 1px solid #eee;">{{ registro.horario }}</td>
-                </tr>
-                {% endfor %}
-            </tbody>
-        </table>
+        <div style="display: flex; justify-content: space-between; margin: 20px 0;">
+            <select style="width: 45%; padding: 10px; border-radius: 8px; border: 1px solid #d68c9a;">
+                <option>Filtrar Mês (Janeiro a Dezembro)</option>
+            </select>
+            <button class="btn-entrada" style="width: 45%; background-color: #d68c9a;">+ Inserir Manual</button>
+        </div>
 
-        <div style="margin-top: 30px;">
-            <a href="/logout" class="btn-saida" style="text-decoration: none; display: inline-block; width: auto; padding: 10px 30px;">Sair do Sistema</a>
+        <div style="background: white; border-radius: 15px; padding: 20px; box-shadow: 0 4px 15px rgba(0,0,0,0.05);">
+            <table style="width: 100%; text-align: left; border-collapse: collapse;">
+                <thead style="color: #d68c9a; border-bottom: 2px solid #fce4ec;">
+                    <tr>
+                        <th style="padding: 10px;">Colaboradora</th>
+                        <th style="padding: 10px;">Entrada</th>
+                        <th style="padding: 10px;">Saída</th>
+                        <th style="padding: 10px;">Horas (Base 6h)</th>
+                        <th style="padding: 10px;">Ações</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for registro in registros %}
+                    <tr style="border-bottom: 1px solid #fce4ec;">
+                        <td style="padding: 12px;">{{ registro.nome }}</td>
+                        <td style="padding: 12px;">{% if registro.tipo == 'Entrada' %}{{ registro.horario }}{% else %}-{% endif %}</td>
+                        <td style="padding: 12px;">{% if registro.tipo == 'Saída' %}{{ registro.horario }}{% else %}-{% endif %}</td>
+                        <td style="padding: 12px;">--:--</td>
+                        <td style="padding: 12px;"><button style="background: none; border: none; color: #d68c9a; cursor: pointer;">⚙️</button></td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
         </div>
     </div>
 </body>
