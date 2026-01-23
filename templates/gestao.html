@@ -1,32 +1,16 @@
 <h1 style="color: #d68c9a; margin: 0;">🌸 Gestão Dra Thamiris Araujo</h1>
 
-<table>
-    <thead>
-        <tr>
-            <th>Data</th><th>Colaboradora</th><th>Entrada</th><th>Saída</th><th>Saldo</th><th>Localização</th><th class="acoes">Ações</th>
-        </tr>
-    </thead>
-    <tbody>
+<tbody>
         {% for r in registros %}
         {% endfor %}
     </tbody>
-    
     <tfoot>
-        <tr style="background: #fce4ec; font-weight: bold;">
-            <td colspan="4" style="text-align: right; padding: 15px;">TOTAL DE HORAS EXTRAS NO MÊS:</td>
-            <td style="color: {{ '#27ae60' if '+' in soma_total else '#e74c3c' }}; padding: 15px;">
+        <tr style="background: #fce4ec; font-weight: bold; border-top: 2px solid #d68c9a;">
+            <td colspan="4" style="text-align: right; padding: 15px; color: #d68c9a;">TOTAL DE HORAS EXTRAS NO MÊS:</td>
+            <td style="padding: 15px; color: {{ '#27ae60' if '+' in soma_total else '#e74c3c' }}; font-size: 18px;">
                 {{ soma_total }}
             </td>
             <td colspan="2"></td>
         </tr>
     </tfoot>
 </table>
-
-<style>
-/* Ajuste para o PDF sair perfeito */
-@media print {
-    .topo button, .card-filtro form, .acoes, .btn-pdf, .btn-manual { display: none !important; }
-    table { border: 1px solid #ddd; width: 100%; }
-    tfoot tr { display: table-row !important; }
-}
-</style>
