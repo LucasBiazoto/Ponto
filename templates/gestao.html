@@ -1,31 +1,29 @@
-<table class="tabela-ponto">
-    <thead>
+<table style="width:100%; border-collapse: collapse; background: white; border-radius: 10px; overflow: hidden;">
+    <thead style="background: #fce4ec; color: #d68c9a;">
         <tr>
-            <th>Data</th>
+            <th style="padding:15px;">Data</th>
             <th>Colaboradora</th>
             <th>Entrada</th>
             <th>Saída</th>
             <th>Saldo (6h)</th>
-            <th>Localização</th>
             <th>Ações</th>
         </tr>
     </thead>
     <tbody>
         {% for r in registros %}
-        <tr>
-            <td>{{ r.data }}</td>
+        <tr style="border-bottom: 1px solid #eee; text-align: center;">
+            <td style="padding:15px;">{{ r.data }}</td>
             <td><b>{{ r.nome }}</b></td>
-            <td style="color: #2ecc71;">{{ r.entrada }}</td>
-            <td style="color: #e74c3c;">{{ r.saida }}</td>
+            <td style="color: green;">{{ r.entrada }}</td>
+            <td style="color: red;">{{ r.saida }}</td>
             <td style="font-weight: bold;">{{ r.saldo }}</td>
-            <td><small>{{ r.local }}</small></td>
             <td>
                 {% if r.id_e is not none %}
-                <a href="/excluir/{{ r.id_e }}" title="Excluir Entrada" style="text-decoration:none; margin-right:8px;">📥🗑️</a>
+                <a href="/excluir/{{ r.id_e }}" title="Apagar Entrada" style="text-decoration:none; font-size: 18px;">📥🗑️</a>
                 {% endif %}
                 
                 {% if r.id_s is not none %}
-                <a href="/excluir/{{ r.id_s }}" title="Excluir Saída" style="text-decoration:none;">📤🗑️</a>
+                <a href="/excluir/{{ r.id_s }}" title="Apagar Saída" style="text-decoration:none; font-size: 18px; margin-left: 10px;">📤🗑️</a>
                 {% endif %}
             </td>
         </tr>
