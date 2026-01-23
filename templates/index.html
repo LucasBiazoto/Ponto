@@ -3,50 +3,39 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Ponto Eletrônico - Dra. Thamiris Araujo</title>
+    <title>Ponto - Dra. Thamiris Araujo</title>
     <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
-    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600&display=swap" rel="stylesheet">
 </head>
 <body>
     <div class="container">
         <header>
-            <h1 style="color: #c48b9f;">🌸 Clínica Dra. Thamiris Araujo</h1>
-            <p>Unidade Penha - Gestão de Ponto</p>
+            <h1>🌸 Dra. Thamiris Araujo</h1>
+            <p>Estética Avançada • Unidade Penha</p>
         </header>
 
         {% with messages = get_flashed_messages() %}
           {% if messages %}
             {% for message in messages %}
-              <div class="alert">✨ {{ message }} ✨</div>
+              <div class="alert">{{ message }}</div>
             {% endfor %}
           {% endif %}
         {% endwith %}
 
-        <div class="ponto-area">
-            <h2>Registrar Ponto</h2>
+        <div class="ponto-card">
             <form action="/bater_ponto" method="POST">
+                <label>Selecione seu nome:</label>
                 <select name="colaboradora" required>
-                    <option value="" disabled selected>Selecione seu nome...</option>
                     <option value="Esther Julia">Esther Julia</option>
                     <option value="Dra Thamiris Araujo">Dra. Thamiris Araujo</option>
                 </select>
-                
-                <div style="display: flex; gap: 10px;">
-                    <button type="submit" name="tipo" value="Entrada" style="background-color: #f8bbd0;">Bater Entrada</button>
-                    <button type="submit" name="tipo" value="Saída" style="background-color: #c48b9f;">Bater Saída</button>
-                </div>
+                <button type="submit" name="tipo" value="Entrada" class="btn-entrada">Bater Entrada</button>
+                <button type="submit" name="tipo" value="Saída" class="btn-saida">Bater Saída</button>
             </form>
         </div>
 
-        <hr style="border: 0.5px solid #f8bbd0; margin: 30px 0;">
-
-        <div class="admin-link">
-            <a href="/login" style="color: #c48b9f; text-decoration: none; font-size: 14px;">🌸 Acesso Restrito Dra. Thamiris</a>
+        <div class="footer-link">
+            <a href="/login">— Acesso Restrito Dra. Thamiris —</a>
         </div>
     </div>
-
-    <footer style="margin-top: 20px; font-size: 12px; color: #c48b9f;">
-        &copy; 2026 Dra. Thamiris Araujo - Estética Avançada
-    </footer>
 </body>
 </html>

@@ -1,69 +1,60 @@
-/* Estilo Feminino e Elegante - Clínica Dra. Thamiris Araujo */
-:root {
-    --rosa-claro: #fff5f8;
-    --rosa-principal: #f8bbd0;
-    --rosa-escuro: #c48b9f;
-    --dourado: #d4af37;
-    --texto: #5d4037;
-}
-
 body {
-    background-color: var(--rosa-claro);
-    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-    color: var(--texto);
-    margin: 0;
-    padding: 20px;
+    background-color: #fff0f3;
+    font-family: 'Segoe UI', sans-serif;
     display: flex;
-    flex-direction: column;
+    justify-content: center;
     align-items: center;
+    height: 100vh;
+    margin: 0;
 }
 
 .container {
     background: white;
-    padding: 30px;
-    border-radius: 20px;
-    box-shadow: 0 10px 25px rgba(0,0,0,0.05);
-    width: 100%;
-    max-width: 800px;
-    border: 1px solid var(--rosa-principal);
-}
-
-h1, h2 {
-    color: var(--rosa-escuro);
-    text-align: center;
-    font-weight: 300;
-}
-
-button, .btn {
-    background-color: var(--rosa-principal);
-    color: white;
-    border: none;
-    padding: 12px 25px;
+    padding: 40px;
     border-radius: 25px;
-    cursor: pointer;
-    font-size: 16px;
-    transition: all 0.3s;
-    margin: 5px;
+    box-shadow: 0 10px 30px rgba(0,0,0,0.05);
+    text-align: center;
+    width: 350px;
 }
 
-button:hover {
-    background-color: var(--rosa-escuro);
-    transform: translateY(-2px);
-}
+h1 { color: #d68c9a; font-size: 24px; margin-bottom: 5px; }
+p { color: #bca0a5; font-size: 14px; margin-bottom: 30px; }
 
-input, select {
+select {
     width: 100%;
-    padding: 10px;
-    margin: 10px 0;
-    border-radius: 10px;
-    border: 1px solid var(--rosa-principal);
+    padding: 12px;
+    border-radius: 15px;
+    border: 1px solid #f8d7da;
+    margin-bottom: 20px;
+    outline: none;
 }
+
+button {
+    width: 100%;
+    padding: 15px;
+    margin: 5px 0;
+    border-radius: 15px;
+    border: none;
+    cursor: pointer;
+    font-weight: bold;
+    transition: 0.3s;
+}
+
+.btn-entrada { background-color: #d68c9a; color: white; }
+.btn-saida { background-color: white; color: #d68c9a; border: 1px solid #d68c9a; }
 
 .alert {
+    background-color: #fce4ec;
+    color: #c2185b;
     padding: 15px;
     border-radius: 10px;
-    margin: 20px 0;
-    text-align: center;
-    background-color: #e8f5e9;
-    color: #2e7d32;
+    margin-bottom: 20px;
+}
+
+.footer-link a {
+    color: #f8bbd0;
+    text-decoration: none;
+    font-size: 12px;
+    margin-top: 20px;
+    display: block;
 }
