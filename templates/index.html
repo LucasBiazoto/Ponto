@@ -13,6 +13,7 @@
         .flash { color: #d68c9a; margin-bottom: 15px; font-weight: bold; }
         .acesso-invisivel { color: transparent; text-decoration: none; font-size: 12px; display: block; margin-top: 20px; transition: 0.3s; }
         .acesso-invisivel:hover { color: #d68c9a; }
+        select { width: 100%; padding: 12px; border-radius: 10px; border: 1px solid #fce4ec; margin-bottom: 10px; outline: none; }
     </style>
 </head>
 <body>
@@ -25,7 +26,7 @@
         {% endwith %}
 
         <form action="/bater_ponto" method="POST">
-            <select name="colaboradora" style="width: 100%; padding: 12px; border-radius: 10px; border: 1px solid #fce4ec; margin-bottom: 10px;">
+            <select name="colaboradora">
                 <option>Esther Julia</option>
                 <option>Dra Thamiris Araujo</option>
             </select>

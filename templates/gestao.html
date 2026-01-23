@@ -4,14 +4,17 @@
     <meta charset="UTF-8">
     <title>Gestão Dra. Thamiris Araujo</title>
     <style>
-        body { background: #fff5f7; font-family: sans-serif; padding: 20px; }
-        .container { background: white; padding: 25px; border-radius: 20px; box-shadow: 0 5px 15px rgba(0,0,0,0.05); }
-        .topo { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; }
-        .btn { padding: 10px 20px; border-radius: 8px; border: none; background: #d68c9a; color: white; font-weight: bold; cursor: pointer; text-decoration: none; }
+        body { background: #fff5f7; font-family: 'Segoe UI', sans-serif; padding: 20px; }
+        .container { background: white; padding: 30px; border-radius: 25px; box-shadow: 0 10px 30px rgba(0,0,0,0.05); max-width: 1100px; margin: auto; }
+        .topo { display: flex; justify-content: space-between; align-items: center; margin-bottom: 25px; }
+        .filtros { display: flex; gap: 10px; align-items: center; }
+        .btn { padding: 10px 20px; border-radius: 10px; border: none; background: #d68c9a; color: white; font-weight: bold; cursor: pointer; text-decoration: none; transition: 0.3s; }
+        .btn-outline { background: white; color: #d68c9a; border: 1px solid #d68c9a; }
         table { width: 100%; border-collapse: collapse; margin-top: 20px; }
-        th { background: #fce4ec; color: #d68c9a; padding: 12px; text-align: center; }
-        td { padding: 12px; border-bottom: 1px solid #eee; text-align: center; }
-        @media print { .no-print { display: none !important; } }
+        th { background: #fce4ec; color: #d68c9a; padding: 15px; }
+        td { padding: 15px; border-bottom: 1px solid #fff0f3; text-align: center; }
+        .saldo-total { background: #fce4ec; font-weight: bold; font-size: 18px; }
+        @media print { .no-print { display: none !important; } .container { box-shadow: none; padding: 0; } }
     </style>
 </head>
 <body>
@@ -21,17 +24,18 @@
             <a href="/logout" class="no-print" style="color: #d68c9a; text-decoration: none; font-weight: bold;">Sair</a>
         </div>
 
-        <div class="no-print" style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 30px;">
-            <form method="GET" action="/gestao">
-                <select name="mes" class="btn" style="background: white; color: #d68c9a; border: 1px solid #d68c9a;">
+        <div class="no-print" style="display: flex; justify-content: space-between; margin-bottom: 20px;">
+            <form method="GET" action="/gestao" class="filtros">
+                <select name="mes" style="padding: 10px; border-radius: 8px; border: 1px solid #d68c9a;">
                     <option value="01" {{'selected' if mes_sel=='01'}}>Janeiro</option>
                     <option value="02" {{'selected' if mes_sel=='02'}}>Fevereiro</option>
-                    </select>
-                <button type="submit" class="btn">🔍 Filtrar</button>
+                    <option value="03" {{'selected' if mes_sel=='03'}}>Março</option>
+                </select>
+                <button type="submit" class="btn">Filtrar</button>
             </form>
-            <div>
-                <button class="btn" onclick="window.print()">🖨️ Exportar PDF</button>
-                <button class="btn" style="background:#fff; color:#d68c9a; border:1px solid #d68c9a;">➕ Manual</button>
+            <div style="gap: 10px; display: flex;">
+                <button onclick="window.print()" class="btn btn-outline">🖨️ Exportar PDF</button>
+                <button class="btn">➕ Inserir Manual</button>
             </div>
         </div>
 
@@ -43,12 +47,11 @@
             </thead>
             <tbody>
                 {% for r in registros %}
-                {% set cor = '#3498db' if r.cor == 'azul' else '#27ae60' if r.cor == 'verde' else '#e74c3c' %}
                 <tr>
                     <td>{{ r.data }}</td>
                     <td><b>{{ r.nome }}</b></td>
-                    <td style="color: {{ cor }}; font-weight: bold;">{{ r.e }}</td>
-                    <td style="color: {{ cor }}; font-weight: bold;">{{ r.s }}</td>
+                    <td style="color: #27ae60; font-weight: bold;">{{ r.e }}</td>
+                    <td style="color: #e74c3c; font-weight: bold;">{{ r.s }}</td>
                     <td style="font-weight: bold;">{{ r.saldo }}</td>
                     <td><small>{{ r.loc }}</small></td>
                     <td class="no-print">🗑️</td>
@@ -56,8 +59,8 @@
                 {% endfor %}
             </tbody>
             <tfoot>
-                <tr style="background: #fce4ec; font-weight: bold;">
-                    <td colspan="4" style="text-align: right; padding: 15px;">TOTAL DE HORAS EXTRAS NO MÊS:</td>
+                <tr class="saldo-total">
+                    <td colspan="4" style="text-align: right; color: #d68c9a;">TOTAL DE HORAS EXTRAS NO MÊS:</td>
                     <td style="color: {{ '#27ae60' if '+' in soma_total else '#e74c3c' }};">{{ soma_total }}</td>
                     <td colspan="2"></td>
                 </tr>
