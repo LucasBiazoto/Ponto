@@ -5,18 +5,24 @@
     <title>Gestão Dra. Thamiris Araujo</title>
     <style>
         :root { --cor-primaria: #d68c9a; --cor-fundo: #fff5f7; }
-        body { background: var(--cor-fundo); font-family: sans-serif; padding: 20px; color: #5a4a4d; }
-        .container { background: white; padding: 30px; border-radius: 20px; box-shadow: 0 5px 15px rgba(0,0,0,0.05); max-width: 1000px; margin: auto; }
+        body { background: var(--cor-fundo); font-family: sans-serif; padding: 20px; color: #5a4a4d; display: flex; flex-direction: column; min-height: 95vh; }
+        .container { background: white; padding: 30px; border-radius: 20px; box-shadow: 0 5px 15px rgba(0,0,0,0.05); max-width: 1000px; margin: auto; width: 100%; }
         .header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 25px; }
         .btn { padding: 10px 18px; border-radius: 10px; border: none; background: var(--cor-primaria); color: white; font-weight: bold; cursor: pointer; text-decoration: none; font-size: 14px; }
         .btn-outline { background: white; color: var(--cor-primaria); border: 1px solid var(--cor-primaria); }
         table { width: 100%; border-collapse: collapse; margin-top: 20px; }
         th { background: #fce4ec; color: var(--cor-primaria); padding: 12px; }
         td { padding: 12px; border-bottom: 1px solid #eee; text-align: center; }
+        
+        /* LÓGICA DE CORES DAS TAGS */
         .saldo-tag { font-weight: bold; padding: 5px 10px; border-radius: 8px; }
         .verde { color: #27ae60; background: #e8f6ed; }
         .vermelho { color: #e74c3c; background: #fdecea; }
+        .azul { color: #3498db; background: #ebf5fb; }
+        
         .resumo-box { margin-top: 20px; background: #fce4ec; padding: 15px; border-radius: 12px; text-align: right; }
+        footer { margin-top: auto; padding: 20px; text-align: center; font-size: 14px; color: var(--cor-primaria); }
+        footer a { text-decoration: none; color: inherit; font-weight: bold; }
         @media print { .no-print { display: none !important; } }
     </style>
 </head>
@@ -55,7 +61,9 @@
                     <td style="color: #27ae60;">{{ r.e }}</td>
                     <td style="color: #e74c3c;">{{ r.s }}</td>
                     <td><span class="saldo-tag {{ r.cor }}">{{ r.saldo }}</span></td>
-                    <td class="no-print"><a href="/excluir/{{ r.id_e or r.id_s }}" style="text-decoration:none;">🗑️</a></td>
+                    <td class="no-print">
+                        <a href="/excluir/{{ r.id_e or r.id_s }}" style="text-decoration:none;">🗑️</a>
+                    </td>
                 </tr>
                 {% endfor %}
             </tbody>
@@ -71,7 +79,9 @@
         <div style="background:white; width:300px; margin:10% auto; padding:25px; border-radius:20px; text-align:center;">
             <h3 style="color:var(--cor-primaria);">Inserir Registro</h3>
             <form action="/inserir_manual" method="POST" style="display:flex; flex-direction:column; gap:10px;">
-                <input type="text" name="nome" placeholder="Nome" required style="padding:8px; border-radius:5px; border:1px solid #ddd;">
+                <select name="nome" required style="padding:8px; border-radius:5px; border:1px solid #ddd;">
+                    <option value="Esther Julia">Esther Julia</option>
+                </select>
                 <select name="tipo"><option>Entrada</option><option>Saída</option></select>
                 <input type="date" name="data" required style="padding:8px; border-radius:5px; border:1px solid #ddd;">
                 <input type="time" name="hora" required style="padding:8px; border-radius:5px; border:1px solid #ddd;">
@@ -80,5 +90,10 @@
             </form>
         </div>
     </div>
+
+    <footer class="no-print">
+        Desenvolvido por <a href="https://github.com/LucasBiazoto" target="_blank">Lucas Biazoto</a>
+        <img src="https://cdn-icons-png.flaticon.com/512/25/25231.png" width="16" style="vertical-align: middle; margin-left: 5px;">
+    </footer>
 </body>
 </html>
