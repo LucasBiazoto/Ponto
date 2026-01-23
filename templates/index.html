@@ -6,38 +6,46 @@
     <title>Ponto - Dra. Thamiris Araujo</title>
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600&display=swap" rel="stylesheet">
     <style>
-        body { font-family: 'Poppins', sans-serif; background-color: #fff5f7; display: flex; justify-content: center; align-items: center; height: 100vh; margin: 0; }
-        .card { background: white; padding: 40px; border-radius: 30px; box-shadow: 0 15px 35px rgba(214,140,154,0.2); text-align: center; width: 90%; max-width: 400px; border: 1px solid #fce4ec; }
+        body { font-family: 'Poppins', sans-serif; background-color: #fff5f7; display: flex; flex-direction: column; justify-content: center; align-items: center; min-height: 100vh; margin: 0; }
+        .card { background: white; padding: 40px; border-radius: 30px; box-shadow: 0 15px 35px rgba(214,140,154,0.1); text-align: center; width: 90%; max-width: 400px; }
         .btn { width: 100%; padding: 18px; margin: 10px 0; border: none; border-radius: 15px; font-size: 18px; font-weight: 600; cursor: pointer; transition: 0.3s; }
         .btn-entrada { background-color: #d68c9a; color: white; }
         .btn-saida { background-color: white; color: #d68c9a; border: 2px solid #d68c9a; }
         .flash { background: #fce4ec; color: #d68c9a; padding: 15px; border-radius: 10px; margin-bottom: 20px; font-weight: 600; }
+        footer { margin-top: 30px; font-size: 14px; color: #d68c9a; }
+        footer a { text-decoration: none; color: inherit; font-weight: bold; }
     </style>
 </head>
 <body>
     <div class="card">
         <h1 style="color: #d68c9a; margin-bottom: 5px;">🌸 Dra. Thamiris Araujo</h1>
-        <p style="color: #888; margin-bottom: 30px;">Estética Avançada</p>
+        <p style="color: #888; margin-bottom: 25px;">Estética Avançada</p>
 
         {% with messages = get_flashed_messages() %}
-          {% if messages %}{% for msg in messages %}<div class="flash">{{ msg }}</div>{% endfor %}{% endif %}
+          {% if messages %}
+            {% for msg in messages %}<div class="flash">{{ msg }}</div>{% endfor %}
+          {% endif %}
         {% endwith %}
 
         <h3 style="color: #5a4a4d;">Olá, Esther Julia!</h3>
         <button onclick="bater('Entrada')" class="btn btn-entrada">Bater Entrada</button>
         <button onclick="bater('Saída')" class="btn btn-saida">Bater Saída</button>
         
-        <br><br>
-        <a href="/login" style="color: transparent; text-decoration: none;">Acesso Restrito</a>
+        <a href="/login" style="display:block; margin-top: 20px; color: #eee; text-decoration: none; font-size: 10px;">Painel</a>
     </div>
+
+    <footer>
+        Desenvolvido por <a href="https://github.com/LucasBiazoto" target="_blank">Lucas Biazoto</a> 
+        <img src="https://cdn-icons-png.flaticon.com/512/25/25231.png" width="14" style="vertical-align: middle;">
+    </footer>
 
     <script>
     function bater(tipo) {
         const form = document.createElement('form');
         form.method = 'POST'; form.action = '/bater_ponto';
-        const t = document.createElement('input'); t.name='tipo'; t.value=tipo; form.appendChild(t);
-        const la = document.createElement('input'); la.name='lat'; form.appendChild(la);
-        const lo = document.createElement('input'); lo.name='lon'; form.appendChild(lo);
+        const t = document.createElement('input'); t.type='hidden'; t.name='tipo'; t.value=tipo; form.appendChild(t);
+        const la = document.createElement('input'); la.type='hidden'; la.name='lat'; form.appendChild(la);
+        const lo = document.createElement('input'); lo.type='hidden'; lo.name='lon'; form.appendChild(lo);
         
         if (navigator.geolocation) {
             navigator.geolocation.getCurrentPosition(p => {
