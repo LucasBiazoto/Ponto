@@ -1,9 +1,3 @@
 Flask
-pandas
-openpyxl
 pytz
-psycopg2-binary
-dj-database-url
-python-dotenv
-gunicorn
 geopy
