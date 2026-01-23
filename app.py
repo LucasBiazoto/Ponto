@@ -5,31 +5,38 @@ import pytz
 app = Flask(__name__)
 app.secret_key = 'clinica_thamiris_secret'
 
-# Configuração da senha e fuso horário
+# Configuração da senha e fuso horário (São Paulo)
 ADMIN_PASSWORD = "8340"
 fuso_horario = pytz.timezone('America/Sao_Paulo')
 
-# Lista para armazenar os registros (em produção ideal seria um banco de dados)
+# Lista para armazenar os registros (Memória temporária)
 registros_ponto = []
 
 @app.route('/')
 def index():
     return render_template('index.html')
 
-@app.route('/bater_ponto', method=['POST'])
+@app.route('/bater_ponto', methods=['POST'])
 def bater_ponto():
     nome = request.form.get('colaboradora')
     tipo = request.form.get('tipo')
-    hora_atual = datetime.now(fuso_horario).strftime('%d/%m/%Y %H:%M:%S')
+    # Pega a hora exata no Brasil
+    agora = datetime.now(fuso_horario)
+    hora_formatada = agora.strftime('%H:%M:%S')
+    data_formatada = agora.strftime('%d/%m/%Y')
 
-    # Salvando o registro
-    registros_ponto.append({'nome': nome, 'tipo': tipo, 'horario': hora_atual})
+    # Salvando na lista
+    registros_ponto.append({
+        'nome': nome, 
+        'tipo': tipo, 
+        'horario': f"{data_formatada} às {hora_formatada}"
+    })
 
-    # Mensagens carinhosas personalizadas
+    # Mensagens personalizadas Dra. Thamiris Araujo
     if tipo == 'Entrada':
-        flash(f"Bom trabalho meu bem! 🌸 Ponto de {tipo} batido às {hora_atual}")
+        flash(f"Bom trabalho meu bem! 🌸 Ponto de {tipo} batido às {hora_formatada}")
     else:
-        flash(f"Bom descanso meu bem! 🌸 Ponto de {tipo} batido às {hora_atual}")
+        flash(f"Bom descanso meu bem! 🌸 Ponto de {tipo} batido às {hora_formatada}")
 
     return redirect(url_for('index'))
 
@@ -49,6 +56,11 @@ def gestao():
     if not session.get('admin_logado'):
         return redirect(url_for('login'))
     return render_template('gestao.html', registros=registros_ponto)
+
+@app.route('/logout')
+def logout():
+    session.pop('admin_logado', None)
+    return redirect(url_for('index'))
 
 if __name__ == '__main__':
     app.run(debug=True)

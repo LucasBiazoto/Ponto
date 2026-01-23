@@ -1,0 +1,20 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <title>Login Restrito - Dra. Thamiris</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+    <div class="container">
+        <h2>🌸 Acesso Administrativo</h2>
+        <form method="POST">
+            <input type="password" name="password" placeholder="Digite a senha 8340" required 
+                   style="width: 100%; padding: 10px; margin-bottom: 20px; border-radius: 10px; border: 1px solid #d68c9a;">
+            <button type="submit" class="btn-entrada">Entrar</button>
+        </form>
+        <br>
+        <a href="/" style="color: #d68c9a; text-decoration: none;">Voltar</a>
+    </div>
+</body>
+</html>
