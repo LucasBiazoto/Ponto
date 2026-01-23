@@ -2,87 +2,143 @@
 <html lang="pt-br">
 <head>
     <meta charset="UTF-8">
-    <title>Gestão de Ponto - Dra. Thamiris Araujo</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Gestão Clínica - Dra. Thamiris Araujo</title>
     <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
     <style>
-        :root { --rosa: #d68c9a; --rosa-fundo: #fff5f7; }
-        body { background-color: var(--rosa-fundo); font-family: 'Segoe UI', sans-serif; margin: 0; padding: 20px; }
-        .container-adm { max-width: 1100px; margin: auto; }
+        :root { --rosa: #d68c9a; --rosa-claro: #fce4ec; --fundo: #fff5f7; }
+        body { background-color: var(--fundo); font-family: 'Segoe UI', sans-serif; margin: 0; padding: 20px; color: #555; }
+        .container-adm { max-width: 1200px; margin: auto; }
+        
         header { background: white; padding: 20px; border-radius: 15px; display: flex; justify-content: space-between; align-items: center; box-shadow: 0 4px 10px rgba(0,0,0,0.05); }
         h1 { color: var(--rosa); margin: 0; font-size: 20px; }
-        .card-resumo { background: white; padding: 20px; border-radius: 15px; margin-top: 20px; border-left: 6px solid var(--rosa); }
-        .tabela-ponto { width: 100%; border-collapse: collapse; background: white; border-radius: 15px; margin-top: 20px; overflow: hidden; box-shadow: 0 4px 15px rgba(0,0,0,0.05); }
-        th { background: #fce4ec; color: var(--rosa); padding: 15px; text-align: left; }
-        td { padding: 15px; border-bottom: 1px solid #eee; font-size: 14px; color: #666; }
-        .status-dentro { color: #2ecc71; font-weight: bold; }
-        .status-fora { color: #e74c3c; font-weight: bold; }
-        .btn-manual { background: var(--rosa); color: white; border: none; padding: 10px 20px; border-radius: 8px; cursor: pointer; font-weight: bold; }
-        .modal { display: none; position: fixed; z-index: 10; left: 0; top: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); }
-        .modal-content { background: white; margin: 10% auto; padding: 25px; border-radius: 20px; width: 350px; }
-        .btn-excluir { color: #e74c3c; text-decoration: none; font-size: 18px; }
+
+        /* Cards de Resumo */
+        .cards-topo { display: flex; gap: 15px; margin: 20px 0; flex-wrap: wrap; }
+        .card-info { background: white; padding: 20px; border-radius: 12px; border-left: 5px solid var(--rosa); flex: 1; min-width: 250px; box-shadow: 0 4px 10px rgba(0,0,0,0.03); }
+        .card-info small { color: #888; font-size: 12px; text-transform: uppercase; }
+        .card-info h3 { margin: 5px 0 0; color: var(--rosa); font-size: 22px; }
+
+        .acoes { display: flex; gap: 10px; margin-bottom: 20px; }
+        .btn { padding: 12px 25px; border-radius: 10px; border: none; cursor: pointer; font-weight: bold; transition: 0.3s; text-decoration: none; }
+        .btn-manual { background: var(--rosa); color: white; }
+        .btn-pdf { background: white; color: var(--rosa); border: 1px solid var(--rosa); }
+
+        /* Tabela */
+        .tabela-container { background: white; border-radius: 20px; padding: 10px; box-shadow: 0 4px 15px rgba(0,0,0,0.05); overflow-x: auto; }
+        table { width: 100%; border-collapse: collapse; min-width: 800px; }
+        th { background: var(--rosa-claro); color: var(--rosa); padding: 15px; text-align: left; font-size: 14px; }
+        td { padding: 15px; border-bottom: 1px solid #eee; font-size: 14px; }
+        
+        .status-badge { padding: 4px 8px; border-radius: 6px; font-size: 11px; font-weight: bold; }
+        .status-dentro { background: #e8f5e9; color: #2ecc71; }
+        .status-fora { background: #ffebee; color: #e74c3c; }
+        
+        .btn-excluir { text-decoration: none; font-size: 18px; margin-left: 10px; }
+        
+        /* Modal */
+        .modal { display: none; position: fixed; z-index: 100; left: 0; top: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); }
+        .modal-content { background: white; margin: 10% auto; padding: 30px; border-radius: 20px; width: 90%; max-width: 400px; box-shadow: 0 10px 30px rgba(0,0,0,0.1); }
+        .form-group { margin-bottom: 15px; }
+        .form-group label { display: block; margin-bottom: 5px; font-size: 14px; }
+        .form-group input, .form-group select { width: 100%; padding: 10px; border-radius: 8px; border: 1px solid #ddd; box-sizing: border-box; }
+
+        @media print { .acoes, .btn-excluir, .btn-saida { display: none !important; } }
     </style>
 </head>
 <body>
     <div class="container-adm">
         <header>
-            <h1>🌸 Gestão Clínica Penha</h1>
-            <a href="/logout" style="color: var(--rosa); font-weight: bold; text-decoration: none;">Sair</a>
+            <h1>🌸 Gestão de Ponto | Dra. Thamiris Araujo</h1>
+            <a href="/logout" class="btn-saida" style="color: var(--rosa); font-weight: bold; text-decoration: none;">Sair</a>
         </header>
 
-        <div style="margin-top: 20px;">
-            <button class="btn-manual" onclick="abrirModal()">➕ Inserir Ponto Manual</button>
-            <button class="btn-manual" style="background: white; color: var(--rosa); border: 1px solid var(--rosa);" onclick="window.print()">📥 Imprimir PDF</button>
+        <div class="cards-topo">
+            <div class="card-info">
+                <small>Localização Atual</small>
+                <h3>Unidade Penha</h3>
+            </div>
+            <div class="card-info">
+                <small>Saldo Total Acumulado (Mês)</small>
+                <h3 id="saldoTotal">Calculando...</h3>
+            </div>
         </div>
 
-        <table class="tabela-ponto">
-            <thead>
-                <tr>
-                    <th>Data</th>
-                    <th>Colaboradora</th>
-                    <th>Tipo</th>
-                    <th>Horário</th>
-                    <th>Localização</th>
-                    <th>Origem</th>
-                    <th>Ações</th>
-                </tr>
-            </thead>
-            <tbody>
-                {% for r in registros %}
-                <tr>
-                    <td>{{ r.data }}</td>
-                    <td style="font-weight: bold;">{{ r.nome }}</td>
-                    <td>{{ r.tipo }}</td>
-                    <td>{{ r.hora }}</td>
-                    <td>
-                        <span class="{{ 'status-dentro' if r.local == 'Dentro da Empresa' else 'status-fora' }}">
-                            {{ r.local }}
-                        </span>
-                    </td>
-                    <td><small>{{ r.origem }}</small></td>
-                    <td>
-                        <a href="/excluir/{{ r.id }}" class="btn-excluir" title="Excluir Registro">🗑️</a>
-                    </td>
-                </tr>
-                {% endfor %}
-            </tbody>
-        </table>
+        <div class="acoes">
+            <button onclick="abrirModal()" class="btn btn-manual">➕ Inserir Ponto Manual</button>
+            <button onclick="window.print()" class="btn btn-pdf">📥 Imprimir Relatório</button>
+        </div>
+
+        <div class="tabela-container">
+            <table>
+                <thead>
+                    <tr>
+                        <th>Data</th>
+                        <th>Colaboradora</th>
+                        <th>Entrada</th>
+                        <th>Saída</th>
+                        <th>Saldo (6h)</th>
+                        <th>Geolocalização</th>
+                        <th>Ações</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for r in registros %}
+                    <tr>
+                        <td>{{ r.data }}</td>
+                        <td style="font-weight: bold;">{{ r.nome }}</td>
+                        <td style="color: #2ecc71;">{{ r.entrada }}</td>
+                        <td style="color: #e74c3c;">{{ r.saida }}</td>
+                        <td style="font-weight: bold; color: {{ '#2ecc71' if '+' in r.saldo else '#e74c3c' if '-' in r.saldo else '#666' }};">
+                            {{ r.saldo }}
+                        </td>
+                        <td>
+                            <span class="status-badge {{ 'status-dentro' if r.local == 'Dentro da Empresa' else 'status-fora' }}">
+                                {{ r.local }}
+                            </span>
+                        </td>
+                        <td>
+                            {% if r.id_entrada is not none %}
+                                <a href="/excluir/{{ r.id_entrada }}" class="btn-excluir" title="Excluir Entrada">📥🗑️</a>
+                            {% endif %}
+                            {% if r.id_saida is not none %}
+                                <a href="/excluir/{{ r.id_saida }}" class="btn-excluir" title="Excluir Saída">📤🗑️</a>
+                            {% endif %}
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
     </div>
 
     <div id="modalManual" class="modal">
         <div class="modal-content">
-            <h2 style="color: var(--rosa); margin-top: 0;">Novo Registro Manual</h2>
+            <h2 style="color: var(--rosa); margin: 0 0 20px 0;">🌸 Registro Manual</h2>
             <form action="/inserir_manual" method="POST">
-                <select name="nome" style="width: 100%; padding: 10px; margin-bottom: 10px;" required>
-                    <option value="Esther Julia">Esther Julia</option>
-                    <option value="Dra Thamiris Araujo">Dra Thamiris Araujo</option>
-                </select>
-                <input type="date" name="data" style="width: 100%; padding: 10px; margin-bottom: 10px;" required>
-                <input type="time" name="hora" style="width: 100%; padding: 10px; margin-bottom: 10px;" required>
-                <select name="tipo" style="width: 100%; padding: 10px; margin-bottom: 15px;">
-                    <option value="Entrada">Entrada</option>
-                    <option value="Saída">Saída</option>
-                </select>
-                <button type="submit" class="btn-manual" style="width: 100%;">Salvar Registro</button>
+                <div class="form-group">
+                    <label>Colaboradora</label>
+                    <select name="nome" required>
+                        <option value="Esther Julia">Esther Julia</option>
+                        <option value="Dra Thamiris Araujo">Dra Thamiris Araujo</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label>Data</label>
+                    <input type="date" name="data" required>
+                </div>
+                <div class="form-group">
+                    <label>Horário</label>
+                    <input type="time" name="hora" required>
+                </div>
+                <div class="form-group">
+                    <label>Tipo</label>
+                    <select name="tipo">
+                        <option value="Entrada">Entrada</option>
+                        <option value="Saída">Saída</option>
+                    </select>
+                </div>
+                <button type="submit" class="btn btn-manual" style="width: 100%;">Salvar Registro</button>
                 <button type="button" onclick="fecharModal()" style="width: 100%; background: none; border: none; margin-top: 10px; color: #888; cursor: pointer;">Cancelar</button>
             </form>
         </div>
@@ -91,6 +147,25 @@
     <script>
         function abrirModal() { document.getElementById('modalManual').style.display = 'block'; }
         function fecharModal() { document.getElementById('modalManual').style.display = 'none'; }
+        
+        // Cálculo simples do saldo total para o card do topo
+        window.onload = function() {
+            let saldos = document.querySelectorAll('td:nth-child(5)');
+            let totalMinutos = 0;
+            saldos.forEach(s => {
+                let texto = s.innerText.trim();
+                if (texto.includes(':')) {
+                    let partes = texto.replace('+', '').split(':');
+                    let minutos = (parseInt(partes[0]) * 60) + parseInt(partes[1]);
+                    if (texto.includes('-')) minutos *= -1;
+                    totalMinutos += minutos;
+                }
+            });
+            let h = Math.floor(Math.abs(totalMinutos) / 60);
+            let m = Math.abs(totalMinutos) % 60;
+            let sinal = totalMinutos >= 0 ? '+' : '-';
+            document.getElementById('saldoTotal').innerText = sinal + String(h).padStart(2, '0') + ':' + String(m).padStart(2, '0');
+        };
     </script>
 </body>
 </html>
