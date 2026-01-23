@@ -1,79 +1,18 @@
-<!DOCTYPE html>
-<html lang="pt-br">
-<head>
-    <meta charset="UTF-8">
-    <title>Gestão Dra Thamiris Araujo</title>
-    <style>
-        body { background: #fff5f7; font-family: sans-serif; padding: 20px; }
-        .card { background: white; padding: 30px; border-radius: 20px; box-shadow: 0 5px 15px rgba(0,0,0,0.05); }
-        .btn { padding: 10px 15px; border-radius: 8px; border: none; background: #d68c9a; color: white; font-weight: bold; cursor: pointer; text-decoration: none; }
-        table { width: 100%; border-collapse: collapse; margin-top: 20px; }
-        th { background: #fce4ec; color: #d68c9a; padding: 12px; }
-        td { padding: 12px; border-bottom: 1px solid #eee; text-align: center; }
-        .verde { color: #27ae60; } .vermelho { color: #e74c3c; } .azul { color: #3498db; }
-        @media print { .no-print { display: none !important; } }
-    </style>
-</head>
-<body>
-    <div class="card">
-        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
-            <h1 style="color: #d68c9a; margin: 0;">🌸 Gestão Dra Thamiris Araujo</h1>
-            <a href="/logout" class="no-print" style="color: #d68c9a; text-decoration: none;">Sair</a>
-        </div>
+<div style="gap: 10px; display: flex;">
+    <a href="/backup" class="btn" style="background: #888;">💾 Backup Dados</a>
+    <button onclick="window.print()" class="btn btn-outline">🖨️ Exportar PDF</button>
+    <button onclick="document.getElementById('modal').style.display='block'" class="btn">➕ Manual</button>
+</div>
 
-        <div class="no-print" style="display: flex; justify-content: space-between; margin-bottom: 20px;">
-            <form method="GET" action="/gestao">
-                <select name="mes" style="padding: 8px; border-radius: 5px; border: 1px solid #d68c9a;">
-                    {% for v, n in [('01','Jan'),('02','Fev'),('03','Mar'),('04','Abr'),('05','Mai'),('06','Jun'),('07','Jul'),('08','Ago'),('09','Set'),('10','Out'),('11','Nov'),('12','Dez')] %}
-                    <option value="{{v}}" {{'selected' if mes_sel==v}}>{{n}}</option>
-                    {% endfor %}
-                </select>
-                <button type="submit" class="btn">Filtrar</button>
-            </form>
-            <div>
-                <button onclick="window.print()" class="btn" style="background: white; color: #d68c9a; border: 1px solid #d68c9a;">🖨️ PDF</button>
-                <button onclick="document.getElementById('modal').style.display='block'" class="btn">➕ Manual</button>
-            </div>
-        </div>
-
-        <table>
-            <thead>
-                <tr><th>Data</th><th>Colaboradora</th><th>Entrada</th><th>Saída</th><th>Saldo</th><th class="no-print">Ações</th></tr>
-            </thead>
-            <tbody>
-                {% for r in registros %}
-                <tr>
-                    <td>{{ r.data }}</td>
-                    <td><b>{{ r.nome }}</b></td>
-                    <td class="{{r.cor}}"><b>{{ r.e }}</b> {% if r.id_e %}<a href="/excluir/{{r.id_e}}" class="no-print" style="text-decoration:none;">🗑️</a>{% endif %}</td>
-                    <td class="{{r.cor}}"><b>{{ r.s }}</b> {% if r.id_s %}<a href="/excluir/{{r.id_s}}" class="no-print" style="text-decoration:none;">🗑️</a>{% endif %}</td>
-                    <td><b>{{ r.saldo }}</b></td>
-                    <td class="no-print"><small>Penha</small></td>
-                </tr>
-                {% endfor %}
-            </tbody>
-            <tfoot>
-                <tr style="background: #fce4ec; font-weight: bold;">
-                    <td colspan="4" style="text-align: right; padding: 15px;">TOTAL DE HORAS EXTRAS NO MÊS:</td>
-                    <td class="{{ 'verde' if '+' in soma_total else 'vermelho' }}">{{ soma_total }}</td>
-                    <td></td>
-                </tr>
-            </tfoot>
-        </table>
-    </div>
-
-    <div id="modal" style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.5);">
-        <div style="background:white; width:300px; margin:10% auto; padding:20px; border-radius:15px; text-align:center;">
-            <h3 style="color:#d68c9a;">Inserir Manual</h3>
-            <form action="/inserir_manual" method="POST">
-                <input type="date" name="data" required style="width:90%; margin-bottom:10px;">
-                <input type="time" name="hora" required style="width:90%; margin-bottom:10px;">
-                <select name="nome" style="width:90%; margin-bottom:10px;"><option>Esther Julia</option><option>Dra Thamiris Araujo</option></select>
-                <select name="tipo" style="width:90%; margin-bottom:10px;"><option>Entrada</option><option>Saída</option></select>
-                <button type="submit" class="btn" style="width:90%;">Salvar</button>
-                <button type="button" onclick="document.getElementById('modal').style.display='none'" style="background:none; border:none; color:gray; margin-top:10px; cursor:pointer;">Cancelar</button>
-            </form>
-        </div>
-    </div>
-</body>
-</html>
+<tfoot>
+    <tr style="background: #fff0f3;">
+        <td colspan="4" style="text-align: right; padding: 10px; color: #d68c9a;">QUANTIDADE DE DIAS TRABALHADOS NO MÊS:</td>
+        <td style="font-weight: bold; color: #d68c9a;">{{ qtd_dias }} dias</td>
+        <td colspan="2"></td>
+    </tr>
+    <tr class="saldo-total">
+        <td colspan="4" style="text-align: right; color: #d68c9a;">TOTAL DE HORAS EXTRAS NO MÊS:</td>
+        <td style="color: {{ '#27ae60' if '+' in soma_total else '#e74c3c' }};">{{ soma_total }}</td>
+        <td colspan="2"></td>
+    </tr>
+</tfoot>
