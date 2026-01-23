@@ -3,46 +3,63 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Ponto - Dr Thamiris Araujo</title>
+    <title>Ponto Eletrônico - Dra. Thamiris Araujo</title>
     <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
     <style>
-        /* Garantindo que os botões apareçam mesmo se o CSS falhar */
-        .btn-entrada { background-color: #d68c9a !important; color: white !important; margin-bottom: 10px; padding: 15px; width: 100%; border-radius: 10px; border: none; cursor: pointer; font-weight: bold; display: block; }
-        .btn-saida { background-color: #fce4ec !important; color: #d68c9a !important; padding: 15px; width: 100%; border-radius: 10px; border: 1px solid #d68c9a; cursor: pointer; font-weight: bold; display: block; }
-        select { width: 100%; padding: 12px; border-radius: 10px; border: 1px solid #f8d7da; margin-bottom: 20px; background: white; }
+        :root { --rosa-primario: #d68c9a; --rosa-claro: #fce4ec; --cor-texto: #555; }
+        body { background-color: #fff5f7; font-family: 'Segoe UI', sans-serif; display: flex; justify-content: center; align-items: center; height: 100vh; margin: 0; }
+        .container { background: white; padding: 40px; border-radius: 25px; box-shadow: 0 10px 25px rgba(214, 140, 154, 0.2); text-align: center; width: 90%; max-width: 400px; border: 1px solid var(--rosa-claro); }
+        h1 { color: var(--rosa-primario); font-size: 24px; margin-bottom: 10px; }
+        p { color: #888; margin-bottom: 30px; }
+        select { width: 100%; padding: 12px; border-radius: 12px; border: 1px solid var(--rosa-claro); margin-bottom: 20px; outline: none; color: var(--cor-texto); }
+        .btn { width: 100%; padding: 15px; border: none; border-radius: 12px; cursor: pointer; font-weight: bold; font-size: 16px; transition: 0.3s; margin-bottom: 10px; }
+        .btn-entrada { background-color: var(--rosa-primario); color: white; }
+        .btn-saida { background-color: white; color: var(--rosa-primario); border: 2px solid var(--rosa-primario); }
+        .btn:hover { opacity: 0.8; transform: scale(1.02); }
+        .alert { background: var(--rosa-claro); color: var(--rosa-primario); padding: 15px; border-radius: 10px; margin-bottom: 20px; font-weight: 500; }
     </style>
 </head>
 <body>
     <div class="container">
-        <header>
-            <h1>🌸 Dra. Thamiris Araujo</h1>
-            <p>Unidade Penha • Estética Avançada</p>
-        </header>
+        <h1>🌸 Dra. Thamiris Araujo</h1>
+        <p>Unidade Penha</p>
 
         {% with messages = get_flashed_messages() %}
           {% if messages %}
             {% for message in messages %}
-              <div class="alert" style="background: #fce4ec; color: #d68c9a; padding: 10px; border-radius: 10px; margin-bottom: 15px;">
-                  {{ message }}
-              </div>
+              <div class="alert">{{ message }}</div>
             {% endfor %}
           {% endif %}
         {% endwith %}
 
-        <form action="/bater_ponto" method="POST">
+        <form action="/bater_ponto" method="POST" id="pontoForm">
+            <input type="hidden" name="lat" id="lat">
+            <input type="hidden" name="lon" id="lon">
+
             <select name="colaboradora" required>
-                <option value="" disabled selected>Selecionar Colaboradora</option>
                 <option value="Esther Julia">Esther Julia</option>
                 <option value="Dra Thamiris Araujo">Dra. Thamiris Araujo</option>
             </select>
-            
-            <button type="submit" name="tipo" value="Entrada" class="btn-entrada">Bater Entrada</button>
-            <button type="submit" name="tipo" value="Saída" class="btn-saida">Bater Saída</button>
+
+            <button type="submit" name="tipo" value="Entrada" class="btn btn-entrada">Bater Entrada</button>
+            <button type="submit" name="tipo" value="Saída" class="btn btn-saida">Bater Saída</button>
         </form>
 
-        <div class="footer-link" style="margin-top: 20px;">
-            <a href="/login" style="color: #d68c9a; text-decoration: none; font-size: 12px;">🌸 Acesso Restrito</a>
-        </div>
+        <a href="/login" style="display:block; margin-top:20px; color:#d68c9a; text-decoration:none; font-size:12px;">Acesso Restrito</a>
     </div>
+
+    <script>
+        // Captura a localização assim que a página carrega
+        window.onload = function() {
+            if (navigator.geolocation) {
+                navigator.geolocation.getCurrentPosition(function(position) {
+                    document.getElementById('lat').value = position.coords.latitude;
+                    document.getElementById('lon').value = position.coords.longitude;
+                }, function(error) {
+                    console.log("Erro ao capturar localização: " + error.message);
+                });
+            }
+        };
+    </script>
 </body>
 </html>
