@@ -1,0 +1,39 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <title>Relatório - Dra. Thamiris</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+    <div class="container" style="max-width: 800px;">
+        <header>
+            <h1>🌸 Relatório de Ponto</h1>
+            <p>Unidade Penha • Dra. Thamiris Araujo</p>
+        </header>
+
+        <table style="width: 100%; border-collapse: collapse; margin-top: 20px; background: white; border-radius: 10px; overflow: hidden;">
+            <thead style="background: #fce4ec; color: #d68c9a;">
+                <tr>
+                    <th style="padding: 15px; border-bottom: 1px solid #f8d7da;">Colaboradora</th>
+                    <th style="padding: 15px; border-bottom: 1px solid #f8d7da;">Ação</th>
+                    <th style="padding: 15px; border-bottom: 1px solid #f8d7da;">Data e Hora</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for registro in registros %}
+                <tr>
+                    <td style="padding: 12px; border-bottom: 1px solid #eee;">{{ registro.nome }}</td>
+                    <td style="padding: 12px; border-bottom: 1px solid #eee;">{{ registro.tipo }}</td>
+                    <td style="padding: 12px; border-bottom: 1px solid #eee;">{{ registro.horario }}</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+
+        <div style="margin-top: 30px;">
+            <a href="/logout" class="btn-saida" style="text-decoration: none; display: inline-block; width: auto; padding: 10px 30px;">Sair do Sistema</a>
+        </div>
+    </div>
+</body>
+</html>

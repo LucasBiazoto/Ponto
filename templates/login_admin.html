@@ -2,30 +2,22 @@
 <html lang="pt-br">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Acesso Restrito - Dra. Thamiris</title>
-    <style>
-        body { font-family: 'Segoe UI', sans-serif; background: #fdfaf9; display: flex; justify-content: center; align-items: center; height: 100vh; margin: 0; }
-        .login-card { background: white; padding: 40px; border-radius: 20px; box-shadow: 0 10px 25px rgba(0,0,0,0.05); width: 300px; text-align: center; }
-        h2 { color: #b5838d; font-weight: 300; margin-bottom: 20px; }
-        input { width: 100%; padding: 12px; margin: 10px 0; border-radius: 10px; border: 1px solid #ddd; box-sizing: border-box; text-align: center; font-size: 16px; }
-        button { width: 100%; padding: 12px; background: #b5838d; color: white; border: none; border-radius: 10px; cursor: pointer; font-weight: bold; transition: 0.3s; }
-        button:hover { background: #a5737d; }
-        .erro { color: #c62828; font-size: 13px; margin-top: 10px; }
-    </style>
+    <title>Login Administrativo</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
 </head>
 <body>
-    <div class="login-card">
-        <div style="font-size: 40px; margin-bottom: 10px;">🔒</div>
-        <h2>Área Restrita</h2>
-        <form action="/verificar_admin" method="POST">
-            <input type="password" name="senha" placeholder="Senha de Acesso" required autofocus>
-            <button type="submit">ENTRAR NO PAINEL</button>
+    <div class="container">
+        <header>
+            <h1>🌸 Acesso Restrito</h1>
+        </header>
+        <form method="POST">
+            <input type="password" name="password" placeholder="Digite a senha de acesso" required 
+                   style="width: 100%; padding: 15px; border-radius: 10px; border: 1px solid #f8d7da; margin-bottom: 20px;">
+            <button type="submit" class="btn-entrada">Entrar no Relatório</button>
         </form>
-        {% if erro %}
-            <p class="erro">Senha incorreta. Tente novamente.</p>
-        {% endif %}
-        <a href="/" style="display:block; margin-top:15px; font-size:12px; color:#aaa; text-decoration:none;">Voltar para Batida de Ponto</a>
+        <div style="margin-top: 20px;">
+            <a href="/" style="color: #d68c9a; text-decoration: none; font-size: 14px;">← Voltar ao Ponto</a>
+        </div>
     </div>
 </body>
 </html>
