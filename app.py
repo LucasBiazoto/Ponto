@@ -3,10 +3,9 @@ from datetime import datetime
 import pytz
 
 app = Flask(__name__)
-app.secret_key = 'thamiris_araujo_key_final'
+app.secret_key = 'clinica_thamiris_key'
 fuso = pytz.timezone('America/Sao_Paulo')
 
-# Dados em memória (Nota: No Vercel, isso reseta ao deslogar)
 registros_ponto = []
 
 @app.route('/')
@@ -15,36 +14,39 @@ def index():
 
 @app.route('/bater_ponto', methods=['POST'])
 def bater_ponto():
-    try:
-        tipo = request.form.get('tipo', 'Entrada')
-        lat = request.form.get('lat', '')
-        lon = request.form.get('lon', '')
-        
-        # Identificação de local simples para evitar erro 500
-        status_gps = "Localizado" if lat and lon else "GPS Off"
-        
-        agora = datetime.now(fuso)
-        registros_ponto.append({
-            'id': len(registros_ponto) + 1,
-            'nome': "Esther Julia",
-            'tipo': tipo,
-            'data': agora.strftime('%d/%m/%Y'),
-            'hora': agora.strftime('%H:%M'),
-            'local': status_gps
-        })
-        flash(f"Bom {'trabalho' if tipo=='Entrada' else 'descanso'} meu bem 🌸")
-    except Exception as e:
-        flash("Erro ao registrar. Tente novamente.")
+    tipo = request.form.get('tipo')
+    lat = request.form.get('lat')
+    lon = request.form.get('lon')
+    agora = datetime.now(fuso)
+    
+    # Lógica de geolocalização simples para evitar erro 500
+    local = "Na Clínica" if lat and lon else "GPS Off"
+    
+    registros_ponto.append({
+        'id': len(registros_ponto) + 1,
+        'nome': "Esther Julia",
+        'tipo': tipo,
+        'data': agora.strftime('%d/%m/%Y'),
+        'hora': agora.strftime('%H:%M'),
+        'local': local
+    })
+    flash(f"Bom {'trabalho' if tipo=='Entrada' else 'descanso'} meu bem 🌸")
     return redirect(url_for('index'))
+
+@app.route('/login', methods=['GET', 'POST'])
+def login():
+    if request.method == 'POST' and request.form.get('password') == "8340":
+        session['admin_logado'] = True
+        return redirect(url_for('gestao'))
+    return render_template('login.html')
 
 @app.route('/gestao')
 def gestao():
     if not session.get('admin_logado'): return redirect(url_for('login'))
     mes_sel = request.args.get('mes', datetime.now(fuso).strftime('%m'))
-    
     resumo = {}
     total_minutos = 0
-    dias_trabalhados = 0
+    dias_completos = 0
 
     for r in registros_ponto:
         if r['data'].split('/')[1] == mes_sel:
@@ -54,48 +56,31 @@ def gestao():
             if r['tipo'] == 'Entrada': resumo[data]['e'] = r['hora']
             else: resumo[data]['s'] = r['hora']
 
-    dados_tabela = []
+    dados_finais = []
     for data, v in resumo.items():
-        saldo = "00:00"
-        cor = "azul"
-        # Regra: Só conta dia se tiver Entrada E Saída
+        saldo, cor = "00:00", "azul"
         if v['e'] != '--:--' and v['s'] != '--:--':
-            dias_trabalhados += 1
+            dias_completos += 1
             h1, m1 = map(int, v['e'].split(':'))
             h2, m2 = map(int, v['s'].split(':'))
-            diff = (h2 * 60 + m2) - (h1 * 60 + m1) - 360 # 6 horas
+            diff = (h2 * 60 + m2) - (h1 * 60 + m1) - 360
             total_minutos += diff
-            cor = "verde" if diff >= 0 else "vermelho"
             saldo = f"{'+' if diff >= 0 else '-'}{abs(diff)//60:02d}:{abs(diff)%60:02d}"
-        
-        dados_tabela.append({'data': data, 'e': v['e'], 's': v['s'], 'local': v['local'], 'saldo': saldo, 'cor': cor, 'id': v['id']})
+            cor = "verde" if diff >= 0 else "vermelho"
+        dados_finais.append({'data': data, 'e': v['e'], 's': v['s'], 'local': v['local'], 'saldo': saldo, 'cor': cor, 'id': v['id']})
 
-    total_extra = f"{'+' if total_minutos >= 0 else '-'}{abs(total_minutos)//60:02d}:{abs(total_minutos)%60:02d}"
-    return render_template('gestao.html', registros=dados_tabela, soma_total=total_extra, qtd_dias=dias_trabalhados, mes_sel=mes_sel)
+    s_total = f"{'+' if total_minutos >= 0 else '-'}{abs(total_minutos)//60:02d}:{abs(total_minutos)%60:02d}"
+    return render_template('gestao.html', registros=dados_finais, soma_total=s_total, qtd_dias=dias_completos, mes_sel=mes_sel)
 
 @app.route('/inserir_manual', methods=['POST'])
 def inserir_manual():
     if not session.get('admin_logado'): return redirect(url_for('login'))
-    try:
-        data_input = request.form.get('data')
-        data_br = datetime.strptime(data_input, '%Y-%m-%d').strftime('%d/%m/%Y')
-        registros_ponto.append({
-            'id': len(registros_ponto) + 1,
-            'nome': "Esther Julia",
-            'tipo': request.form.get('tipo'),
-            'data': data_br,
-            'hora': request.form.get('hora'),
-            'local': "Manual"
-        })
-    except: pass
+    data_br = datetime.strptime(request.form.get('data'), '%Y-%m-%d').strftime('%d/%m/%Y')
+    registros_ponto.append({
+        'id': len(registros_ponto) + 1, 'nome': "Esther Julia", 'tipo': request.form.get('tipo'),
+        'data': data_br, 'hora': request.form.get('hora'), 'local': "Manual"
+    })
     return redirect(url_for('gestao'))
-
-@app.route('/login', methods=['GET', 'POST'])
-def login():
-    if request.method == 'POST' and request.form.get('password') == "8340":
-        session['admin_logado'] = True
-        return redirect(url_for('gestao'))
-    return render_template('login.html')
 
 @app.route('/logout')
 def logout():
