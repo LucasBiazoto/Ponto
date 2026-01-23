@@ -1,35 +1,47 @@
-<div style="display: flex; justify-content: space-between; align-items: center; background: white; padding: 20px; border-radius: 15px; margin-bottom: 20px;">
-    <form method="GET" action="/gestao" style="display: flex; gap: 10px; align-items: center;">
-        <select name="mes" class="btn" style="background: #fff; color: #d68c9a; border: 1px solid #d68c9a;">
-            <option value="01" {{ 'selected' if mes_sel == '01' }}>Janeiro</option>
-            <option value="02" {{ 'selected' if mes_sel == '02' }}>Fevereiro</option>
-            <option value="03" {{ 'selected' if mes_sel == '03' }}>Março</option>
-            <option value="04" {{ 'selected' if mes_sel == '04' }}>Abril</option>
-            <option value="05" {{ 'selected' if mes_sel == '05' }}>Maio</option>
-            <option value="06" {{ 'selected' if mes_sel == '06' }}>Junho</option>
-            <option value="07" {{ 'selected' if mes_sel == '07' }}>Julho</option>
-            <option value="08" {{ 'selected' if mes_sel == '08' }}>Agosto</option>
-            <option value="09" {{ 'selected' if mes_sel == '09' }}>Setembro</option>
-            <option value="10" {{ 'selected' if mes_sel == '10' }}>Outubro</option>
-            <option value="11" {{ 'selected' if mes_sel == '11' }}>Novembro</option>
-            <option value="12" {{ 'selected' if mes_sel == '12' }}>Dezembro</option>
+<div style="display: flex; justify-content: space-between; align-items: center; background: white; padding: 20px; border-radius: 15px; margin-bottom: 20px; box-shadow: 0 4px 10px rgba(0,0,0,0.05);">
+    <form method="GET" action="/gestao" style="display: flex; gap: 10px;">
+        <select name="mes" class="btn-filtro">
+            <option value="01" {{'selected' if mes_sel=='01'}}>Janeiro</option>
+            <option value="02" {{'selected' if mes_sel=='02'}}>Fevereiro</option>
+            <option value="12" {{'selected' if mes_sel=='12'}}>Dezembro</option>
         </select>
-        <select name="ano" class="btn" style="background: #fff; color: #d68c9a; border: 1px solid #d68c9a;">
-            <option value="2025" {{ 'selected' if ano_sel == '2025' }}>2025</option>
-            <option value="2026" {{ 'selected' if ano_sel == '2026' }}>2026</option>
-        </select>
-        <button type="submit" class="btn">🔍 Filtrar</button>
+        <button type="submit" class="btn">Filtrar</button>
     </form>
-
-    <div style="display: flex; gap: 10px;">
+    
+    <div>
         <button class="btn" onclick="window.print()">🖨️ Exportar PDF</button>
-        <button class="btn" style="background: #fff; color: #d68c9a; border: 2px solid #d68c9a;" onclick="document.getElementById('m').style.display='block'">➕ Inserir Manual</button>
+        <button class="btn" onclick="document.getElementById('m').style.display='block'">➕ Inserir Manual</button>
     </div>
 </div>
 
-<div style="background: white; padding: 15px; border-radius: 15px; margin-bottom: 20px; display: inline-block; box-shadow: 0 4px 10px rgba(0,0,0,0.05);">
-    <span style="color: #888;">Saldo Total do Período:</span>
-    <strong style="font-size: 20px; color: {{ '#27ae60' if '+' in soma_total else '#e74c3c' }};">
+<div style="background: white; padding: 15px; border-radius: 15px; margin-bottom: 20px; display: inline-block;">
+    <span style="color: #888;">Saldo Total do Mês:</span>
+    <strong style="font-size: 22px; color: {{ '#27ae60' if '+' in soma_total else '#e74c3c' }};">
         {{ soma_total }}
     </strong>
 </div>
+
+<table>
+    <thead>
+        <tr>
+            <th>Data</th><th>Colaboradora</th><th>Entrada</th><th>Saída</th><th>Saldo</th><th>Localização</th><th>Ações</th>
+        </tr>
+    </thead>
+    <tbody>
+        {% for r in registros %}
+        {% set cor = '#3498db' if r.cor == 'azul' else '#27ae60' if r.cor == 'verde' else '#e74c3c' %}
+        <tr style="text-align: center; border-bottom: 1px solid #eee;">
+            <td style="padding: 15px;">{{ r.data }}</td>
+            <td><b>{{ r.nome }}</b></td>
+            <td style="color: {{ cor }}; font-weight: bold;">{{ r.e }}</td>
+            <td style="color: {{ cor }}; font-weight: bold;">{{ r.s }}</td>
+            <td style="font-weight: bold;">{{ r.saldo }}</td>
+            <td><small>{{ r.loc }}</small></td>
+            <td>
+                {% if r.id_e %}<a href="/excluir/{{ r.id_e }}">📥🗑️</a>{% endif %}
+                {% if r.id_s %}<a href="/excluir/{{ r.id_s }}" style="margin-left:10px;">📤🗑️</a>{% endif %}
+            </td>
+        </tr>
+        {% endfor %}
+    </tbody>
+</table>
