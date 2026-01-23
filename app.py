@@ -7,7 +7,6 @@ app.secret_key = 'clinica_thamiris_secret'
 ADMIN_PASSWORD = "8340"
 fuso_horario = pytz.timezone('America/Sao_Paulo')
 
-# Lista de registros (simulando banco de dados)
 registros_ponto = []
 
 @app.route('/')
@@ -18,7 +17,6 @@ def index():
 def bater_ponto():
     nome = request.form.get('colaboradora')
     tipo = request.form.get('tipo')
-    # Aqui pegamos a localização enviada pelo navegador
     loc = request.form.get('local_status') or "Unidade Penha"
     agora = datetime.now(fuso_horario)
     
@@ -32,6 +30,20 @@ def bater_ponto():
     flash(f"Bom {'trabalho' if tipo=='Entrada' else 'descanso'} meu bem! 🌸")
     return redirect(url_for('index'))
 
+@app.route('/inserir_manual', methods=['POST'])
+def inserir_manual():
+    if not session.get('admin_logado'): return redirect(url_for('login'))
+    data_br = datetime.strptime(request.form.get('data'), '%Y-%m-%d').strftime('%d/%m/%Y')
+    registros_ponto.append({
+        'id': len(registros_ponto),
+        'nome': request.form.get('nome'), 
+        'tipo': request.form.get('tipo'),
+        'data': data_br, 
+        'hora': request.form.get('hora'),
+        'local': 'Manual pela Gestão'
+    })
+    return redirect(url_for('gestao'))
+
 @app.route('/login', methods=['GET', 'POST'])
 def login():
     if request.method == 'POST' and request.form.get('password') == ADMIN_PASSWORD:
@@ -42,13 +54,11 @@ def login():
 @app.route('/gestao')
 def gestao():
     if not session.get('admin_logado'): return redirect(url_for('login'))
-    
     resumo = {}
     for r in registros_ponto:
         chave = (r['data'], r['nome'])
         if chave not in resumo:
             resumo[chave] = {'e': '--:--', 's': '--:--', 'id_e': None, 'id_s': None, 'loc': 'N/A'}
-        
         if r['tipo'] == 'Entrada':
             resumo[chave]['e'] = r['hora']
             resumo[chave]['id_e'] = r['id']
@@ -60,23 +70,19 @@ def gestao():
     dados_finais = []
     for (data, nome), v in resumo.items():
         saldo_str = "00:00"
-        cor_status = "azul" # Padrão: 6h exatas
-        
+        cor_status = "azul" 
         if v['e'] != '--:--' and v['s'] != '--:--':
             try:
                 h1, m1 = map(int, v['e'].split(':'))
                 h2, m2 = map(int, v['s'].split(':'))
-                total_min = (h2 * 60 + m2) - (h1 * 60 + m1)
-                
-                diff = total_min - 360 # Base 6h
-                if diff > 0: cor_status = "verde" # Extra
-                elif diff < 0: cor_status = "vermelho" # Atraso
-                
+                diff = (h2 * 60 + m2) - (h1 * 60 + m1) - 360
+                if diff > 0: cor_status = "verde"
+                elif diff < 0: cor_status = "vermelho"
+                else: cor_status = "azul"
                 sinal = "+" if diff >= 0 else "-"
                 abs_m = abs(diff)
                 saldo_str = f"{sinal}{abs_m//60:02d}:{abs_m%60:02d}"
             except: pass
-            
         dados_finais.append({
             'data': data, 'nome': nome, 'e': v['e'], 's': v['s'],
             'id_e': v['id_e'], 'id_s': v['id_s'], 'saldo': saldo_str, 
