@@ -17,7 +17,7 @@ def get_db_connection():
 
 @app.route('/')
 def index():
-    # Garante Esther Julia fixa na tela inicial
+    # Garant Esther Julia fixa na tela inicial
     return render_template('index.html', funcionarios=[{'id': 1, 'nome': 'Esther Julia'}])
 
 @app.route('/bater_ponto', methods=['POST'])
