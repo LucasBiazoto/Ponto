@@ -1,67 +1,35 @@
-<!DOCTYPE html>
-<html lang="pt-br">
-<head>
-    <meta charset="UTF-8">
-    <title>Gestão Dra. Thamiris</title>
-    <style>
-        body { background: #fff5f7; font-family: sans-serif; padding: 20px; }
-        .topo { background: white; padding: 20px; border-radius: 15px; display: flex; justify-content: space-between; align-items: center; box-shadow: 0 4px 10px rgba(0,0,0,0.05); }
-        .btn { padding: 10px 20px; border-radius: 8px; border: none; background: #d68c9a; color: white; font-weight: bold; cursor: pointer; text-decoration: none; }
-        table { width: 100%; background: white; border-radius: 15px; margin-top: 20px; border-collapse: collapse; overflow: hidden; }
-        th { background: #fce4ec; color: #d68c9a; padding: 15px; }
-        td { padding: 15px; border-bottom: 1px solid #eee; text-align: center; }
-        .modal { display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.5); }
-    </style>
-</head>
-<body>
-    <div class="topo">
-        <h1 style="color: #d68c9a; margin: 0;">🌸 Gestão Clínica Penha</h1>
-        <a href="/logout" style="color: #d68c9a; text-decoration: none; font-weight: bold;">Sair</a>
-    </div>
+<div style="display: flex; justify-content: space-between; align-items: center; background: white; padding: 20px; border-radius: 15px; margin-bottom: 20px;">
+    <form method="GET" action="/gestao" style="display: flex; gap: 10px; align-items: center;">
+        <select name="mes" class="btn" style="background: #fff; color: #d68c9a; border: 1px solid #d68c9a;">
+            <option value="01" {{ 'selected' if mes_sel == '01' }}>Janeiro</option>
+            <option value="02" {{ 'selected' if mes_sel == '02' }}>Fevereiro</option>
+            <option value="03" {{ 'selected' if mes_sel == '03' }}>Março</option>
+            <option value="04" {{ 'selected' if mes_sel == '04' }}>Abril</option>
+            <option value="05" {{ 'selected' if mes_sel == '05' }}>Maio</option>
+            <option value="06" {{ 'selected' if mes_sel == '06' }}>Junho</option>
+            <option value="07" {{ 'selected' if mes_sel == '07' }}>Julho</option>
+            <option value="08" {{ 'selected' if mes_sel == '08' }}>Agosto</option>
+            <option value="09" {{ 'selected' if mes_sel == '09' }}>Setembro</option>
+            <option value="10" {{ 'selected' if mes_sel == '10' }}>Outubro</option>
+            <option value="11" {{ 'selected' if mes_sel == '11' }}>Novembro</option>
+            <option value="12" {{ 'selected' if mes_sel == '12' }}>Dezembro</option>
+        </select>
+        <select name="ano" class="btn" style="background: #fff; color: #d68c9a; border: 1px solid #d68c9a;">
+            <option value="2025" {{ 'selected' if ano_sel == '2025' }}>2025</option>
+            <option value="2026" {{ 'selected' if ano_sel == '2026' }}>2026</option>
+        </select>
+        <button type="submit" class="btn">🔍 Filtrar</button>
+    </form>
 
-    <div style="margin-top: 20px;">
-        <button class="btn" onclick="document.getElementById('m').style.display='block'">➕ Inserir Manual</button>
+    <div style="display: flex; gap: 10px;">
+        <button class="btn" onclick="window.print()">🖨️ Exportar PDF</button>
+        <button class="btn" style="background: #fff; color: #d68c9a; border: 2px solid #d68c9a;" onclick="document.getElementById('m').style.display='block'">➕ Inserir Manual</button>
     </div>
+</div>
 
-    <table>
-        <thead>
-            <tr>
-                <th>Data</th><th>Colaboradora</th><th>Entrada</th><th>Saída</th><th>Saldo (6h)</th><th>Localização</th><th>Ações</th>
-            </tr>
-        </thead>
-        <tbody>
-            {% for r in registros %}
-            {% set hex = '#3498db' %} {# Azul Padrão #}
-            {% if r.cor == 'verde' %}{% set hex = '#27ae60' %}{% endif %}
-            {% if r.cor == 'vermelho' %}{% set hex = '#e74c3c' %}{% endif %}
-            <tr>
-                <td>{{ r.data }}</td>
-                <td><b>{{ r.nome }}</b></td>
-                <td style="color:{{ hex }}; font-weight:bold;">{{ r.e }}</td>
-                <td style="color:{{ hex }}; font-weight:bold;">{{ r.s }}</td>
-                <td style="font-weight: bold;">{{ r.saldo }}</td>
-                <td><small style="color: {{ 'red' if 'Fora' in r.loc else '#888' }}">{{ r.loc }}</small></td>
-                <td>
-                    {% if r.id_e is not none %}<a href="/excluir/{{ r.id_e }}" title="Apagar Entrada" style="text-decoration:none;">📥🗑️</a>{% endif %}
-                    {% if r.id_s is not none %}<a href="/excluir/{{ r.id_s }}" title="Apagar Saída" style="text-decoration:none; margin-left: 10px;">📤🗑️</a>{% endif %}
-                </td>
-            </tr>
-            {% endfor %}
-        </tbody>
-    </table>
-
-    <div id="m" class="modal">
-        <div style="background:white; width:300px; margin:10% auto; padding:25px; border-radius:15px;">
-            <h3 style="color:#d68c9a;">Novo Registro</h3>
-            <form action="/inserir_manual" method="POST">
-                <input type="date" name="data" style="width:100%; margin-bottom:10px;" required>
-                <input type="time" name="hora" style="width:100%; margin-bottom:10px;" required>
-                <select name="nome" style="width:100%; margin-bottom:10px;"><option>Esther Julia</option><option>Dra Thamiris Araujo</option></select>
-                <select name="tipo" style="width:100%; margin-bottom:10px;"><option>Entrada</option><option>Saída</option></select>
-                <button type="submit" class="btn" style="width:100%;">Salvar</button>
-                <button type="button" onclick="document.getElementById('m').style.display='none'" style="width:100%; background:none; border:none; color:#888; margin-top:10px; cursor:pointer;">Cancelar</button>
-            </form>
-        </div>
-    </div>
-</body>
-</html>
+<div style="background: white; padding: 15px; border-radius: 15px; margin-bottom: 20px; display: inline-block; box-shadow: 0 4px 10px rgba(0,0,0,0.05);">
+    <span style="color: #888;">Saldo Total do Período:</span>
+    <strong style="font-size: 20px; color: {{ '#27ae60' if '+' in soma_total else '#e74c3c' }};">
+        {{ soma_total }}
+    </strong>
+</div>
