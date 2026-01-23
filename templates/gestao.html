@@ -1,41 +1,32 @@
-<table>
-    <thead>
+<table style="width:100%; background:white; border-radius:15px; overflow:hidden; border-collapse: collapse;">
+    <thead style="background:#fce4ec; color:#d68c9a;">
         <tr>
-            <th>Data</th>
-            <th>Colaboradora</th>
-            <th>Entrada</th>
-            <th>Saída</th>
-            <th>Saldo (6h)</th>
-            <th>Localização</th>
-            <th>Ações</th>
+            <th style="padding:15px;">Data</th><th>Colaboradora</th>
+            <th>Entrada</th><th>Saída</th><th>Saldo (6h)</th>
+            <th>Localização</th><th>Ações</th>
         </tr>
     </thead>
     <tbody>
         {% for r in registros %}
-        <tr style="text-align: center; border-bottom: 1px solid #eee;">
-            <td style="padding: 15px;">{{ r.data }}</td>
+        <tr style="text-align:center; border-bottom:1px solid #eee;">
+            <td style="padding:15px;">{{ r.data }}</td>
             <td><b>{{ r.nome }}</b></td>
             
             {# Lógica de Cores da Dra. Thamiris #}
-            {% set cor = '#3498db' %} {# Azul para Normal #}
-            {% if r.status == 'extra' %}{% set cor = '#27ae60' %}{% endif %} {# Verde para Extra #}
-            {% if r.status == 'atraso' %}{% set cor = '#e74c3c' %}{% endif %} {# Vermelho para Atraso #}
+            {% set hex = '#3498db' %} {# Azul #}
+            {% if r.cor == 'verde' %}{% set hex = '#27ae60' %}{% endif %}
+            {% if r.cor == 'vermelho' %}{% set hex = '#e74c3c' %}{% endif %}
 
-            <td style="color: {{ cor }}; font-weight: bold;">{{ r.e }}</td>
-            <td style="color: {{ cor }}; font-weight: bold;">{{ r.s }}</td>
-            
-            <td style="font-weight: bold;">{{ r.saldo }}</td>
-            <td>
-                <small style="color: {{ 'red' if 'Fora' in r.loc else '#888' }}">
-                    {{ r.loc }}
-                </small>
-            </td>
+            <td style="color:{{ hex }}; font-weight:bold;">{{ r.e }}</td>
+            <td style="color:{{ hex }}; font-weight:bold;">{{ r.s }}</td>
+            <td style="font-weight:bold;">{{ r.saldo }}</td>
+            <td><small>{{ r.loc }}</small></td>
             <td>
                 {% if r.id_e is not none %}
                     <a href="/excluir/{{ r.id_e }}" title="Apagar Entrada" style="text-decoration:none;">📥🗑️</a>
                 {% endif %}
                 {% if r.id_s is not none %}
-                    <a href="/excluir/{{ r.id_s }}" title="Apagar Saída" style="text-decoration:none; margin-left: 10px;">📤🗑️</a>
+                    <a href="/excluir/{{ r.id_s }}" title="Apagar Saída" style="text-decoration:none; margin-left:10px;">📤🗑️</a>
                 {% endif %}
             </td>
         </tr>

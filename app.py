@@ -1,3 +1,44 @@
+from flask import Flask, render_template, request, redirect, url_for, flash, session
+from datetime import datetime
+import pytz
+
+app = Flask(__name__)
+app.secret_key = 'clinica_thamiris_secret'
+ADMIN_PASSWORD = "8340"
+fuso_horario = pytz.timezone('America/Sao_Paulo')
+
+# Lista de registros (simulando banco de dados)
+registros_ponto = []
+
+@app.route('/')
+def index():
+    return render_template('index.html')
+
+@app.route('/bater_ponto', methods=['POST'])
+def bater_ponto():
+    nome = request.form.get('colaboradora')
+    tipo = request.form.get('tipo')
+    # Aqui pegamos a localização enviada pelo navegador
+    loc = request.form.get('local_status') or "Unidade Penha"
+    agora = datetime.now(fuso_horario)
+    
+    registros_ponto.append({
+        'id': len(registros_ponto),
+        'nome': nome, 'tipo': tipo,
+        'data': agora.strftime('%d/%m/%Y'),
+        'hora': agora.strftime('%H:%M'),
+        'local': loc
+    })
+    flash(f"Bom {'trabalho' if tipo=='Entrada' else 'descanso'} meu bem! 🌸")
+    return redirect(url_for('index'))
+
+@app.route('/login', methods=['GET', 'POST'])
+def login():
+    if request.method == 'POST' and request.form.get('password') == ADMIN_PASSWORD:
+        session['admin_logado'] = True
+        return redirect(url_for('gestao'))
+    return render_template('login.html')
+
 @app.route('/gestao')
 def gestao():
     if not session.get('admin_logado'): return redirect(url_for('login'))
@@ -11,7 +52,7 @@ def gestao():
         if r['tipo'] == 'Entrada':
             resumo[chave]['e'] = r['hora']
             resumo[chave]['id_e'] = r['id']
-            resumo[chave]['loc'] = r.get('local', 'N/A') # Recupera a localização
+            resumo[chave]['loc'] = r.get('local', 'N/A')
         else:
             resumo[chave]['s'] = r['hora']
             resumo[chave]['id_s'] = r['id']
@@ -19,28 +60,37 @@ def gestao():
     dados_finais = []
     for (data, nome), v in resumo.items():
         saldo_str = "00:00"
-        status_dia = "normal" # Define a cor padrão (Azul)
+        cor_status = "azul" # Padrão: 6h exatas
         
         if v['e'] != '--:--' and v['s'] != '--:--':
             try:
                 h1, m1 = map(int, v['e'].split(':'))
                 h2, m2 = map(int, v['s'].split(':'))
-                total_minutos = (h2 * 60 + m2) - (h1 * 60 + m1)
+                total_min = (h2 * 60 + m2) - (h1 * 60 + m1)
                 
-                saldo_minutos = total_minutos - 360 # Base 6h
+                diff = total_min - 360 # Base 6h
+                if diff > 0: cor_status = "verde" # Extra
+                elif diff < 0: cor_status = "vermelho" # Atraso
                 
-                if saldo_minutos > 0: status_dia = "extra"
-                elif saldo_minutos < 0: status_dia = "atraso"
-                
-                sinal = "+" if saldo_minutos >= 0 else "-"
-                abs_min = abs(saldo_minutos)
-                saldo_str = f"{sinal}{abs_min // 60:02d}:{abs_min % 60:02d}"
+                sinal = "+" if diff >= 0 else "-"
+                abs_m = abs(diff)
+                saldo_str = f"{sinal}{abs_m//60:02d}:{abs_m%60:02d}"
             except: pass
             
         dados_finais.append({
             'data': data, 'nome': nome, 'e': v['e'], 's': v['s'],
             'id_e': v['id_e'], 'id_s': v['id_s'], 'saldo': saldo_str, 
-            'loc': v['loc'], 'status': status_dia
+            'loc': v['loc'], 'cor': cor_status
         })
-    
     return render_template('gestao.html', registros=dados_finais)
+
+@app.route('/excluir/<int:id>')
+def excluir(id):
+    global registros_ponto
+    registros_ponto = [r for r in registros_ponto if r['id'] != id]
+    return redirect(url_for('gestao'))
+
+@app.route('/logout')
+def logout():
+    session.clear()
+    return redirect(url_for('index'))
