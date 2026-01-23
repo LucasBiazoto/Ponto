@@ -1,0 +1,69 @@
+/* Estilo Feminino e Elegante - Clínica Dra. Thamiris Araujo */
+:root {
+    --rosa-claro: #fff5f8;
+    --rosa-principal: #f8bbd0;
+    --rosa-escuro: #c48b9f;
+    --dourado: #d4af37;
+    --texto: #5d4037;
+}
+
+body {
+    background-color: var(--rosa-claro);
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    color: var(--texto);
+    margin: 0;
+    padding: 20px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+}
+
+.container {
+    background: white;
+    padding: 30px;
+    border-radius: 20px;
+    box-shadow: 0 10px 25px rgba(0,0,0,0.05);
+    width: 100%;
+    max-width: 800px;
+    border: 1px solid var(--rosa-principal);
+}
+
+h1, h2 {
+    color: var(--rosa-escuro);
+    text-align: center;
+    font-weight: 300;
+}
+
+button, .btn {
+    background-color: var(--rosa-principal);
+    color: white;
+    border: none;
+    padding: 12px 25px;
+    border-radius: 25px;
+    cursor: pointer;
+    font-size: 16px;
+    transition: all 0.3s;
+    margin: 5px;
+}
+
+button:hover {
+    background-color: var(--rosa-escuro);
+    transform: translateY(-2px);
+}
+
+input, select {
+    width: 100%;
+    padding: 10px;
+    margin: 10px 0;
+    border-radius: 10px;
+    border: 1px solid var(--rosa-principal);
+}
+
+.alert {
+    padding: 15px;
+    border-radius: 10px;
+    margin: 20px 0;
+    text-align: center;
+    background-color: #e8f5e9;
+    color: #2e7d32;
+}
