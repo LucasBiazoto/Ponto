@@ -13,12 +13,10 @@ def get_db_connection():
     try:
         url = os.environ.get('DATABASE_URL').replace("postgres://", "postgresql://", 1)
         return psycopg2.connect(url, sslmode='require')
-    except: 
-        return None
+    except: return None
 
 @app.route('/')
 def index():
-    # Carrega o index.html revisado
     return render_template('index.html')
 
 @app.route('/bater_ponto', methods=['POST'])
@@ -26,12 +24,10 @@ def bater_ponto():
     nome = request.form.get('colaboradora')
     tipo = request.form.get('tipo')
     agora = datetime.now(SP_TZ)
-    
     conn = get_db_connection()
     if conn:
         cur = conn.cursor()
         if tipo == 'Entrada':
-            # Insere o ponto com a mensagem carinhosa
             cur.execute('INSERT INTO pontos (funcionario_nome, entrada) VALUES (%s, %s)', (nome, agora))
             flash(f'Bom trabalho meu bem, {nome}! 🌸')
         else:
@@ -44,4 +40,12 @@ def bater_ponto():
 
 @app.route('/login')
 def login():
-    return render_template('painel_gestao.html')
+    conn = get_db_connection()
+    pontos = []
+    if conn:
+        cur = conn.cursor(cursor_factory=RealDictCursor)
+        cur.execute("SELECT funcionario_nome as nome, entrada, saida FROM pontos ORDER BY entrada DESC")
+        pontos = cur.fetchall()
+        cur.close()
+        conn.close()
+    return render_template('painel_gestao.html', pontos=pontos)

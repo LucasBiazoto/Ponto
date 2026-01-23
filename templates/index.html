@@ -10,7 +10,7 @@
     <div class="container">
         <header>
             <h1>🌸 Dra. Thamiris Araujo</h1>
-            <p>Estética Avançada • Unidade Penha</p>
+            <p>Unidade Penha • Estética Avançada</p>
         </header>
 
         {% with messages = get_flashed_messages() %}
@@ -21,20 +21,17 @@
           {% endif %}
         {% endwith %}
 
-        <div class="ponto-card">
-            <form action="/bater_ponto" method="POST">
-                <label>Selecione seu nome:</label>
-                <select name="colaboradora" required>
-                    <option value="Esther Julia">Esther Julia</option>
-                    <option value="Dra Thamiris Araujo">Dra. Thamiris Araujo</option>
-                </select>
-                <button type="submit" name="tipo" value="Entrada" class="btn-entrada">Bater Entrada</button>
-                <button type="submit" name="tipo" value="Saída" class="btn-saida">Bater Saída</button>
-            </form>
-        </div>
+        <form action="/bater_ponto" method="POST">
+            <select name="colaboradora" required>
+                <option value="Esther Julia">Esther Julia</option>
+                <option value="Dra Thamiris Araujo">Dra. Thamiris Araujo</option>
+            </select>
+            <button type="submit" name="tipo" value="Entrada" class="btn-entrada">Bater Entrada</button>
+            <button type="submit" name="tipo" value="Saída" class="btn-saida">Bater Saída</button>
+        </form>
 
         <div class="footer-link">
-            <a href="/login">— Acesso Restrito Dra. Thamiris —</a>
+            <a href="/login">🌸 Acesso Restrito</a>
         </div>
     </div>
 </body>
