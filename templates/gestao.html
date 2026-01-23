@@ -2,42 +2,47 @@
 <html lang="pt-br">
 <head>
     <meta charset="UTF-8">
-    <title>Gestão Dra. Thamiris</title>
+    <title>Painel Administrativo - Dra. Thamiris</title>
     <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
 </head>
 <body style="background-color: #fff5f7;">
-    <div class="container" style="max-width: 1000px;">
-        <header style="display: flex; justify-content: space-between; align-items: center;">
-            <h1>🌸 Relatório de Ponto</h1>
-            <a href="/" class="btn-saida" style="width: auto; padding: 5px 15px; text-decoration: none;">Voltar</a>
+    <div class="container" style="max-width: 1100px;">
+        <header style="display: flex; justify-content: space-between; align-items: center; border-bottom: 2px solid #fce4ec; padding-bottom: 10px;">
+            <h1 style="font-size: 24px;">🌸 Gestão de Pontos</h1>
+            <a href="/logout" class="btn-saida" style="width: auto; padding: 8px 20px; text-decoration: none; font-size: 14px;">Sair</a>
         </header>
 
-        <div style="display: flex; justify-content: space-between; margin: 20px 0;">
-            <select style="width: 45%; padding: 10px; border-radius: 8px; border: 1px solid #d68c9a;">
-                <option>Filtrar Mês (Janeiro a Dezembro)</option>
+        <div style="display: flex; gap: 15px; margin: 25px 0;">
+            <select style="flex: 2; padding: 12px; border-radius: 10px; border: 1px solid #d68c9a; background: white;">
+                <option>Selecione o Mês (Janeiro a Dezembro)</option>
+                <option>Janeiro</option>
+                <option>Fevereiro</option>
             </select>
-            <button class="btn-entrada" style="width: 45%; background-color: #d68c9a;">+ Inserir Manual</button>
+            <button class="btn-entrada" style="flex: 1; margin: 0; background-color: #d68c9a;">+ Inserir Manual</button>
+            <button class="btn-saida" style="flex: 1; margin: 0; border-color: #d68c9a; color: #d68c9a;">📥 Exportar PDF</button>
         </div>
 
-        <div style="background: white; border-radius: 15px; padding: 20px; box-shadow: 0 4px 15px rgba(0,0,0,0.05);">
-            <table style="width: 100%; text-align: left; border-collapse: collapse;">
-                <thead style="color: #d68c9a; border-bottom: 2px solid #fce4ec;">
-                    <tr>
-                        <th style="padding: 10px;">Colaboradora</th>
-                        <th style="padding: 10px;">Entrada</th>
-                        <th style="padding: 10px;">Saída</th>
-                        <th style="padding: 10px;">Horas (Base 6h)</th>
-                        <th style="padding: 10px;">Ações</th>
+        <div style="background: white; border-radius: 20px; padding: 20px; box-shadow: 0 10px 30px rgba(214, 140, 154, 0.1);">
+            <table style="width: 100%; border-collapse: collapse; text-align: left;">
+                <thead>
+                    <tr style="color: #d68c9a; border-bottom: 2px solid #fce4ec;">
+                        <th style="padding: 15px;">Colaboradora</th>
+                        <th style="padding: 15px;">Data</th>
+                        <th style="padding: 15px;">Entrada</th>
+                        <th style="padding: 15px;">Saída</th>
+                        <th style="padding: 15px;">Total Horas</th>
+                        <th style="padding: 15px;">Ação</th>
                     </tr>
                 </thead>
                 <tbody>
                     {% for registro in registros %}
-                    <tr style="border-bottom: 1px solid #fce4ec;">
-                        <td style="padding: 12px;">{{ registro.nome }}</td>
-                        <td style="padding: 12px;">{% if registro.tipo == 'Entrada' %}{{ registro.horario }}{% else %}-{% endif %}</td>
-                        <td style="padding: 12px;">{% if registro.tipo == 'Saída' %}{{ registro.horario }}{% else %}-{% endif %}</td>
-                        <td style="padding: 12px;">--:--</td>
-                        <td style="padding: 12px;"><button style="background: none; border: none; color: #d68c9a; cursor: pointer;">⚙️</button></td>
+                    <tr style="border-bottom: 1px solid #fff5f7;">
+                        <td style="padding: 15px; font-weight: bold; color: #555;">{{ registro.nome }}</td>
+                        <td style="padding: 15px;">{{ registro.data }}</td>
+                        <td style="padding: 15px; color: #2ecc71;">{{ registro.hora if registro.tipo == 'Entrada' else '-' }}</td>
+                        <td style="padding: 15px; color: #e74c3c;">{{ registro.hora if registro.tipo == 'Saída' else '-' }}</td>
+                        <td style="padding: 15px;"><span style="background: #fce4ec; padding: 5px 10px; border-radius: 5px; font-size: 12px;">Base 6h</span></td>
+                        <td style="padding: 15px;"><button style="background: none; border: none; cursor: pointer;">✏️</button></td>
                     </tr>
                     {% endfor %}
                 </tbody>
@@ -45,4 +50,4 @@
         </div>
     </div>
 </body>
-</html>
+</html> 

@@ -5,11 +5,10 @@ import pytz
 app = Flask(__name__)
 app.secret_key = 'clinica_thamiris_secret'
 
-# Configuração da senha e fuso horário (São Paulo)
 ADMIN_PASSWORD = "8340"
 fuso_horario = pytz.timezone('America/Sao_Paulo')
 
-# Lista para armazenar os registros (Memória temporária)
+# Lista de registros (em um projeto real usaríamos banco de dados)
 registros_ponto = []
 
 @app.route('/')
@@ -20,35 +19,29 @@ def index():
 def bater_ponto():
     nome = request.form.get('colaboradora')
     tipo = request.form.get('tipo')
-    # Pega a hora exata no Brasil
     agora = datetime.now(fuso_horario)
-    hora_formatada = agora.strftime('%H:%M:%S')
-    data_formatada = agora.strftime('%d/%m/%Y')
-
-    # Salvando na lista
+    
     registros_ponto.append({
         'nome': nome, 
         'tipo': tipo, 
-        'horario': f"{data_formatada} às {hora_formatada}"
+        'data': agora.strftime('%d/%m/%Y'),
+        'hora': agora.strftime('%H:%M:%S')
     })
 
-    # Mensagens personalizadas Dra. Thamiris Araujo
     if tipo == 'Entrada':
-        flash(f"Bom trabalho meu bem! 🌸 Ponto de {tipo} batido às {hora_formatada}")
+        flash(f"Bom trabalho meu bem! 🌸 Ponto de {tipo} batido às {agora.strftime('%H:%M:%S')}")
     else:
-        flash(f"Bom descanso meu bem! 🌸 Ponto de {tipo} batido às {hora_formatada}")
-
+        flash(f"Bom descanso meu bem! 🌸 Ponto de {tipo} batido às {agora.strftime('%H:%M:%S')}")
+    
     return redirect(url_for('index'))
 
 @app.route('/login', methods=['GET', 'POST'])
 def login():
     if request.method == 'POST':
-        senha = request.form.get('password')
-        if senha == ADMIN_PASSWORD:
+        if request.form.get('password') == ADMIN_PASSWORD:
             session['admin_logado'] = True
             return redirect(url_for('gestao'))
-        else:
-            flash("Senha incorreta, tente novamente.")
+        flash("Senha incorreta!")
     return render_template('login.html')
 
 @app.route('/gestao')
