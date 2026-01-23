@@ -1,66 +1,44 @@
-<!DOCTYPE html>
-<html lang="pt-br">
-<head>
-    <meta charset="UTF-8">
-    <title>Gestão Dra. Thamiris</title>
-    <style>
-        body { background: #fff5f7; font-family: sans-serif; margin: 0; padding: 20px; }
-        .topo { background: white; padding: 20px; border-radius: 15px; display: flex; justify-content: space-between; align-items: center; box-shadow: 0 4px 10px rgba(0,0,0,0.05); }
-        table { width: 100%; background: white; border-radius: 15px; margin-top: 20px; border-collapse: collapse; overflow: hidden; }
-        th { background: #fce4ec; color: #d68c9a; padding: 15px; text-align: left; }
-        td { padding: 15px; border-bottom: 1px solid #eee; text-align: center; }
-        .btn { padding: 10px 20px; border-radius: 8px; border: none; background: #d68c9a; color: white; font-weight: bold; cursor: pointer; text-decoration: none; }
-    </style>
-</head>
-<body>
-    <div class="topo">
-        <h1 style="color: #d68c9a; margin: 0;">🌸 Gestão Clínica Penha</h1>
-        <a href="/logout" style="color: #d68c9a; text-decoration: none; font-weight: bold;">Sair</a>
-    </div>
+<table>
+    <thead>
+        <tr>
+            <th>Data</th>
+            <th>Colaboradora</th>
+            <th>Entrada</th>
+            <th>Saída</th>
+            <th>Saldo (6h)</th>
+            <th>Localização</th>
+            <th>Ações</th>
+        </tr>
+    </thead>
+    <tbody>
+        {% for r in registros %}
+        <tr style="text-align: center; border-bottom: 1px solid #eee;">
+            <td style="padding: 15px;">{{ r.data }}</td>
+            <td><b>{{ r.nome }}</b></td>
+            
+            {# Lógica de Cores da Dra. Thamiris #}
+            {% set cor = '#3498db' %} {# Azul para Normal #}
+            {% if r.status == 'extra' %}{% set cor = '#27ae60' %}{% endif %} {# Verde para Extra #}
+            {% if r.status == 'atraso' %}{% set cor = '#e74c3c' %}{% endif %} {# Vermelho para Atraso #}
 
-    <div style="margin-top: 20px;">
-        <button class="btn" onclick="document.getElementById('modal').style.display='block'">➕ Inserir Manual</button>
-    </div>
-
-    <table>
-        <thead>
-            <tr>
-                <th>Data</th><th>Colaboradora</th><th>Entrada</th><th>Saída</th><th>Saldo (6h)</th><th>Ações</th>
-            </tr>
-        </thead>
-        <tbody>
-            {% for r in registros %}
-            <tr>
-                <td>{{ r.data }}</td>
-                <td><b>{{ r.nome }}</b></td>
-                <td style="color: #2ecc71;">{{ r.e }}</td>
-                <td style="color: #e74c3c;">{{ r.s }}</td>
-                <td style="font-weight: bold;">{{ r.saldo }}</td>
-                <td>
-                    {% if r.id_e is not none %}
-                        <a href="/excluir/{{ r.id_e }}" title="Excluir Entrada" style="text-decoration:none;">📥🗑️</a>
-                    {% endif %}
-                    {% if r.id_s is not none %}
-                        <a href="/excluir/{{ r.id_s }}" title="Excluir Saída" style="text-decoration:none; margin-left: 10px;">📤🗑️</a>
-                    {% endif %}
-                </td>
-            </tr>
-            {% endfor %}
-        </tbody>
-    </table>
-
-    <div id="modal" style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.5);">
-        <div style="background:white; width:300px; margin:10% auto; padding:25px; border-radius:15px;">
-            <h3 style="color:#d68c9a;">Novo Registro</h3>
-            <form action="/inserir_manual" method="POST">
-                <input type="date" name="data" style="width:100%; margin-bottom:10px;" required>
-                <input type="time" name="hora" style="width:100%; margin-bottom:10px;" required>
-                <select name="nome" style="width:100%; margin-bottom:10px;"><option>Esther Julia</option><option>Dra Thamiris Araujo</option></select>
-                <select name="tipo" style="width:100%; margin-bottom:10px;"><option>Entrada</option><option>Saída</option></select>
-                <button type="submit" class="btn" style="width:100%;">Salvar</button>
-                <button type="button" onclick="document.getElementById('modal').style.display='none'" style="width:100%; background:none; border:none; color:#888; margin-top:10px; cursor:pointer;">Cancelar</button>
-            </form>
-        </div>
-    </div>
-</body>
-</html>
+            <td style="color: {{ cor }}; font-weight: bold;">{{ r.e }}</td>
+            <td style="color: {{ cor }}; font-weight: bold;">{{ r.s }}</td>
+            
+            <td style="font-weight: bold;">{{ r.saldo }}</td>
+            <td>
+                <small style="color: {{ 'red' if 'Fora' in r.loc else '#888' }}">
+                    {{ r.loc }}
+                </small>
+            </td>
+            <td>
+                {% if r.id_e is not none %}
+                    <a href="/excluir/{{ r.id_e }}" title="Apagar Entrada" style="text-decoration:none;">📥🗑️</a>
+                {% endif %}
+                {% if r.id_s is not none %}
+                    <a href="/excluir/{{ r.id_s }}" title="Apagar Saída" style="text-decoration:none; margin-left: 10px;">📤🗑️</a>
+                {% endif %}
+            </td>
+        </tr>
+        {% endfor %}
+    </tbody>
+</table>
