@@ -1,51 +1,54 @@
-import os
-import psycopg2
-from psycopg2.extras import RealDictCursor
+from flask import Flask, render_template, request, redirect, url_for, flash, session
 from datetime import datetime
 import pytz
-from flask import Flask, render_template, request, redirect, url_for, flash
 
 app = Flask(__name__)
-app.secret_key = 'clinica_thamiris_2026'
-SP_TZ = pytz.timezone('America/Sao_Paulo')
+app.secret_key = 'clinica_thamiris_secret'
 
-def get_db_connection():
-    try:
-        url = os.environ.get('DATABASE_URL').replace("postgres://", "postgresql://", 1)
-        return psycopg2.connect(url, sslmode='require')
-    except: return None
+# Configuração da senha e fuso horário
+ADMIN_PASSWORD = "8340"
+fuso_horario = pytz.timezone('America/Sao_Paulo')
+
+# Lista para armazenar os registros (em produção ideal seria um banco de dados)
+registros_ponto = []
 
 @app.route('/')
 def index():
     return render_template('index.html')
 
-@app.route('/bater_ponto', methods=['POST'])
+@app.route('/bater_ponto', method=['POST'])
 def bater_ponto():
     nome = request.form.get('colaboradora')
     tipo = request.form.get('tipo')
-    agora = datetime.now(SP_TZ)
-    conn = get_db_connection()
-    if conn:
-        cur = conn.cursor()
-        if tipo == 'Entrada':
-            cur.execute('INSERT INTO pontos (funcionario_nome, entrada) VALUES (%s, %s)', (nome, agora))
-            flash(f'Bom trabalho meu bem, {nome}! 🌸')
-        else:
-            cur.execute('UPDATE pontos SET saida = %s WHERE funcionario_nome = %s AND saida IS NULL', (agora, nome))
-            flash(f'Bom descanso meu bem, {nome}! ✨')
-        conn.commit()
-        cur.close()
-        conn.close()
+    hora_atual = datetime.now(fuso_horario).strftime('%d/%m/%Y %H:%M:%S')
+
+    # Salvando o registro
+    registros_ponto.append({'nome': nome, 'tipo': tipo, 'horario': hora_atual})
+
+    # Mensagens carinhosas personalizadas
+    if tipo == 'Entrada':
+        flash(f"Bom trabalho meu bem! 🌸 Ponto de {tipo} batido às {hora_atual}")
+    else:
+        flash(f"Bom descanso meu bem! 🌸 Ponto de {tipo} batido às {hora_atual}")
+
     return redirect(url_for('index'))
 
-@app.route('/login')
+@app.route('/login', methods=['GET', 'POST'])
 def login():
-    conn = get_db_connection()
-    pontos = []
-    if conn:
-        cur = conn.cursor(cursor_factory=RealDictCursor)
-        cur.execute("SELECT funcionario_nome as nome, entrada, saida FROM pontos ORDER BY entrada DESC")
-        pontos = cur.fetchall()
-        cur.close()
-        conn.close()
-    return render_template('painel_gestao.html', pontos=pontos)
+    if request.method == 'POST':
+        senha = request.form.get('password')
+        if senha == ADMIN_PASSWORD:
+            session['admin_logado'] = True
+            return redirect(url_for('gestao'))
+        else:
+            flash("Senha incorreta, tente novamente.")
+    return render_template('login.html')
+
+@app.route('/gestao')
+def gestao():
+    if not session.get('admin_logado'):
+        return redirect(url_for('login'))
+    return render_template('gestao.html', registros=registros_ponto)
+
+if __name__ == '__main__':
+    app.run(debug=True)
