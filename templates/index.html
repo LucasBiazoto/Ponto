@@ -1,39 +1,31 @@
-<div class="card">
-    <h1 style="color: #d68c9a; margin-bottom: 0;">🌸 Dra. Thamiris Araujo</h1>
-    <p style="color: #888; margin-top: 5px; margin-bottom: 25px;">Estetica avançada</p>
-
-    {% with messages = get_flashed_messages() %}
-      {% if messages %}{% for msg in messages %}<div class="flash">{{ msg }}</div>{% endfor %}{% endif %}
-    {% endwith %}
-
-    <form id="formPonto" action="/bater_ponto" method="POST">
-        <input type="hidden" name="colaboradora" value="Esther Julia">
-        <input type="hidden" id="lat" name="lat" value="">
-        <input type="hidden" id="lon" name="lon" value="">
-        
-        <h3 style="color: #5a4a4d; font-size: 18px;">Olá, Esther Julia!</h3>
-        
-        <button type="button" onclick="capturarEEnviar('Entrada')" class="btn btn-entrada">Bater Entrada</button>
-        <button type="button" onclick="capturarEEnviar('Saída')" class="btn btn-saida">Bater Saída</button>
-    </form>
-    <a href="/login" class="acesso-invisivel">Acesso Restrito</a>
-</div>
-
 <script>
-function capturarEEnviar(tipo) {
-    const form = document.getElementById('formPonto');
+function baterPonto(tipo) {
+    const form = document.createElement('form');
+    form.method = 'POST';
+    form.action = '/bater_ponto';
+
     const inputTipo = document.createElement('input');
-    inputTipo.type = 'hidden';
-    inputTipo.name = 'tipo';
-    inputTipo.value = tipo;
+    inputTipo.name = 'tipo'; inputTipo.value = tipo;
     form.appendChild(inputTipo);
+
+    const latInp = document.createElement('input'); latInp.name = 'lat';
+    const lonInp = document.createElement('input'); lonInp.name = 'lon';
 
     if (navigator.geolocation) {
         navigator.geolocation.getCurrentPosition((pos) => {
-            document.getElementById('lat').value = pos.coords.latitude;
-            document.getElementById('lon').value = pos.coords.longitude;
-            form.submit();
-        }, () => { form.submit(); }); // Envia mesmo se o GPS falhar
-    } else { form.submit(); }
+            latInp.value = pos.coords.latitude;
+            lonInp.value = pos.coords.longitude;
+            enviar();
+        }, () => { enviar(); }); // Se negar GPS, envia vazio
+    } else { enviar(); }
+
+    function enviar() {
+        form.appendChild(latInp); form.appendChild(lonInp);
+        document.body.appendChild(form);
+        form.submit();
+    }
 }
 </script>
+
+<button onclick="baterPonto('Entrada')" class="btn btn-entrada">Bater Entrada</button>
+<button onclick="baterPonto('Saída')" class="btn btn-saida">Bater Saída</button>
