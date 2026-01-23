@@ -7,7 +7,9 @@ app = Flask(__name__)
 app.secret_key = 'clinica_thamiris_permanente_key'
 fuso = pytz.timezone('America/Sao_Paulo')
 
-# Lista de registros (Inicia vazia para evitar erro 500)
+# Endereço da Clínica conforme solicitado
+ENDERECO_PENHA = "Av. Amador Bueno da Veiga, 1230 - Penha"
+
 registros_ponto = []
 
 @app.route('/')
@@ -24,7 +26,7 @@ def bater_ponto():
         'nome': nome, 'tipo': tipo,
         'data': agora.strftime('%d/%m/%Y'),
         'hora': agora.strftime('%H:%M'),
-        'local': 'Unidade Penha'
+        'local': ENDERECO_PENHA
     })
     flash(f"Bom {'trabalho' if tipo=='Entrada' else 'descanso'} meu bem 🌸")
     return redirect(url_for('index'))
@@ -40,7 +42,7 @@ def inserir_manual():
             'tipo': request.form.get('tipo'),
             'data': data_br,
             'hora': request.form.get('hora'),
-            'local': 'Manual pela Gestão'
+            'local': "Manual - " + ENDERECO_PENHA
         })
     except: pass
     return redirect(url_for('gestao'))
@@ -48,31 +50,28 @@ def inserir_manual():
 @app.route('/gestao')
 def gestao():
     if not session.get('admin_logado'): return redirect(url_for('login'))
-    
     mes_sel = request.args.get('mes', datetime.now(fuso).strftime('%m'))
     resumo = {}
     total_minutos = 0
-    dias_trabalhados = set() # Conta dias únicos
 
     for r in registros_ponto:
-        # Filtro por mês
         if r['data'].split('/')[1] == mes_sel:
-            dias_trabalhados.add(r['data'])
             chave = (r['data'], r['nome'])
             if chave not in resumo:
                 resumo[chave] = {'e': '--:--', 's': '--:--', 'id_e': None, 'id_s': None}
-            
             if r['tipo'] == 'Entrada':
-                resumo[chave]['e'] = r['hora']
-                resumo[chave]['id_e'] = r['id']
+                resumo[chave]['e'] = r['hora']; resumo[chave]['id_e'] = r['id']
             else:
-                resumo[chave]['s'] = r['hora']
-                resumo[chave]['id_s'] = r['id']
+                resumo[chave]['s'] = r['hora']; resumo[chave]['id_s'] = r['id']
 
     dados_finais = []
+    dias_completos = 0 # NOVA LÓGICA DE CONTAGEM
+
     for (data, nome), v in resumo.items():
         cor, saldo = "azul", "00:00"
+        # SÓ CONTA DIA SE TIVER ENTRADA E SAÍDA
         if v['e'] != '--:--' and v['s'] != '--:--':
+            dias_completos += 1
             try:
                 h1, m1 = map(int, v['e'].split(':'))
                 h2, m2 = map(int, v['s'].split(':'))
@@ -81,10 +80,11 @@ def gestao():
                 cor = "verde" if diff > 0 else "vermelho" if diff < 0 else "azul"
                 saldo = f"{'+' if diff >= 0 else '-'}{abs(diff)//60:02d}:{abs(diff)%60:02d}"
             except: pass
+        
         dados_finais.append({'data': data, 'nome': nome, 'e': v['e'], 's': v['s'], 'id_e': v['id_e'], 'id_s': v['id_s'], 'saldo': saldo, 'cor': cor})
 
     s_total = f"{'+' if total_minutos >= 0 else '-'}{abs(total_minutos)//60:02d}:{abs(total_minutos)%60:02d}"
-    return render_template('gestao.html', registros=dados_finais, soma_total=s_total, mes_sel=mes_sel, qtd_dias=len(dias_trabalhados))
+    return render_template('gestao.html', registros=dados_finais, soma_total=s_total, mes_sel=mes_sel, qtd_dias=dias_completos)
 
 @app.route('/backup')
 def backup():

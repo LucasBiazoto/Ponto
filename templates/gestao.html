@@ -13,13 +13,10 @@
         table { width: 100%; border-collapse: collapse; margin-top: 20px; }
         th { background: #fce4ec; color: var(--cor-primaria); padding: 12px; }
         td { padding: 12px; border-bottom: 1px solid #eee; text-align: center; }
-        
-        /* LÓGICA DE CORES DAS TAGS */
         .saldo-tag { font-weight: bold; padding: 5px 10px; border-radius: 8px; }
         .verde { color: #27ae60; background: #e8f6ed; }
         .vermelho { color: #e74c3c; background: #fdecea; }
         .azul { color: #3498db; background: #ebf5fb; }
-        
         .resumo-box { margin-top: 20px; background: #fce4ec; padding: 15px; border-radius: 12px; text-align: right; }
         footer { margin-top: auto; padding: 20px; text-align: center; font-size: 14px; color: var(--cor-primaria); }
         footer a { text-decoration: none; color: inherit; font-weight: bold; }
@@ -61,16 +58,14 @@
                     <td style="color: #27ae60;">{{ r.e }}</td>
                     <td style="color: #e74c3c;">{{ r.s }}</td>
                     <td><span class="saldo-tag {{ r.cor }}">{{ r.saldo }}</span></td>
-                    <td class="no-print">
-                        <a href="/excluir/{{ r.id_e or r.id_s }}" style="text-decoration:none;">🗑️</a>
-                    </td>
+                    <td class="no-print"><a href="/excluir/{{ r.id_e or r.id_s }}" style="text-decoration:none;">🗑️</a></td>
                 </tr>
                 {% endfor %}
             </tbody>
         </table>
 
         <div class="resumo-box">
-            <p>DIAS TRABALHADOS NO MÊS: <b>{{ qtd_dias }}</b></p>
+            <p>DIAS TRABALHADOS (COMPLETOS): <b>{{ qtd_dias }}</b></p>
             <p style="font-size: 1.2em; color: var(--cor-primaria);">TOTAL DE HORAS EXTRAS: <b>{{ soma_total }}</b></p>
         </div>
     </div>
@@ -79,9 +74,7 @@
         <div style="background:white; width:300px; margin:10% auto; padding:25px; border-radius:20px; text-align:center;">
             <h3 style="color:var(--cor-primaria);">Inserir Registro</h3>
             <form action="/inserir_manual" method="POST" style="display:flex; flex-direction:column; gap:10px;">
-                <select name="nome" required style="padding:8px; border-radius:5px; border:1px solid #ddd;">
-                    <option value="Esther Julia">Esther Julia</option>
-                </select>
+                <select name="nome"><option value="Esther Julia">Esther Julia</option></select>
                 <select name="tipo"><option>Entrada</option><option>Saída</option></select>
                 <input type="date" name="data" required style="padding:8px; border-radius:5px; border:1px solid #ddd;">
                 <input type="time" name="hora" required style="padding:8px; border-radius:5px; border:1px solid #ddd;">
