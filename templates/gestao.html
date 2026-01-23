@@ -1,4 +1,4 @@
-<table>
+<table class="tabela-ponto">
     <thead>
         <tr>
             <th>Data</th>
@@ -6,7 +6,7 @@
             <th>Entrada</th>
             <th>Saída</th>
             <th>Saldo (6h)</th>
-            <th>Local</th>
+            <th>Localização</th>
             <th>Ações</th>
         </tr>
     </thead>
@@ -17,17 +17,15 @@
             <td><b>{{ r.nome }}</b></td>
             <td style="color: #2ecc71;">{{ r.entrada }}</td>
             <td style="color: #e74c3c;">{{ r.saida }}</td>
-            <td style="font-weight: bold; color: {{ '#2ecc71' if '+' in r.saldo else '#e74c3c' if '-' in r.saldo else '#666' }};">
-                {{ r.saldo }}
-            </td>
+            <td style="font-weight: bold;">{{ r.saldo }}</td>
             <td><small>{{ r.local }}</small></td>
             <td>
                 {% if r.id_e is not none %}
-                    <a href="/excluir/{{ r.id_e }}" title="Excluir Entrada" style="text-decoration:none; margin-right: 10px;">📥🗑️</a>
+                <a href="/excluir/{{ r.id_e }}" title="Excluir Entrada" style="text-decoration:none; margin-right:8px;">📥🗑️</a>
                 {% endif %}
                 
                 {% if r.id_s is not none %}
-                    <a href="/excluir/{{ r.id_s }}" title="Excluir Saída" style="text-decoration:none;">📤🗑️</a>
+                <a href="/excluir/{{ r.id_s }}" title="Excluir Saída" style="text-decoration:none;">📤🗑️</a>
                 {% endif %}
             </td>
         </tr>
