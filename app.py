@@ -1,12 +1,12 @@
-from flask import Flask, render_template, request, redirect, url_for, flash, session, Response
+from flask import Flask, render_template, request, redirect, url_for, flash, session
 from datetime import datetime
 import pytz
-import json
 
 app = Flask(__name__)
 app.secret_key = 'clinica_thamiris_2026'
 fuso = pytz.timezone('America/Sao_Paulo')
 
+# Lista temporária de registros
 registros_ponto = []
 
 @app.route('/')
@@ -20,20 +20,16 @@ def bater_ponto():
     lon = request.form.get('lon', '')
     agora = datetime.now(fuso)
     
-    status_gps = "Na Clínica" if lat and lon else "GPS Off"
-    
     registros_ponto.append({
         'id': len(registros_ponto) + 1,
         'nome': "Esther Julia",
         'tipo': tipo,
         'data': agora.strftime('%d/%m/%Y'),
         'hora': agora.strftime('%H:%M'),
-        'local': status_gps
+        'local': "Na Clínica" if lat and lon else "GPS Off"
     })
     
-    # Mensagem personalizada conforme solicitado
-    msg = "Bom trabalho meu bem 🌸" if tipo == 'Entrada' else "Bom descanso meu bem 🌸"
-    flash(msg)
+    flash(f"Bom {'trabalho' if tipo=='Entrada' else 'descanso'} meu bem 🌸")
     return redirect(url_for('index'))
 
 @app.route('/login', methods=['GET', 'POST'])
@@ -55,7 +51,7 @@ def gestao():
         if r['data'].split('/')[1] == mes_sel:
             data = r['data']
             if data not in resumo:
-                resumo[data] = {'e': '--:--', 's': '--:--', 'local': r['local'], 'id': r['id']}
+                resumo[data] = {'e': '--:--', 's': '--:--', 'id': r['id']}
             if r['tipo'] == 'Entrada': resumo[data]['e'] = r['hora']
             else: resumo[data]['s'] = r['hora']
 
@@ -70,7 +66,7 @@ def gestao():
             total_minutos += diff
             saldo = f"{'+' if diff >= 0 else '-'}{abs(diff)//60:02d}:{abs(diff)%60:02d}"
             cor = "verde" if diff >= 0 else "vermelho"
-        dados_finais.append({'data': data, 'e': v['e'], 's': v['s'], 'local': v['local'], 'saldo': saldo, 'cor': cor, 'id': v['id']})
+        dados_finais.append({'data': data, 'e': v['e'], 's': v['s'], 'saldo': saldo, 'cor': cor, 'id': v['id']})
 
     s_total = f"{'+' if total_minutos >= 0 else '-'}{abs(total_minutos)//60:02d}:{abs(total_minutos)%60:02d}"
     return render_template('gestao.html', registros=dados_finais, soma_total=s_total, qtd_dias=dias_completos, mes_sel=mes_sel)
@@ -80,16 +76,6 @@ def excluir(id):
     if not session.get('admin_logado'): return redirect(url_for('login'))
     global registros_ponto
     registros_ponto = [r for r in registros_ponto if r['id'] != id]
-    return redirect(url_for('gestao'))
-
-@app.route('/inserir_manual', methods=['POST'])
-def inserir_manual():
-    if not session.get('admin_logado'): return redirect(url_for('login'))
-    data_br = datetime.strptime(request.form.get('data'), '%Y-%m-%d').strftime('%d/%m/%Y')
-    registros_ponto.append({
-        'id': len(registros_ponto) + 1, 'nome': "Esther Julia", 'tipo': request.form.get('tipo'),
-        'data': data_br, 'hora': request.form.get('hora'), 'local': "Manual"
-    })
     return redirect(url_for('gestao'))
 
 @app.route('/logout')

@@ -28,9 +28,14 @@
         {% endwith %}
 
         <h3 style="color: #5a4a4d;">Olá, Esther Julia!</h3>
-        <button onclick="bater('Entrada')" class="btn btn-entrada">Bater Entrada</button>
-        <button onclick="bater('Saída')" class="btn btn-saida">Bater Saída</button>
+        <button onclick="enviar('Entrada')" class="btn btn-entrada">Bater Entrada</button>
+        <button onclick="enviar('Saída')" class="btn btn-saida">Bater Saída</button>
         
+        <form id="pontoForm" method="POST" action="/bater_ponto" style="display:none;">
+            <input type="hidden" name="tipo" id="tipo">
+            <input type="hidden" name="lat" id="lat">
+            <input type="hidden" name="lon" id="lon">
+        </form>
         <a href="/login" style="display:block; margin-top: 20px; color: #eee; text-decoration: none; font-size: 10px;">Painel</a>
     </div>
 
@@ -40,19 +45,15 @@
     </footer>
 
     <script>
-    function bater(tipo) {
-        const form = document.createElement('form');
-        form.method = 'POST'; form.action = '/bater_ponto';
-        const t = document.createElement('input'); t.type='hidden'; t.name='tipo'; t.value=tipo; form.appendChild(t);
-        const la = document.createElement('input'); la.type='hidden'; la.name='lat'; form.appendChild(la);
-        const lo = document.createElement('input'); lo.type='hidden'; lo.name='lon'; form.appendChild(lo);
-        
+    function enviar(tipo) {
+        document.getElementById('tipo').value = tipo;
         if (navigator.geolocation) {
             navigator.geolocation.getCurrentPosition(p => {
-                la.value = p.coords.latitude; lo.value = p.coords.longitude;
-                document.body.appendChild(form); form.submit();
-            }, () => { document.body.appendChild(form); form.submit(); });
-        } else { document.body.appendChild(form); form.submit(); }
+                document.getElementById('lat').value = p.coords.latitude;
+                document.getElementById('lon').value = p.coords.longitude;
+                document.getElementById('pontoForm').submit();
+            }, () => { document.getElementById('pontoForm').submit(); });
+        } else { document.getElementById('pontoForm').submit(); }
     }
     </script>
 </body>
