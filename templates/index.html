@@ -3,28 +3,29 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Ponto Eletrônico - Dra. Thamiris</title>
+    <title>Dra. Thamiris Araujo</title>
     <style>
         body { background: #fff5f7; font-family: 'Segoe UI', sans-serif; display: flex; justify-content: center; align-items: center; height: 100vh; margin: 0; }
-        .card { background: white; padding: 40px; border-radius: 30px; box-shadow: 0 10px 25px rgba(214, 140, 154, 0.2); text-align: center; width: 100%; max-width: 400px; }
-        h1 { color: #d68c9a; font-size: 24px; margin-bottom: 5px; }
-        .sub { color: #888; margin-bottom: 25px; font-size: 16px; }
-        select, .btn { width: 100%; padding: 15px; margin: 10px 0; border-radius: 12px; border: 2px solid #fce4ec; font-size: 16px; transition: 0.3s; }
-        .btn-entrada { background: #d68c9a; color: white; border: none; font-weight: bold; cursor: pointer; }
-        .btn-saida { background: white; color: #d68c9a; border: 2px solid #d68c9a; font-weight: bold; cursor: pointer; }
-        .btn:hover { transform: translateY(-2px); box-shadow: 0 5px 15px rgba(214, 140, 154, 0.3); }
-        /* Botão Invisível */
-        .acesso-secreto { color: transparent; text-decoration: none; font-size: 13px; display: inline-block; margin-top: 20px; transition: 0.3s; }
-        .acesso-secreto:hover { color: #d68c9a; }
+        .card { background: white; padding: 40px; border-radius: 30px; box-shadow: 0 10px 25px rgba(214, 140, 154, 0.2); text-align: center; width: 90%; max-width: 400px; }
+        .btn { width: 100%; padding: 15px; margin: 10px 0; border-radius: 12px; border: none; font-size: 16px; font-weight: bold; cursor: pointer; transition: 0.3s; }
+        .btn-entrada { background: #d68c9a; color: white; }
+        .btn-saida { background: white; color: #d68c9a; border: 2px solid #d68c9a; }
+        .flash { color: #d68c9a; margin-bottom: 15px; font-weight: bold; }
+        .acesso-invisivel { color: transparent; text-decoration: none; font-size: 12px; display: block; margin-top: 20px; transition: 0.3s; }
+        .acesso-invisivel:hover { color: #d68c9a; }
     </style>
 </head>
 <body>
     <div class="card">
-        <h1>🌸 Dra. Thamiris Araujo</h1>
-        <div class="sub">Estetica avançada</div>
-        
+        <h1 style="color: #d68c9a; margin-bottom: 0;">🌸 Dra. Thamiris Araujo</h1>
+        <p style="color: #888; margin-top: 5px; margin-bottom: 25px;">Estetica avançada</p>
+
+        {% with messages = get_flashed_messages() %}
+          {% if messages %}{% for msg in messages %}<div class="flash">{{ msg }}</div>{% endfor %}{% endif %}
+        {% endwith %}
+
         <form action="/bater_ponto" method="POST">
-            <select name="colaboradora">
+            <select name="colaboradora" style="width: 100%; padding: 12px; border-radius: 10px; border: 1px solid #fce4ec; margin-bottom: 10px;">
                 <option>Esther Julia</option>
                 <option>Dra Thamiris Araujo</option>
             </select>
@@ -32,7 +33,7 @@
             <button type="submit" name="tipo" value="Saída" class="btn btn-saida">Bater Saída</button>
         </form>
 
-        <a href="/login" class="acesso-secreto">Acesso Restrito</a>
+        <a href="/login" class="acesso-invisivel">Acesso Restrito</a>
     </div>
 </body>
 </html>

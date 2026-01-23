@@ -1,16 +1,68 @@
-<h1 style="color: #d68c9a; margin: 0;">🌸 Gestão Dra Thamiris Araujo</h1>
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <title>Gestão Dra. Thamiris Araujo</title>
+    <style>
+        body { background: #fff5f7; font-family: sans-serif; padding: 20px; }
+        .container { background: white; padding: 25px; border-radius: 20px; box-shadow: 0 5px 15px rgba(0,0,0,0.05); }
+        .topo { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; }
+        .btn { padding: 10px 20px; border-radius: 8px; border: none; background: #d68c9a; color: white; font-weight: bold; cursor: pointer; text-decoration: none; }
+        table { width: 100%; border-collapse: collapse; margin-top: 20px; }
+        th { background: #fce4ec; color: #d68c9a; padding: 12px; text-align: center; }
+        td { padding: 12px; border-bottom: 1px solid #eee; text-align: center; }
+        @media print { .no-print { display: none !important; } }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="topo">
+            <h1 style="color: #d68c9a; margin: 0;">🌸 Gestão Dra Thamiris Araujo</h1>
+            <a href="/logout" class="no-print" style="color: #d68c9a; text-decoration: none; font-weight: bold;">Sair</a>
+        </div>
 
-<tbody>
-        {% for r in registros %}
-        {% endfor %}
-    </tbody>
-    <tfoot>
-        <tr style="background: #fce4ec; font-weight: bold; border-top: 2px solid #d68c9a;">
-            <td colspan="4" style="text-align: right; padding: 15px; color: #d68c9a;">TOTAL DE HORAS EXTRAS NO MÊS:</td>
-            <td style="padding: 15px; color: {{ '#27ae60' if '+' in soma_total else '#e74c3c' }}; font-size: 18px;">
-                {{ soma_total }}
-            </td>
-            <td colspan="2"></td>
-        </tr>
-    </tfoot>
-</table>
+        <div class="no-print" style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 30px;">
+            <form method="GET" action="/gestao">
+                <select name="mes" class="btn" style="background: white; color: #d68c9a; border: 1px solid #d68c9a;">
+                    <option value="01" {{'selected' if mes_sel=='01'}}>Janeiro</option>
+                    <option value="02" {{'selected' if mes_sel=='02'}}>Fevereiro</option>
+                    </select>
+                <button type="submit" class="btn">🔍 Filtrar</button>
+            </form>
+            <div>
+                <button class="btn" onclick="window.print()">🖨️ Exportar PDF</button>
+                <button class="btn" style="background:#fff; color:#d68c9a; border:1px solid #d68c9a;">➕ Manual</button>
+            </div>
+        </div>
+
+        <table>
+            <thead>
+                <tr>
+                    <th>Data</th><th>Colaboradora</th><th>Entrada</th><th>Saída</th><th>Saldo</th><th>Localização</th><th class="no-print">Ações</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for r in registros %}
+                {% set cor = '#3498db' if r.cor == 'azul' else '#27ae60' if r.cor == 'verde' else '#e74c3c' %}
+                <tr>
+                    <td>{{ r.data }}</td>
+                    <td><b>{{ r.nome }}</b></td>
+                    <td style="color: {{ cor }}; font-weight: bold;">{{ r.e }}</td>
+                    <td style="color: {{ cor }}; font-weight: bold;">{{ r.s }}</td>
+                    <td style="font-weight: bold;">{{ r.saldo }}</td>
+                    <td><small>{{ r.loc }}</small></td>
+                    <td class="no-print">🗑️</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+            <tfoot>
+                <tr style="background: #fce4ec; font-weight: bold;">
+                    <td colspan="4" style="text-align: right; padding: 15px;">TOTAL DE HORAS EXTRAS NO MÊS:</td>
+                    <td style="color: {{ '#27ae60' if '+' in soma_total else '#e74c3c' }};">{{ soma_total }}</td>
+                    <td colspan="2"></td>
+                </tr>
+            </tfoot>
+        </table>
+    </div>
+</body>
+</html>
