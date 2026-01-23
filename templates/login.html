@@ -2,22 +2,18 @@
 <html lang="pt-br">
 <head>
     <meta charset="UTF-8">
-    <title>Acesso Restrito - Dra. Thamiris</title>
+    <title>Login - Dra. Thamiris</title>
     <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
 </head>
 <body>
     <div class="container">
-        <header>
-            <h1>🌸 Acesso Restrito</h1>
-        </header>
+        <h1>🌸 Acesso Restrito</h1>
         <form method="POST">
-            <input type="password" name="password" placeholder="Digite sua senha de acesso" required 
+            <input type="password" name="password" placeholder="Sua senha secreta" required 
                    style="width: 100%; padding: 15px; border-radius: 10px; border: 1px solid #f8d7da; margin-bottom: 20px;">
             <button type="submit" class="btn-entrada">Entrar no Painel</button>
         </form>
-        <div style="margin-top: 20px;">
-            <a href="/" style="color: #d68c9a; text-decoration: none;">← Voltar</a>
-        </div>
+        <a href="/" style="color: #d68c9a; text-decoration: none; font-size: 14px;">← Voltar</a>
     </div>
 </body>
 </html>

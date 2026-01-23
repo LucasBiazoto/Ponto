@@ -2,52 +2,72 @@
 <html lang="pt-br">
 <head>
     <meta charset="UTF-8">
-    <title>Painel Administrativo - Dra. Thamiris</title>
+    <title>Gestão - Dra. Thamiris</title>
     <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+    <style>
+        .modal { display: none; position: fixed; z-index: 1; left: 0; top: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.4); }
+        .modal-content { background: white; margin: 10% auto; padding: 20px; border-radius: 20px; width: 90%; max-width: 400px; }
+        input, select { width: 100%; padding: 10px; margin: 10px 0; border-radius: 8px; border: 1px solid #ddd; }
+    </style>
 </head>
 <body style="background-color: #fff5f7;">
-    <div class="container" style="max-width: 1100px;">
-        <header style="display: flex; justify-content: space-between; align-items: center; border-bottom: 2px solid #fce4ec; padding-bottom: 10px;">
-            <h1 style="font-size: 24px;">🌸 Gestão de Pontos</h1>
-            <a href="/logout" class="btn-saida" style="width: auto; padding: 8px 20px; text-decoration: none; font-size: 14px;">Sair</a>
+    <div class="container" style="max-width: 1000px;">
+        <header style="display: flex; justify-content: space-between; align-items: center;">
+            <h1>🌸 Gestão de Pontos</h1>
+            <a href="/logout" class="btn-saida" style="width: auto; padding: 5px 15px; text-decoration: none;">Sair</a>
         </header>
 
-        <div style="display: flex; gap: 15px; margin: 25px 0;">
-            <select style="flex: 2; padding: 12px; border-radius: 10px; border: 1px solid #d68c9a; background: white;">
-                <option>Selecione o Mês (Janeiro a Dezembro)</option>
-                <option>Janeiro</option>
-                <option>Fevereiro</option>
-            </select>
-            <button class="btn-entrada" style="flex: 1; margin: 0; background-color: #d68c9a;">+ Inserir Manual</button>
-            <button class="btn-saida" style="flex: 1; margin: 0; border-color: #d68c9a; color: #d68c9a;">📥 Exportar PDF</button>
+        {% with messages = get_flashed_messages() %}
+            {% if messages %}{% for m in messages %}<p style="color: #d68c9a;">{{ m }}</p>{% endfor %}{% endif %}
+        {% endwith %}
+
+        <div style="display: flex; gap: 10px; margin: 20px 0;">
+            <button onclick="document.getElementById('id01').style.display='block'" class="btn-entrada" style="background:#d68c9a;">+ Inserir Manual</button>
+            <button class="btn-saida" onclick="window.print()" style="border-color:#d68c9a; color:#d68c9a;">📥 PDF</button>
         </div>
 
-        <div style="background: white; border-radius: 20px; padding: 20px; box-shadow: 0 10px 30px rgba(214, 140, 154, 0.1);">
-            <table style="width: 100%; border-collapse: collapse; text-align: left;">
+        <div style="background: white; border-radius: 15px; padding: 15px; overflow-x: auto;">
+            <table style="width: 100%; text-align: left; border-collapse: collapse;">
                 <thead>
                     <tr style="color: #d68c9a; border-bottom: 2px solid #fce4ec;">
-                        <th style="padding: 15px;">Colaboradora</th>
-                        <th style="padding: 15px;">Data</th>
-                        <th style="padding: 15px;">Entrada</th>
-                        <th style="padding: 15px;">Saída</th>
-                        <th style="padding: 15px;">Total Horas</th>
-                        <th style="padding: 15px;">Ação</th>
+                        <th style="padding: 10px;">Colaboradora</th>
+                        <th style="padding: 10px;">Data</th>
+                        <th style="padding: 10px;">Tipo</th>
+                        <th style="padding: 10px;">Horário</th>
                     </tr>
                 </thead>
                 <tbody>
-                    {% for registro in registros %}
-                    <tr style="border-bottom: 1px solid #fff5f7;">
-                        <td style="padding: 15px; font-weight: bold; color: #555;">{{ registro.nome }}</td>
-                        <td style="padding: 15px;">{{ registro.data }}</td>
-                        <td style="padding: 15px; color: #2ecc71;">{{ registro.hora if registro.tipo == 'Entrada' else '-' }}</td>
-                        <td style="padding: 15px; color: #e74c3c;">{{ registro.hora if registro.tipo == 'Saída' else '-' }}</td>
-                        <td style="padding: 15px;"><span style="background: #fce4ec; padding: 5px 10px; border-radius: 5px; font-size: 12px;">Base 6h</span></td>
-                        <td style="padding: 15px;"><button style="background: none; border: none; cursor: pointer;">✏️</button></td>
+                    {% for r in registros %}
+                    <tr style="border-bottom: 1px solid #fce4ec;">
+                        <td style="padding: 10px;">{{ r.nome }}</td>
+                        <td style="padding: 10px;">{{ r.data }}</td>
+                        <td style="padding: 10px;">{{ r.tipo }}</td>
+                        <td style="padding: 10px;">{{ r.hora }}</td>
                     </tr>
                     {% endfor %}
                 </tbody>
             </table>
         </div>
     </div>
+
+    <div id="id01" class="modal">
+        <div class="modal-content">
+            <h3 style="color: #d68c9a;">🌸 Novo Registro</h3>
+            <form action="/inserir_manual" method="POST">
+                <select name="nome" required>
+                    <option value="Esther Julia">Esther Julia</option>
+                    <option value="Dra Thamiris Araujo">Dra. Thamiris Araujo</option>
+                </select>
+                <input type="date" name="data" required>
+                <input type="time" name="hora" required>
+                <select name="tipo">
+                    <option value="Entrada">Entrada</option>
+                    <option value="Saída">Saída</option>
+                </select>
+                <button type="submit" class="btn-entrada">Salvar Registro</button>
+                <button type="button" onclick="document.getElementById('id01').style.display='none'" class="btn-saida">Cancelar</button>
+            </form>
+        </div>
+    </div>
 </body>
-</html> 
+</html>
