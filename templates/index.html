@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Ponto - Dra. Thamiris</title>
+    <title>Dra. Thamiris Araujo</title>
     <style>
         body { background: #fff5f7; font-family: 'Segoe UI', sans-serif; display: flex; justify-content: center; align-items: center; height: 100vh; margin: 0; }
         .card { background: white; padding: 40px; border-radius: 30px; box-shadow: 0 10px 25px rgba(214, 140, 154, 0.2); text-align: center; width: 90%; max-width: 400px; }
@@ -11,9 +11,8 @@
         .btn-entrada { background: #d68c9a; color: white; }
         .btn-saida { background: white; color: #d68c9a; border: 2px solid #d68c9a; }
         .flash { color: #d68c9a; margin-bottom: 15px; font-weight: bold; background: #fff0f3; padding: 10px; border-radius: 10px; }
-        select { width: 100%; padding: 12px; border-radius: 10px; border: 1px solid #fce4ec; margin-bottom: 10px; }
-        .link-secreto { color: transparent; text-decoration: none; font-size: 10px; }
-        .link-secreto:hover { color: #d68c9a; }
+        .acesso-secreto { color: transparent; text-decoration: none; font-size: 12px; display: block; margin-top: 20px; }
+        .acesso-secreto:hover { color: #d68c9a; }
     </style>
 </head>
 <body>
@@ -26,7 +25,7 @@
         {% endwith %}
 
         <form action="/bater_ponto" method="POST">
-            <select name="colaboradora">
+            <select name="colaboradora" style="width: 100%; padding: 10px; margin-bottom: 10px; border-radius: 8px; border: 1px solid #fce4ec;">
                 <option>Esther Julia</option>
                 <option>Dra Thamiris Araujo</option>
             </select>
@@ -34,7 +33,7 @@
             <button type="submit" name="tipo" value="Saída" class="btn btn-saida">Bater Saída</button>
         </form>
 
-        <a href="/login" class="link-secreto">Acesso</a>
+        <a href="/login" class="acesso-secreto">Acesso Restrito</a>
     </div>
 </body>
 </html>
