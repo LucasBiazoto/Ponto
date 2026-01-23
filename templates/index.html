@@ -5,6 +5,12 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Ponto - Dra. Thamiris Araujo</title>
     <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+    <style>
+        /* Garantindo que os botões apareçam mesmo se o CSS falhar */
+        .btn-entrada { background-color: #d68c9a !important; color: white !important; margin-bottom: 10px; padding: 15px; width: 100%; border-radius: 10px; border: none; cursor: pointer; font-weight: bold; display: block; }
+        .btn-saida { background-color: #fce4ec !important; color: #d68c9a !important; padding: 15px; width: 100%; border-radius: 10px; border: 1px solid #d68c9a; cursor: pointer; font-weight: bold; display: block; }
+        select { width: 100%; padding: 12px; border-radius: 10px; border: 1px solid #f8d7da; margin-bottom: 20px; background: white; }
+    </style>
 </head>
 <body>
     <div class="container">
@@ -16,22 +22,26 @@
         {% with messages = get_flashed_messages() %}
           {% if messages %}
             {% for message in messages %}
-              <div class="alert">{{ message }}</div>
+              <div class="alert" style="background: #fce4ec; color: #d68c9a; padding: 10px; border-radius: 10px; margin-bottom: 15px;">
+                  {{ message }}
+              </div>
             {% endfor %}
           {% endif %}
         {% endwith %}
 
         <form action="/bater_ponto" method="POST">
             <select name="colaboradora" required>
+                <option value="" disabled selected>Selecionar Colaboradora</option>
                 <option value="Esther Julia">Esther Julia</option>
                 <option value="Dra Thamiris Araujo">Dra. Thamiris Araujo</option>
             </select>
+            
             <button type="submit" name="tipo" value="Entrada" class="btn-entrada">Bater Entrada</button>
             <button type="submit" name="tipo" value="Saída" class="btn-saida">Bater Saída</button>
         </form>
 
-        <div class="footer-link">
-            <a href="/login">🌸 Acesso Restrito</a>
+        <div class="footer-link" style="margin-top: 20px;">
+            <a href="/login" style="color: #d68c9a; text-decoration: none; font-size: 12px;">🌸 Acesso Restrito</a>
         </div>
     </div>
 </body>
