@@ -1,18 +1,98 @@
-<div style="gap: 10px; display: flex;">
-    <a href="/backup" class="btn" style="background: #888;">💾 Backup Dados</a>
-    <button onclick="window.print()" class="btn btn-outline">🖨️ Exportar PDF</button>
-    <button onclick="document.getElementById('modal').style.display='block'" class="btn">➕ Manual</button>
-</div>
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Gestão Dra. Thamiris</title>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600&display=swap" rel="stylesheet">
+    <style>
+        :root { --cor-primaria: #d68c9a; --cor-fundo: #fff0f3; --cor-texto: #5a4a4d; }
+        body { font-family: 'Poppins', sans-serif; background-color: var(--cor-fundo); color: var(--cor-texto); margin: 0; padding: 20px; }
+        .container { max-width: 1100px; margin: auto; background: white; padding: 30px; border-radius: 20px; box-shadow: 0 10px 25px rgba(214,140,154,0.2); }
+        .header { display: flex; justify-content: space-between; align-items: center; border-bottom: 2px solid var(--cor-fundo); padding-bottom: 20px; margin-bottom: 20px; }
+        h2 { color: var(--cor-primaria); margin: 0; display: flex; align-items: center; gap: 10px; }
+        .controles { display: flex; gap: 15px; flex-wrap: wrap; align-items: center; margin-bottom: 25px; }
+        .btn { padding: 10px 20px; border-radius: 12px; border: none; cursor: pointer; font-weight: 600; transition: 0.3s; text-decoration: none; display: inline-flex; align-items: center; gap: 8px; font-size: 14px; }
+        .btn-primario { background-color: var(--cor-primaria); color: white; }
+        .btn-primario:hover { background-color: #c47b89; }
+        .btn-outline { border: 2px solid var(--cor-primaria); color: var(--cor-primaria); background: transparent; }
+        .btn-backup { background-color: #888; color: white; }
+        
+        table { width: 100%; border-collapse: collapse; margin-top: 10px; }
+        th { background-color: var(--cor-fundo); color: var(--cor-primaria); padding: 15px; text-align: left; font-size: 14px; }
+        td { padding: 15px; border-bottom: 1px solid #f9f0f2; font-size: 14px; }
+        tr:hover { background-color: #fff9fa; }
+        
+        .saldo-tag { font-weight: bold; padding: 4px 10px; border-radius: 8px; }
+        .verde { color: #27ae60; background: #e8f6ed; }
+        .vermelho { color: #e74c3c; background: #fdecea; }
+        .azul { color: #3498db; background: #ebf5fb; }
+        
+        .resumo-footer { margin-top: 25px; padding: 20px; background: var(--cor-fundo); border-radius: 15px; }
+        .resumo-linha { display: flex; justify-content: flex-end; gap: 20px; font-weight: bold; color: var(--cor-primaria); margin-bottom: 5px; }
+        
+        @media print { .btn, .controles, .lixeira { display: none !important; } }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h2>🌸 Gestão Dra. Thamiris Araujo</h2>
+            <a href="/logout" style="color: #888; text-decoration: none;">Sair</a>
+        </div>
 
-<tfoot>
-    <tr style="background: #fff0f3;">
-        <td colspan="4" style="text-align: right; padding: 10px; color: #d68c9a;">QUANTIDADE DE DIAS TRABALHADOS NO MÊS:</td>
-        <td style="font-weight: bold; color: #d68c9a;">{{ qtd_dias }} dias</td>
-        <td colspan="2"></td>
-    </tr>
-    <tr class="saldo-total">
-        <td colspan="4" style="text-align: right; color: #d68c9a;">TOTAL DE HORAS EXTRAS NO MÊS:</td>
-        <td style="color: {{ '#27ae60' if '+' in soma_total else '#e74c3c' }};">{{ soma_total }}</td>
-        <td colspan="2"></td>
-    </tr>
-</tfoot>
+        <div class="controles">
+            <form action="/gestao" method="GET" style="display: flex; gap: 10px;">
+                <select name="mes" class="btn btn-outline" style="padding: 8px;">
+                    <option value="01" {% if mes_sel == '01' %}selected{% endif %}>Janeiro</option>
+                    <option value="02" {% if mes_sel == '02' %}selected{% endif %}>Fevereiro</option>
+                    </select>
+                <button type="submit" class="btn btn-primario">Filtrar</button>
+            </form>
+            <a href="/backup" class="btn btn-backup">💾 Backup Dados</a>
+            <button onclick="window.print()" class="btn btn-outline">🖨️ Exportar PDF</button>
+            <button onclick="document.getElementById('modal').style.display='block'" class="btn btn-primario">➕ Inserir Manual</button>
+        </div>
+
+        <table>
+            <thead>
+                <tr>
+                    <th>Data</th>
+                    <th>Colaboradora</th>
+                    <th>Entrada</th>
+                    <th>Saída</th>
+                    <th>Saldo</th>
+                    <th>Ações</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for r in registros %}
+                <tr>
+                    <td>{{ r.data }}</td>
+                    <td><strong>{{ r.nome }}</strong></td>
+                    <td style="color: #27ae60;">{{ r.e }}</td>
+                    <td style="color: #e74c3c;">{{ r.s }}</td>
+                    <td><span class="saldo-tag {{ r.cor }}">{{ r.saldo }}</span></td>
+                    <td>
+                        {% if r.id_e %}<a href="/excluir/{{ r.id_e }}" class="lixeira" onclick="return confirm('Excluir entrada?')">🗑️</a>{% endif %}
+                        {% if r.id_s %}<a href="/excluir/{{ r.id_s }}" class="lixeira" onclick="return confirm('Excluir saída?')">🗑️</a>{% endif %}
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+
+        <div class="resumo-footer">
+            <div class="resumo-linha">
+                <span>QUANTIDADE DE DIAS TRABALHADOS NO MÊS:</span>
+                <span>{{ qtd_dias }} dias</span>
+            </div>
+            <div class="resumo-linha" style="font-size: 1.2em;">
+                <span>TOTAL DE HORAS EXTRAS NO MÊS:</span>
+                <span style="color: {{ '#27ae60' if '+' in soma_total else '#e74c3c' }};">{{ soma_total }}</span>
+            </div>
+        </div>
+    </div>
+
+    </body>
+</html>
