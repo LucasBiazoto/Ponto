@@ -1,66 +1,36 @@
-<!DOCTYPE html>
-<html lang="pt-br">
-<head>
-    <meta charset="UTF-8">
-    <title>Gestão Dra. Thamiris</title>
-    <style>
-        body { background: #fff5f7; font-family: sans-serif; padding: 20px; }
-        .topo { background: white; padding: 20px; border-radius: 15px; display: flex; justify-content: space-between; align-items: center; }
-        table { width: 100%; background: white; border-radius: 15px; margin-top: 20px; border-collapse: collapse; overflow: hidden; }
-        th { background: #fce4ec; color: #d68c9a; padding: 15px; text-align: left; }
-        td { padding: 15px; border-bottom: 1px solid #eee; }
-        .btn { padding: 10px 15px; border-radius: 8px; border: none; cursor: pointer; background: #d68c9a; color: white; text-decoration: none; font-weight: bold; }
-        .modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); }
-        .modal-content { background: white; width: 300px; margin: 10% auto; padding: 20px; border-radius: 15px; }
-    </style>
-</head>
-<body>
-    <div class="topo">
-        <h1 style="color: #d68c9a; margin: 0;">🌸 Gestão Clínica Penha</h1>
-        <a href="/logout" style="color: #d68c9a; text-decoration: none;">Sair</a>
-    </div>
-
-    <div style="margin-top: 20px;">
-        <button class="btn" onclick="document.getElementById('m').style.display='block'">➕ Inserir Manual</button>
-        <button class="btn" style="background: white; color: #d68c9a; border: 1px solid #d68c9a;" onclick="window.print()">📥 PDF</button>
-    </div>
-
-    <table>
-        <thead>
-            <tr>
-                <th>Data</th><th>Colaboradora</th><th>Entrada</th><th>Saída</th><th>Saldo (6h)</th><th>Local</th><th>Ações</th>
-            </tr>
-        </thead>
-        <tbody>
-            {% for r in registros %}
-            <tr>
-                <td>{{ r.data }}</td>
-                <td><b>{{ r.nome }}</b></td>
-                <td style="color: green;">{{ r.entrada }}</td>
-                <td style="color: red;">{{ r.saida }}</td>
-                <td style="font-weight: bold;">{{ r.saldo }}</td>
-                <td><small>{{ r.local }}</small></td>
-                <td>
-                    {% if r.id_e %}<a href="/excluir/{{ r.id_e }}" title="Excluir Entrada">📥🗑️</a>{% endif %}
-                    {% if r.id_s %}<a href="/excluir/{{ r.id_s }}" title="Excluir Saída">📤🗑️</a>{% endif %}
-                </td>
-            </tr>
-            {% endfor %}
-        </tbody>
-    </table>
-
-    <div id="m" class="modal">
-        <div class="modal-content">
-            <h3>Novo Registro</h3>
-            <form action="/inserir_manual" method="POST">
-                <select name="nome" style="width: 100%; margin-bottom: 10px;"><option>Esther Julia</option><option>Dra Thamiris Araujo</option></select>
-                <input type="date" name="data" style="width: 100%; margin-bottom: 10px;" required>
-                <input type="time" name="hora" style="width: 100%; margin-bottom: 10px;" required>
-                <select name="tipo" style="width: 100%; margin-bottom: 10px;"><option>Entrada</option><option>Saída</option></select>
-                <button type="submit" class="btn" style="width: 100%;">Salvar</button>
-                <button type="button" onclick="document.getElementById('m').style.display='none'" style="width: 100%; background: none; border: none; color: #888; margin-top: 10px;">Cancelar</button>
-            </form>
-        </div>
-    </div>
-</body>
-</html>
+<table>
+    <thead>
+        <tr>
+            <th>Data</th>
+            <th>Colaboradora</th>
+            <th>Entrada</th>
+            <th>Saída</th>
+            <th>Saldo (6h)</th>
+            <th>Local</th>
+            <th>Ações</th>
+        </tr>
+    </thead>
+    <tbody>
+        {% for r in registros %}
+        <tr>
+            <td>{{ r.data }}</td>
+            <td><b>{{ r.nome }}</b></td>
+            <td style="color: #2ecc71;">{{ r.entrada }}</td>
+            <td style="color: #e74c3c;">{{ r.saida }}</td>
+            <td style="font-weight: bold; color: {{ '#2ecc71' if '+' in r.saldo else '#e74c3c' if '-' in r.saldo else '#666' }};">
+                {{ r.saldo }}
+            </td>
+            <td><small>{{ r.local }}</small></td>
+            <td>
+                {% if r.id_e is not none %}
+                    <a href="/excluir/{{ r.id_e }}" title="Excluir Entrada" style="text-decoration:none; margin-right: 10px;">📥🗑️</a>
+                {% endif %}
+                
+                {% if r.id_s is not none %}
+                    <a href="/excluir/{{ r.id_s }}" title="Excluir Saída" style="text-decoration:none;">📤🗑️</a>
+                {% endif %}
+            </td>
+        </tr>
+        {% endfor %}
+    </tbody>
+</table>
