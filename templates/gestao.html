@@ -1,57 +1,100 @@
-<style>
-    :root { --rosa: #d68c9a; --fundo: #fff5f7; }
-    body { font-family: 'Poppins', sans-serif; background: var(--fundo); padding: 20px; }
-    .card-gestao { background: white; border-radius: 20px; padding: 30px; box-shadow: 0 10px 30px rgba(0,0,0,0.05); max-width: 1000px; margin: auto; }
-    .btn-rosa { background: var(--rosa); color: white; border: none; padding: 10px 20px; border-radius: 12px; cursor: pointer; font-weight: 600; }
-    .header-acoes { display: flex; gap: 15px; margin-bottom: 25px; flex-wrap: wrap; align-items: center; }
-    table { width: 100%; border-collapse: collapse; }
-    th { color: var(--rosa); border-bottom: 2px solid #fce4ec; padding: 15px; text-align: center; }
-    td { padding: 15px; text-align: center; border-bottom: 1px solid #f9f9f9; }
-</style>
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Gestão - Dra. Thamiris Araujo</title>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600&display=swap" rel="stylesheet">
+    <style>
+        :root { --rosa: #d68c9a; --fundo: #fff5f7; }
+        body { font-family: 'Poppins', sans-serif; background: var(--fundo); margin: 0; padding: 20px; }
+        .container { max-width: 900px; margin: auto; background: white; padding: 30px; border-radius: 25px; box-shadow: 0 10px 30px rgba(0,0,0,0.05); }
+        .header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 25px; }
+        .btn-group { display: flex; gap: 10px; flex-wrap: wrap; margin-bottom: 20px; align-items: center; }
+        .btn { padding: 10px 18px; border-radius: 12px; border: none; cursor: pointer; font-weight: 600; text-decoration: none; font-size: 14px; transition: 0.3s; }
+        .btn-rosa { background: var(--rosa); color: white; }
+        .btn-out { background: white; border: 1px solid var(--rosa); color: var(--rosa); }
+        .btn-cinza { background: #8e8e8e; color: white; }
+        table { width: 100%; border-collapse: collapse; }
+        th { color: var(--rosa); border-bottom: 2px solid #fce4ec; padding: 15px; }
+        td { padding: 15px; text-align: center; border-bottom: 1px solid #f9f9f9; }
+        .resumo { background: #fce4ec; padding: 20px; border-radius: 15px; display: flex; justify-content: space-around; margin-top: 25px; color: var(--rosa); font-weight: bold; }
+        .trash { color: #e74c3c; text-decoration: none; font-size: 12px; margin-left: 5px; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h2 style="color: var(--rosa); margin: 0;">🌸 Gestão Dra. Thamiris</h2>
+            <a href="/logout" style="color: gray; font-size: 13px; text-decoration: none;">Sair</a>
+        </div>
 
-<div class="card-gestao">
-    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:20px;">
-        <h2 style="color:var(--rosa); margin:0;">🌸 Gestão Dra. Thamiris Araujo</h2>
-        <a href="/logout" style="text-decoration:none; color:gray; font-size:14px;">Sair</a>
-    </div>
-
-    <div class="header-acoes">
-        <form method="GET" action="/gestao">
-            <select name="mes" onchange="this.form.submit()" style="padding:10px; border-radius:10px; border:1px solid var(--rosa);">
-                <option value="01" {% if mes_atual=='01' %}selected{% endif %}>Janeiro</option>
-                <option value="02" {% if mes_atual=='02' %}selected{% endif %}>Fevereiro</option>
+        <div class="btn-group">
+            <form method="GET" action="/gestao">
+                <select name="mes" onchange="this.form.submit()" class="btn btn-out" style="width: 140px;">
+                    <option value="01" {% if mes_atual=='01' %}selected{% endif %}>Janeiro</option>
+                    <option value="02" {% if mes_atual=='02' %}selected{% endif %}>Fevereiro</option>
+                    <option value="03" {% if mes_atual=='03' %}selected{% endif %}>Março</option>
+                    <option value="04" {% if mes_atual=='04' %}selected{% endif %}>Abril</option>
+                    <option value="05" {% if mes_atual=='05' %}selected{% endif %}>Maio</option>
+                    <option value="06" {% if mes_atual=='06' %}selected{% endif %}>Junho</option>
+                    <option value="07" {% if mes_atual=='07' %}selected{% endif %}>Julho</option>
+                    <option value="08" {% if mes_atual=='08' %}selected{% endif %}>Agosto</option>
+                    <option value="09" {% if mes_atual=='09' %}selected{% endif %}>Setembro</option>
+                    <option value="10" {% if mes_atual=='10' %}selected{% endif %}>Outubro</option>
+                    <option value="11" {% if mes_atual=='11' %}selected{% endif %}>Novembro</option>
+                    <option value="12" {% if mes_atual=='12' %}selected{% endif %}>Dezembro</option>
                 </select>
-        </form>
-        <button class="btn-rosa" style="background:#8e8e8e;">💾 Backup</button>
-        <button class="btn-rosa" style="background:white; border:1px solid var(--rosa); color:var(--rosa);">📄 PDF</button>
-        <button class="btn-rosa">➕ Manual</button>
+            </form>
+            <button class="btn btn-cinza">💾 Backup</button>
+            <button class="btn btn-out">📄 PDF</button>
+            <button onclick="document.getElementById('modalManual').style.display='block'" class="btn btn-rosa">➕ Manual</button>
+        </div>
+
+        <table>
+            <thead>
+                <tr>
+                    <th>Data</th>
+                    <th>Entrada</th>
+                    <th>Saída</th>
+                    <th>Saldo</th>
+                    <th>Status</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for r in registros %}
+                <tr style="color: {{ r.cor }};">
+                    <td>{{ r.data }}</td>
+                    <td>{{ r.e }} {% if r.id_e %}<a href="/excluir/{{ r.id_e }}" class="trash">🗑️</a>{% endif %}</td>
+                    <td>{{ r.s }} {% if r.id_s %}<a href="/excluir/{{ r.id_s }}" class="trash">🗑️</a>{% endif %}</td>
+                    <td style="font-weight: bold;">{{ r.saldo }}</td>
+                    <td><small style="opacity: 0.7;">📍 Localizado</small></td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+
+        <div class="resumo">
+            <span>DIAS TRABALHADOS (6H): {{ contador }}</span>
+            <span>TOTAL ACUMULADO: {{ total }}</span>
+        </div>
     </div>
 
-    <table>
-        <thead>
-            <tr>
-                <th>Data</th>
-                <th>Entrada</th>
-                <th>Saída</th>
-                <th>Saldo</th>
-                <th>Ações</th>
-            </tr>
-        </thead>
-        <tbody>
-            {% for r in registros %}
-            <tr style="color: {{ r.cor }};">
-                <td>{{ r.data }}</td>
-                <td>{{ r.e }} {% if r.id_e %}<a href="/excluir/{{ r.id_e }}">🗑️</a>{% endif %}</td>
-                <td>{{ r.s }} {% if r.id_s %}<a href="/excluir/{{ r.id_s }}">🗑️</a>{% endif %}</td>
-                <td style="font-weight: bold;">{{ r.saldo }}</td>
-                <td><small>📍 Localizado</small></td>
-            </tr>
-            {% endfor %}
-        </tbody>
-    </table>
-
-    <div style="background:#fce4ec; padding:20px; border-radius:15px; margin-top:30px; display:flex; justify-content:space-around; color:var(--rosa); font-weight:bold;">
-        <span>DIAS TRABALHADOS (COMPLETOS): {{ contador }}</span>
-        <span>TOTAL: {{ total }}</span>
+    <div id="modalManual" style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.5); z-index:1000;">
+        <div style="background:white; width:90%; max-width:400px; margin:100px auto; padding:30px; border-radius:20px; text-align:center;">
+            <h3 style="color:var(--rosa);">🌸 Registro Manual</h3>
+            <form action="/add_manual" method="POST" style="display:flex; flex-direction:column; gap:15px;">
+                <select name="tipo" class="btn btn-out">
+                    <option value="Entrada">Entrada</option>
+                    <option value="Saída">Saída</option>
+                </select>
+                <input type="date" name="data" required style="padding:10px; border-radius:10px; border:1px solid #ddd;">
+                <input type="time" name="hora" required style="padding:10px; border-radius:10px; border:1px solid #ddd;">
+                <button type="submit" class="btn btn-rosa">Salvar</button>
+                <button type="button" onclick="document.getElementById('modalManual').style.display='none'" style="background:none; border:none; color:gray; cursor:pointer;">Cancelar</button>
+            </form>
+        </div>
     </div>
-</div>
+    <footer style="text-align:center; margin-top:20px; color:var(--rosa); font-size:12px;">Desenvolvido por <b>Lucas Biazoto</b> 🐙</footer>
+</body>
+</html>
