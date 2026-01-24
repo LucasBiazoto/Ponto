@@ -1,77 +1,51 @@
-<!DOCTYPE html>
-<html lang="pt-br">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Gestão - Dra. Thamiris Araujo</title>
-    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600&display=swap" rel="stylesheet">
-    <style>
-        body { font-family: 'Poppins', sans-serif; background: #fff5f7; padding: 20px; }
-        .card { background: white; padding: 25px; border-radius: 20px; box-shadow: 0 10px 30px rgba(0,0,0,0.05); max-width: 900px; margin: auto; }
-        table { width: 100%; border-collapse: collapse; margin: 20px 0; }
-        th { background: #fce4ec; color: #d68c9a; padding: 12px; }
-        td { padding: 12px; text-align: center; border-bottom: 1px solid #eee; }
-        .btn { padding: 10px 15px; border-radius: 10px; border: none; cursor: pointer; font-weight: 600; }
-        .btn-rosa { background: #d68c9a; color: white; }
-        .resumo { background: #fce4ec; padding: 15px; border-radius: 15px; display: flex; justify-content: space-around; font-weight: bold; color: #d68c9a; }
-    </style>
-</head>
-<body>
-    <div class="card">
-        <div style="display:flex; justify-content:space-between; align-items:center;">
-            <h2 style="color:#d68c9a;">🌸 Gestão Dra. Thamiris Araujo</h2>
-            <div>
-                <button onclick="document.getElementById('modalManual').style.display='block'" class="btn btn-rosa">➕ Manual</button>
-                <a href="/logout" style="color:gray; font-size:12px; text-decoration:none; margin-left:10px;">Sair</a>
-            </div>
-        </div>
+<div class="card">
+    <div style="display:flex; justify-content:space-between; align-items:center;">
+        <h2 style="color:#d68c9a;">🌸 Gestão Dra. Thamiris Araujo</h2>
+        <a href="/logout" style="color:gray; text-decoration:none;">Sair</a>
+    </div>
 
-        <table>
-            <thead>
-                <tr>
-                    <th>Data</th>
-                    <th>Entrada</th>
-                    <th>Saída</th>
-                    <th>Saldo</th>
-                    <th>Ações</th>
-                </tr>
-            </thead>
-            <tbody>
-                {% for r in registros %}
-                <tr>
-                    <td>{{ r.data }}</td>
-                    <td style="color:#27ae60;">{{ r.e }}</td>
-                    <td style="color:#e74c3c;">{{ r.s }}</td>
-                    <td style="color:{{ r.cor }}; font-weight:bold;">{{ r.saldo }}</td>
-                    <td><a href="/excluir/{{ r.id }}" style="text-decoration:none;">🗑️</a></td>
-                </tr>
+    <div style="margin: 20px 0; display:flex; gap:10px; align-items:center;">
+        <form method="GET" action="/gestao">
+            <select name="mes" onchange="this.form.submit()" style="padding:8px; border-radius:10px; border:1px solid #d68c9a;">
+                {% for m in ['Jan', 'Fev', 'Mar', 'Abr', 'Mai', 'Jun', 'Jul', 'Ago', 'Set', 'Out', 'Nov', 'Dez'] %}
+                <option value="{{ m }}" {% if mes_atual == m %}selected{% endif %}>{{ m }}</option>
                 {% endfor %}
-            </tbody>
-        </table>
-
-        <div class="resumo">
-            <span>DIAS TRABALHADOS: {{ dias }}</span>
-            <span>TOTAL HORAS: {{ total }}</span>
-        </div>
+            </select>
+        </form>
+        <button class="btn" style="background:#8e8e8e; color:white;">💾 Backup</button>
+        <a href="/exportar_pdf" class="btn" style="background:white; color:#d68c9a; border:1px solid #d68c9a; text-decoration:none;">📄 PDF</a>
+        <button onclick="document.getElementById('modalManual').style.display='block'" class="btn" style="background:#d68c9a; color:white;">➕ Manual</button>
     </div>
 
-    <div id="modalManual" style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.5); z-index:1000;">
-        <div style="background:white; width:90%; max-width:400px; margin:100px auto; padding:30px; border-radius:20px; text-align:center;">
-            <h3 style="color:#d68c9a;">🌸 Inserir Ponto Manual</h3>
-            <form action="/add_manual" method="POST" style="display:flex; flex-direction:column; gap:15px;">
-                <input type="text" value="Esther Julia" readonly style="padding:10px; border-radius:10px; border:1px solid #eee; background:#f9f9f9; text-align:center;">
-                <select name="tipo" style="padding:10px; border-radius:10px; border:1px solid #ddd;">
-                    <option value="Entrada">Entrada</option>
-                    <option value="Saída">Saída</option>
-                </select>
-                <input type="date" name="data" required style="padding:10px; border-radius:10px; border:1px solid #ddd;">
-                <input type="time" name="hora" required style="padding:10px; border-radius:10px; border:1px solid #ddd;">
-                <button type="submit" class="btn btn-rosa">Salvar Registro</button>
-                <button type="button" onclick="document.getElementById('modalManual').style.display='none'" style="background:none; border:none; color:gray; cursor:pointer;">Cancelar</button>
-            </form>
-        </div>
-    </div>
+    <table>
+        <thead>
+            <tr>
+                <th>Data</th>
+                <th>Entrada</th>
+                <th>Saída</th>
+                <th>Saldo</th>
+                <th>Ações</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for r in registros %}
+            <tr>
+                <td>{{ r.data }}</td>
+                <td style="color:{{ r.cor }};">
+                    {{ r.e }} {% if r.id_e %}<a href="/excluir/{{ r.id_e }}" style="font-size:10px; text-decoration:none;">🗑️</a>{% endif %}
+                </td>
+                <td style="color:{{ r.cor }};">
+                    {{ r.s }} {% if r.id_s %}<a href="/excluir/{{ r.id_s }}" style="font-size:10px; text-decoration:none;">🗑️</a>{% endif %}
+                </td>
+                <td style="color:{{ r.cor }}; font-weight:bold;">{{ r.saldo }}</td>
+                <td><small>Localizado</small></td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
 
-    <footer style="text-align:center; margin-top:20px; color:#d68c9a; font-size:12px;">Desenvolvido por <b>Lucas Biazoto</b> 🐙</footer>
-</body>
-</html>
+    <div style="background:#fce4ec; padding:15px; border-radius:15px; display:flex; justify-content:space-around; color:#d68c9a; font-weight:bold;">
+        <span>DIAS TRABALHADOS: {{ dias }}</span>
+        <span>TOTAL: {{ total }}</span>
+    </div>
+</div>
