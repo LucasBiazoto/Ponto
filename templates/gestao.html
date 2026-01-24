@@ -1,82 +1,24 @@
-<!DOCTYPE html>
-<html lang="pt-br">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Gestão - Dra. Thamiris Araujo</title>
-    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600&display=swap" rel="stylesheet">
-    <style>
-        :root { --cor-primaria: #d68c9a; --cor-fundo: #fff5f7; }
-        body { font-family: 'Poppins', sans-serif; background: var(--cor-fundo); margin: 0; padding: 20px; color: #5a4a4d; display: flex; flex-direction: column; min-height: 100vh; }
-        .container { max-width: 1000px; margin: auto; background: white; padding: 30px; border-radius: 20px; box-shadow: 0 10px 25px rgba(0,0,0,0.05); width: 100%; box-sizing: border-box; }
-        .header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 25px; }
-        .btn { padding: 10px 18px; border-radius: 10px; border: none; background: var(--cor-primaria); color: white; font-weight: 600; cursor: pointer; text-decoration: none; font-size: 14px; display: inline-flex; align-items: center; gap: 8px; }
-        .btn-outline { background: white; color: var(--cor-primaria); border: 1px solid var(--cor-primaria); }
-        table { width: 100%; border-collapse: collapse; margin-top: 20px; }
-        th { background: #fce4ec; color: var(--cor-primaria); padding: 12px; }
-        td { padding: 12px; border-bottom: 1px solid #eee; text-align: center; }
-        .saldo-tag { font-weight: bold; padding: 5px 10px; border-radius: 8px; }
-        .verde { color: #27ae60; background: #e8f6ed; }
-        .vermelho { color: #e74c3c; background: #fdecea; }
-        .azul { color: #3498db; background: #ebf5fb; }
-        .resumo-box { margin-top: 20px; background: #fce4ec; padding: 15px; border-radius: 12px; text-align: right; }
-        footer { margin-top: auto; padding: 20px; text-align: center; font-size: 14px; color: var(--cor-primaria); }
-        footer a { text-decoration: none; color: inherit; font-weight: bold; }
-        @media print { .no-print { display: none !important; } }
-    </style>
-</head>
-<body>
-    <div class="container">
-        <div class="header">
-            <h1 style="color: var(--cor-primaria); margin: 0; font-size: 22px;">🌸 Gestão Dra Thamiris Araujo</h1>
-            <a href="/logout" class="no-print" style="color: #888; text-decoration: none;">Sair</a>
-        </div>
+<div id="modalManual" style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.5); z-index:1000;">
+    <div style="background:white; width:90%; max-width:400px; margin:100px auto; padding:30px; border-radius:20px; text-align:center;">
+        <h3 style="color:#d68c9a;">🌸 Inserir Ponto Manual</h3>
+        
+        <form action="/add_manual" method="POST" style="display:flex; flex-direction:column; gap:15px;">
+            <input type="text" value="Esther Julia" readonly style="padding:10px; border-radius:10px; border:1px solid #eee; background:#f9f9f9; text-align:center;">
+            
+            <select name="tipo" style="padding:10px; border-radius:10px; border:1px solid #ddd;">
+                <option value="Entrada">Entrada</option>
+                <option value="Saída">Saída</option>
+            </select>
+            
+            <input type="date" name="data" required style="padding:10px; border-radius:10px; border:1px solid #ddd;">
+            <input type="time" name="hora" required style="padding:10px; border-radius:10px; border:1px solid #ddd;">
+            
+            <button type="submit" class="btn btn-primario" style="background:#d68c9a; color:white; border:none; padding:12px; border-radius:10px; cursor:pointer; font-weight:600;">Salvar Registro</button>
+            <button type="button" onclick="document.getElementById('modalManual').style.display='none'" style="background:none; border:none; color:gray; cursor:pointer;">Cancelar</button>
+        </form>
+    </div>
+</div>
 
-        <div class="no-print" style="display: flex; justify-content: space-between; margin-bottom: 20px; flex-wrap: wrap; gap: 10px;">
-            <form method="GET" action="/gestao">
-                <select name="mes" style="padding: 8px; border-radius: 8px; border: 1px solid var(--cor-primaria);">
-                    {% for v, n in [('01','Jan'),('02','Fev'),('03','Mar'),('04','Abr'),('05','Mai'),('06','Jun'),('07','Jul'),('08','Ago'),('09','Set'),('10','Out'),('11','Nov'),('12','Dez')] %}
-                    <option value="{{v}}" {{'selected' if mes_sel==v}}>{{n}}</option>
-                    {% endfor %}
-                </select>
-                <button type="submit" class="btn">Filtrar</button>
-            </form>
-            <div style="display: flex; gap: 8px;">
-                <a href="/backup" class="btn" style="background: #888;">💾 Backup</a>
-                <button onclick="window.print()" class="btn btn-outline">🖨️ PDF</button>
-                <button onclick="document.getElementById('modal').style.display='block'" class="btn">➕ Manual</button>
-            </div>
-        </div>
-
-        <table>
-            <thead>
-                <tr>
-                    <th>Data</th>
-                    <th>Colaboradora</th>
-                    <th>Entrada</th>
-                    <th>Saída</th>
-                    <th>Saldo</th>
-                    <th>Localização</th>
-                    <th class="no-print">Ações</th>
-                </tr>
-            </thead>
-            <tbody>
-                {% for r in registros %}
-                <tr>
-                    <td>{{ r.data }}</td>
-                    <td><b>Esther Julia</b></td>
-                    <td style="color: #27ae60;">{{ r.e }}</td>
-                    <td style="color: #e74c3c;">{{ r.s }}</td>
-                    <td><span class="saldo-tag {{ r.cor }}">{{ r.saldo }}</span></td>
-                    <td style="font-size: 12px; color: #888;">{{ r.local }}</td>
-                    <td class="no-print">
-                        <a href="/excluir/{{ r.id }}" onclick="return confirm('Excluir?')">🗑️</a>
-                    </td>
-                </tr>
-                {% endfor %}
-            </tbody>
-        </table>
-
-        <div class="resumo-box">
-            <p>DIAS TRABALHADOS (COMPLETOS): <b>{{ qtd_dias }}</b></p>
-            <p style="font-size: 1.2em; color: var(--cor-primaria);">TOTAL
+<button onclick="document.getElementById('modalManual').style.display='block'" class="btn btn-primario">
+    ➕ Manual
+</button>
