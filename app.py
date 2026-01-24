@@ -1,94 +1,82 @@
-from flask import Flask, render_template, request, redirect, url_for, flash, session, send_file
-from datetime import datetime
-import pytz
-import io
-import json
-
-app = Flask(__name__)
-app.secret_key = 'clinica_thamiris_2026'
-fuso = pytz.timezone('America/Sao_Paulo')
-
-# Lucas: Esta lista DEVE ser substituída por um banco de dados real (Postgres)
-# para que os dados da Dra. Thamiris parem de sumir a cada deploy.
-historico_db = [] 
-
-@app.route('/')
-def index():
-    return render_template('index.html')
-
-@app.route('/gestao')
-def gestao():
-    if not session.get('admin_logado'): return redirect(url_for('login'))
-    mes_f = request.args.get('mes', datetime.now(fuso).strftime('%m'))
-    
-    # Lógica de agrupamento e Cores Triple (Verde, Azul, Vermelho)
-    diario = {}
-    for p in [x for x in historico_db if x['mes'] == mes_f]:
-        d = p['data']
-        if d not in diario: diario[d] = {'e': '--:--', 's': '--:--', 'id_e': None, 'id_s': None}
-        if p['tipo'] == 'Entrada': 
-            diario[d]['e'] = p['hora']; diario[d]['id_e'] = p['id']
-        else: 
-            diario[d]['s'] = p['hora']; diario[d]['id_s'] = p['id']
-
-    total_m = 0
-    dias_count = 0
-    tabela = []
-
-    for data, v in diario.items():
-        cor, saldo = "#5a4a4d", "00:00"
-        if v['e'] != '--:--' and v['s'] != '--:--':
-            dias_count += 1
-            h1, m1 = map(int, v['e'].split(':'))
-            h2, m2 = map(int, v['s'].split(':'))
-            diff = (h2 * 60 + m2) - (h1 * 60 + m1) - 360 # Jornada 6h
-            total_m += diff
-            
-            # Lógica de cores solicitada
-            if diff == 0: cor = "#27ae60" # VERDE
-            elif diff > 0: cor = "#2980b9" # AZUL
-            else: cor = "#e74c3c" # VERMELHO
-            
-            sinal = "+" if diff >= 0 else "-"
-            saldo = f"{sinal}{abs(diff)//60:02d}:{abs(diff)%60:02d}"
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Ponto - Dra. Thamiris Araujo</title>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600&display=swap" rel="stylesheet">
+    <style>
+        body { font-family: 'Poppins', sans-serif; background-color: #fff5f7; display: flex; flex-direction: column; align-items: center; justify-content: center; min-height: 100vh; margin: 0; }
+        .card { background: white; padding: 40px; border-radius: 30px; box-shadow: 0 10px 25px rgba(214,140,154,0.1); text-align: center; width: 320px; border: 1px solid #fce4ec; }
+        .btn { width: 100%; padding: 15px; margin: 10px 0; border: none; border-radius: 12px; font-weight: 600; cursor: pointer; font-size: 16px; transition: 0.3s; }
+        .btn-ent { background: #d68c9a; color: white; }
+        .btn-sai { background: white; color: #d68c9a; border: 2px solid #d68c9a; }
+        .btn:disabled { opacity: 0.6; cursor: not-allowed; }
+        .flash { color: #d68c9a; margin-bottom: 20px; font-weight: 600; background: #fce4ec; padding: 10px; border-radius: 10px; border: 1px solid #d68c9a; }
+        footer { margin-top: 30px; color: #d68c9a; font-size: 13px; text-align: center; }
+        footer a { color: inherit; text-decoration: none; font-weight: bold; }
+        .loading { font-size: 12px; color: #d68c9a; margin-top: 5px; display: none; }
+    </style>
+</head>
+<body>
+    <div class="card">
+        <h2 style="color: #d68c9a;">🌸 Dra Thamiris Araujo</h2>
         
-        tabela.append({'data': data, 'e': v['e'], 's': v['s'], 'id_e': v['id_e'], 'id_s': v['id_s'], 'cor': cor, 'saldo': saldo})
+        {% with messages = get_flashed_messages() %}
+            {% if messages %}
+                {% for msg in messages %}
+                    <div class="flash">{{ msg }}</div>
+                {% endfor %}
+            {% endif %}
+        {% endwith %}
+        
+        <p>Olá, <b>Esther Julia</b>!</p>
+        
+        <button id="btnEntrada" onclick="enviar('Entrada')" class="btn btn-ent">Bater Entrada</button>
+        <button id="btnSaida" onclick="enviar('Saída')" class="btn btn-sai">Bater Saída</button>
+        
+        <div id="status" class="loading">Localizando GPS... aguarde ✨</div>
 
-    total_txt = f"{'+' if total_m >= 0 else '-'}{abs(total_m)//60:02d}:{abs(total_m)%60:02d}"
-    return render_template('gestao.html', registros=tabela, total=total_txt, contador=dias_count, mes_atual=mes_f)
+        <form id="formPonto" method="POST" action="/bater_ponto" style="display:none;">
+            <input type="hidden" name="tipo" id="tipo">
+            <input type="hidden" name="lat" id="lat">
+            <input type="hidden" name="lon" id="lon">
+        </form>
+        
+        <a href="/login" style="font-size: 10px; color: #fce4ec; text-decoration: none; display: block; margin-top: 15px;">Acesso Restrito</a>
+    </div>
 
-# --- FUNÇÕES DOS BOTÕES QUE ESTAVAM FALTANDO ---
+    <footer>
+        Desenvolvido por <a href="https://github.com/LucasBiazoto" target="_blank">Lucas Biazoto</a> 🐙
+    </footer>
 
-@app.route('/exportar_backup')
-def exportar_backup():
-    # Gera um arquivo com todos os registros para segurança
-    data = json.dumps(historico_db, indent=4)
-    proxy = io.BytesIO(data.encode())
-    return send_file(proxy, mimetype='application/json', as_attachment=True, download_name='backup_ponto.json')
+    <script>
+    function enviar(tipo) {
+        // Desativa botões para evitar duplo clique
+        document.getElementById('btnEntrada').disabled = true;
+        document.getElementById('btnSaida').disabled = true;
+        document.getElementById('status').style.display = 'block';
+        
+        document.getElementById('tipo').value = tipo;
 
-@app.route('/exportar_pdf')
-def exportar_pdf():
-    # Gera um relatório em texto (PDF simples)
-    txt = "RELATÓRIO DE PONTO - DRA. THAMIRIS ARAUJO\n\n"
-    for r in historico_db:
-        txt += f"{r['data']} | {r['tipo']}: {r['hora']}\n"
-    proxy = io.BytesIO(txt.encode())
-    return send_file(proxy, mimetype='text/plain', as_attachment=True, download_name='relatorio_ponto.txt')
-
-@app.route('/excluir/<int:id>')
-def excluir(id):
-    global historico_db
-    historico_db = [p for p in historico_db if p['id'] != id]
-    return redirect(url_for('gestao'))
-
-@app.route('/login', methods=['GET', 'POST'])
-def login():
-    if request.method == 'POST' and request.form.get('password') == "8340":
-        session['admin_logado'] = True
-        return redirect(url_for('gestao'))
-    return render_template('login.html')
-
-@app.route('/logout')
-def logout():
-    session.clear()
-    return redirect(url_for('index'))
+        if (navigator.geolocation) {
+            // Tenta pegar a localização por 6 segundos, se não conseguir, bate o ponto assim mesmo
+            navigator.geolocation.getCurrentPosition(
+                (p) => {
+                    document.getElementById('lat').value = p.coords.latitude;
+                    document.getElementById('lon').value = p.coords.longitude;
+                    document.getElementById('formPonto').submit();
+                },
+                (erro) => {
+                    console.log("GPS erro:", erro);
+                    document.getElementById('formPonto').submit();
+                },
+                { timeout: 6000, enableHighAccuracy: true }
+            );
+        } else {
+            document.getElementById('formPonto').submit();
+        }
+    }
+    </script>
+</body>
+</html>
