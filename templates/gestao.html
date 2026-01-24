@@ -1,47 +1,48 @@
 <style>
-    .btn-group { display: flex; gap: 10px; flex-wrap: wrap; margin-bottom: 20px; }
-    .status-badge { padding: 4px 10px; border-radius: 20px; font-size: 12px; color: white; }
-    /* Fix para não desconfigurar no celular */
-    .table-responsive { overflow-x: auto; -webkit-overflow-scrolling: touch; }
+    .btn-rosa { background: #d68c9a; color: white; padding: 10px 15px; border-radius: 12px; border: none; cursor: pointer; text-decoration: none; font-size: 14px; }
+    .tabela-container { background: white; border-radius: 20px; padding: 20px; box-shadow: 0 4px 15px rgba(0,0,0,0.05); }
+    table { width: 100%; border-collapse: collapse; margin-top: 15px; }
+    th { color: #d68c9a; border-bottom: 2px solid #fce4ec; padding: 10px; }
+    td { padding: 12px; text-align: center; border-bottom: 1px solid #f9f9f9; }
 </style>
 
-<div class="card">
-    <div class="btn-group">
-        <select id="filtroMes" class="btn" style="border: 1px solid #d68c9a;">
-            <option value="01">Janeiro</option>
-            <option value="02">Fevereiro</option>
-            </select>
-        <button class="btn" style="background: #8e8e8e; color: white;">💾 Backup</button>
-        <button class="btn" style="background: white; border: 1px solid #d68c9a; color: #d68c9a;">📄 PDF</button>
-        <button onclick="abrirModal()" class="btn" style="background: #d68c9a; color: white;">➕ Manual</button>
+<div class="tabela-container">
+    <div style="display:flex; gap:10px; margin-bottom: 20px; align-items:center;">
+        <form method="GET" action="/gestao">
+            <select name="mes" onchange="this.form.submit()" class="btn-rosa" style="background:white; color:#d68c9a; border:1px solid #d68c9a;">
+                <option value="01" {% if mes_atual=='01' %}selected{% endif %}>Janeiro</option>
+                <option value="02" {% if mes_atual=='02' %}selected{% endif %}>Fevereiro</option>
+                </select>
+        </form>
+        <button class="btn-rosa" style="background:#8e8e8e;">💾 Backup</button>
+        <button class="btn-rosa" style="background:white; color:#d68c9a; border:1px solid #d68c9a;">📄 PDF</button>
+        <button onclick="document.getElementById('modalManual').style.display='block'" class="btn-rosa">➕ Manual</button>
     </div>
 
-    <div class="table-responsive">
-        <table>
-            <thead>
-                <tr>
-                    <th>Data</th>
-                    <th>Entrada</th>
-                    <th>Saída</th>
-                    <th>Saldo</th>
-                    <th>Ações</th>
-                </tr>
-            </thead>
-            <tbody>
-                {% for r in registros %}
-                <tr style="color: {{ r.cor }};">
-                    <td>{{ r.data }}</td>
-                    <td>{{ r.e }} {% if r.id_e %}<a href="/excluir/{{ r.id_e }}">🗑️</a>{% endif %}</td>
-                    <td>{{ r.s }} {% if r.id_s %}<a href="/excluir/{{ r.id_s }}">🗑️</a>{% endif %}</td>
-                    <td style="font-weight: bold;">{{ r.saldo }}</td>
-                    <td><span class="status-badge" style="background: {{ r.cor }};">Localizado</span></td>
-                </tr>
-                {% endfor %}
-            </tbody>
-        </table>
-    </div>
+    <table>
+        <thead>
+            <tr>
+                <th>Data</th>
+                <th>Entrada</th>
+                <th>Saída</th>
+                <th>Saldo</th>
+                <th>Ações</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for r in registros %}
+            <tr style="color: {{ r.cor }};">
+                <td>{{ r.data }}</td>
+                <td>{{ r.e }} {% if r.id_e %}<a href="/excluir/{{ r.id_e }}" style="text-decoration:none;">🗑️</a>{% endif %}</td>
+                <td>{{ r.s }} {% if r.id_s %}<a href="/excluir/{{ r.id_s }}" style="text-decoration:none;">🗑️</a>{% endif %}</td>
+                <td style="font-weight: bold;">{{ r.saldo }}</td>
+                <td><small>📍 Localizado</small></td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
 
-    <div class="resumo-rosa">
+    <div style="background:#fce4ec; padding:15px; border-radius:15px; margin-top:20px; display:flex; justify-content:space-around; color:#d68c9a; font-weight:bold;">
         <span>DIAS TRABALHADOS (COMPLETOS): {{ contador }}</span>
         <span>TOTAL: {{ total }}</span>
     </div>
