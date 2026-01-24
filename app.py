@@ -3,11 +3,16 @@ from datetime import datetime
 import pytz
 
 app = Flask(__name__)
-app.secret_key = 'thamiris_araujo_2026'
+app.secret_key = 'clinica_thamiris_araujo_2026'
 fuso = pytz.timezone('America/Sao_Paulo')
 
-# Lista temporária (O Lucas deve conectar um Banco de Dados SQL para não perder dados)
-db_pontos = []
+# IMPORTANTE: Lucas, para os dados não sumirem, use um banco de dados (SQL ou Supabase).
+# Esta lista é temporária e apaga quando o Vercel reinicia.
+historico_permanente = []
+
+@app.route('/')
+def index():
+    return render_template('index.html')
 
 @app.route('/bater_ponto', methods=['POST'])
 def bater_ponto():
@@ -15,20 +20,27 @@ def bater_ponto():
     lat = request.form.get('lat')
     lon = request.form.get('lon')
     agora = datetime.now(fuso)
-    db_pontos.append({
-        'id': len(db_pontos) + 1, 'tipo': tipo,
-        'data': agora.strftime('%d/%m/%Y'), 'mes': agora.strftime('%m'),
-        'hora': agora.strftime('%H:%M'), 'geo': f"{lat},{lon}"
+    
+    historico_permanente.append({
+        'id': len(historico_permanente) + 1,
+        'tipo': tipo,
+        'data': agora.strftime('%d/%m/%Y'),
+        'mes': agora.strftime('%m'),
+        'hora': agora.strftime('%H:%M'),
+        'geo': f"{lat}, {lon}" if lat else "Sem GPS"
     })
+    flash(f"Bom {'trabalho' if tipo=='Entrada' else 'descanso'} meu bem 🌸")
     return redirect(url_for('index'))
 
 @app.route('/gestao')
 def gestao():
     if not session.get('admin_logado'): return redirect(url_for('login'))
     
-    mes_f = request.args.get('mes', datetime.now().strftime('%m'))
+    mes_filtro = request.args.get('mes', datetime.now().strftime('%m'))
+    
+    # Agrupar Entrada e Saída por dia
     dias = {}
-    for p in [x for x in db_pontos if x['mes'] == mes_f]:
+    for p in [x for x in historico_permanente if x['mes'] == mes_filtro]:
         d = p['data']
         if d not in dias: dias[d] = {'e': '--:--', 's': '--:--', 'id_e': None, 'id_s': None}
         if p['tipo'] == 'Entrada': 
@@ -36,34 +48,47 @@ def gestao():
         else: 
             dias[d]['s'] = p['hora']; dias[d]['id_s'] = p['id']
 
-    total_m = 0
-    dias_completos = 0
-    tabela = []
+    total_minutos_geral = 0
+    contagem_dias = 0
+    lista_tabela = []
 
     for data, v in dias.items():
-        cor, saldo = "#5a4a4d", "00:00"
+        cor, saldo_str = "#5a4a4d", "00:00"
+        
+        # SÓ SOMA SE HOUVER ENTRADA E SAÍDA NO MESMO DIA
         if v['e'] != '--:--' and v['s'] != '--:--':
-            dias_completos += 1
+            contagem_dias += 1
             h1, m1 = map(int, v['e'].split(':'))
             h2, m2 = map(int, v['s'].split(':'))
-            diff = (h2 * 60 + m2) - (h1 * 60 + m1) - 360 # 6h
-            total_m += diff
-            # LÓGICA DAS CORES
+            total_min = (h2 * 60 + m2) - (h1 * 60 + m1)
+            diff = total_min - 360 # Jornada de 6h
+            total_minutos_geral += diff
+            
+            # LÓGICA DE CORES
             if diff == 0: cor = "#27ae60" # VERDE
             elif diff > 0: cor = "#2980b9" # AZUL
             else: cor = "#e74c3c" # VERMELHO
-            saldo = f"{'+' if diff >= 0 else '-'}{abs(diff)//60:02d}:{abs(diff)%60:02d}"
+            
+            sinal = "+" if diff >= 0 else "-"
+            saldo_str = f"{sinal}{abs(diff)//60:02d}:{abs(diff)%60:02d}"
         
-        tabela.append({'data': data, 'e': v['e'], 's': v['s'], 'id_e': v['id_e'], 'id_s': v['id_s'], 'cor': cor, 'saldo': saldo})
+        lista_tabela.append({'data': data, 'e': v['e'], 's': v['s'], 'id_e': v['id_e'], 'id_s': v['id_s'], 'cor': cor, 'saldo': saldo_str})
 
-    total_txt = f"{'+' if total_m >= 0 else '-'}{abs(total_m)//60:02d}:{abs(total_m)%60:02d}"
-    return render_template('gestao.html', registros=tabela, total=total_txt, contador=dias_completos, mes_atual=mes_f)
+    resumo_total = f"{'+' if total_minutos_extra >= 0 else '-'}{abs(total_minutos_extra)//60:02d}:{abs(total_minutos_extra)%60:02d}"
+    return render_template('gestao.html', registros=lista_tabela, total=resumo_total, contador=contagem_dias, mes_atual=mes_filtro)
 
 @app.route('/excluir/<int:id>')
 def excluir(id):
-    global db_pontos
-    db_pontos = [p for p in db_pontos if p['id'] != id]
+    global historico_permanente
+    historico_permanente = [p for p in historico_permanente if p['id'] != id]
     return redirect(url_for('gestao'))
+
+@app.route('/login', methods=['GET', 'POST'])
+def login():
+    if request.method == 'POST' and request.form.get('password') == "8340":
+        session['admin_logado'] = True
+        return redirect(url_for('gestao'))
+    return render_template('login.html')
 
 @app.route('/logout')
 def logout():
