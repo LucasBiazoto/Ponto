@@ -3,11 +3,11 @@ from datetime import datetime
 import pytz
 
 app = Flask(__name__)
-app.secret_key = 'clinica_thamiris_araujo_2026'
+app.secret_key = 'thamiris_clinica_2026'
 fuso = pytz.timezone('America/Sao_Paulo')
 
-# Lista para armazenar os pontos
-historico_pontos = []
+# Lista global para salvar os pontos (na memória do servidor)
+historico = []
 
 @app.route('/')
 def index():
@@ -17,8 +17,8 @@ def index():
 def bater_ponto():
     tipo = request.form.get('tipo')
     agora = datetime.now(fuso)
-    historico_pontos.append({
-        'id': len(historico_pontos) + 1,
+    historico.append({
+        'id': len(historico) + 1,
         'nome': "Esther Julia",
         'tipo': tipo,
         'data': agora.strftime('%d/%m/%Y'),
@@ -30,19 +30,15 @@ def bater_ponto():
 
 @app.route('/add_manual', methods=['POST'])
 def add_manual():
-    # Rota que resolve o erro ao clicar em 'Salvar' no Manual
-    data_cal = request.form.get('data')
+    # Rota que corrige o erro ao salvar ponto manual
+    data_input = request.form.get('data')
     hora = request.form.get('hora')
     tipo = request.form.get('tipo')
-    if data_cal and hora:
-        data_br = datetime.strptime(data_cal, '%Y-%m-%d').strftime('%d/%m/%Y')
-        historico_pontos.append({
-            'id': len(historico_pontos) + 1,
-            'nome': "Esther Julia",
-            'tipo': tipo,
-            'data': data_br,
-            'hora': hora,
-            'local': "Manual"
+    if data_input and hora:
+        data_br = datetime.strptime(data_input, '%Y-%m-%d').strftime('%d/%m/%Y')
+        historico.append({
+            'id': len(historico) + 1, 'nome': "Esther Julia", 
+            'tipo': tipo, 'data': data_br, 'hora': hora, 'local': "Manual"
         })
     return redirect(url_for('gestao'))
 
@@ -50,36 +46,35 @@ def add_manual():
 def gestao():
     if not session.get('admin_logado'): return redirect(url_for('login'))
     
-    # Organiza os pontos por dia para preencher Entrada/Saída na mesma linha
-    organizado = {}
-    for p in historico_pontos:
-        d = p['data']
-        if d not in organizado: organizado[d] = {'e': '--:--', 's': '--:--', 'id': p['id']}
-        if p['tipo'] == 'Entrada': organizado[d]['e'] = p['hora']
-        else: organizado[d]['s'] = p['hora']
+    # Lógica para juntar Entrada e Saída na mesma linha (Preenche a tabela do print)
+    resumo_diario = {}
+    for p in historico:
+        dia = p['data']
+        if dia not in resumo_diario: resumo_diario[dia] = {'e': '--:--', 's': '--:--', 'id': p['id']}
+        if p['tipo'] == 'Entrada': resumo_diario[dia]['e'] = p['hora']
+        else: resumo_diario[dia]['s'] = p['hora']
 
-    lista_final = []
-    total_minutos_extra = 0
-    dias_count = 0
+    final_cards = []
+    minutos_extras_total = 0
+    dias_fechados = 0
 
-    for data, v in organizado.items():
-        cor, saldo = "#d68c9a", "00:00"
+    for data, v in resumo_diario.items():
+        cor, saldo_txt = "#d68c9a", "00:00"
         if v['e'] != '--:--' and v['s'] != '--:--':
-            dias_count += 1
+            dias_fechados += 1
             h1, m1 = map(int, v['e'].split(':'))
             h2, m2 = map(int, v['s'].split(':'))
-            total_trabalhado = (h2 * 60 + m2) - (h1 * 60 + m1)
-            extra = total_trabalhado - 360 # Jornada de 6h
-            total_minutos_extra += extra
-            
+            total = (h2 * 60 + m2) - (h1 * 60 + m1)
+            extra = total - 360 # Jornada de 6h
+            minutos_extras_total += extra
             cor = "#27ae60" if extra >= 0 else "#e74c3c"
             sinal = "+" if extra >= 0 else "-"
-            saldo = f"{sinal}{abs(extra)//60:02d}:{abs(extra)%60:02d}"
+            saldo_txt = f"{sinal}{abs(extra)//60:02d}:{abs(extra)%60:02d}"
         
-        lista_final.append({'data': data, 'e': v['e'], 's': v['s'], 'saldo': saldo, 'cor': cor, 'id': v['id']})
+        final_cards.append({'data': data, 'e': v['e'], 's': v['s'], 'saldo': saldo_txt, 'cor': cor, 'id': v['id']})
 
-    resumo_total = f"{'+' if total_minutos_extra >= 0 else '-'}{abs(total_minutos_extra)//60:02d}:{abs(total_minutos_extra)%60:02d}"
-    return render_template('gestao.html', registros=lista_final, total_extra=resumo_total, qtd_dias=dias_count)
+    resumo_geral = f"{'+' if minutos_extras_total >= 0 else '-'}{abs(minutos_extras_total)//60:02d}:{abs(minutos_extras_total)%60:02d}"
+    return render_template('gestao.html', registros=final_cards, total=resumo_geral, dias=dias_fechados)
 
 @app.route('/login', methods=['GET', 'POST'])
 def login():
@@ -90,8 +85,8 @@ def login():
 
 @app.route('/excluir/<int:id>')
 def excluir(id):
-    global historico_pontos
-    historico_pontos = [p for p in historico_pontos if p['id'] != id]
+    global historico
+    historico = [p for p in historico if p['id'] != id]
     return redirect(url_for('gestao'))
 
 @app.route('/logout')

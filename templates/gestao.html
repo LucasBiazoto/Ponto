@@ -6,26 +6,23 @@
     <title>Gestão - Dra. Thamiris Araujo</title>
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600&display=swap" rel="stylesheet">
     <style>
-        :root { --rosa: #d68c9a; --fundo: #fff5f7; }
-        body { font-family: 'Poppins', sans-serif; background: var(--fundo); margin: 0; padding: 20px; color: #5a4a4d; }
-        .container { max-width: 900px; margin: auto; background: white; padding: 30px; border-radius: 20px; box-shadow: 0 10px 30px rgba(0,0,0,0.05); }
-        .header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; }
+        body { font-family: 'Poppins', sans-serif; background: #fff5f7; padding: 20px; }
+        .card { background: white; padding: 25px; border-radius: 20px; box-shadow: 0 10px 30px rgba(0,0,0,0.05); max-width: 900px; margin: auto; }
         table { width: 100%; border-collapse: collapse; margin: 20px 0; }
-        th { background: #fce4ec; color: var(--rosa); padding: 12px; }
+        th { background: #fce4ec; color: #d68c9a; padding: 12px; }
         td { padding: 12px; text-align: center; border-bottom: 1px solid #eee; }
-        .btn { padding: 10px 20px; border-radius: 10px; border: none; cursor: pointer; font-weight: 600; transition: 0.3s; }
-        .btn-primario { background: var(--rosa); color: white; }
-        .resumo-card { background: #fce4ec; padding: 20px; border-radius: 15px; display: flex; justify-content: space-around; margin-top: 20px; }
-        footer { text-align: center; margin-top: 30px; color: var(--rosa); font-size: 13px; }
+        .btn { padding: 10px 15px; border-radius: 10px; border: none; cursor: pointer; font-weight: 600; }
+        .btn-rosa { background: #d68c9a; color: white; }
+        .resumo { background: #fce4ec; padding: 15px; border-radius: 15px; display: flex; justify-content: space-around; font-weight: bold; color: #d68c9a; }
     </style>
 </head>
 <body>
-    <div class="container">
-        <div class="header">
-            <h2 style="color: var(--rosa); margin:0;">🌸 Gestão de Pontos</h2>
+    <div class="card">
+        <div style="display:flex; justify-content:space-between; align-items:center;">
+            <h2 style="color:#d68c9a;">🌸 Gestão Dra. Thamiris Araujo</h2>
             <div>
-                <button onclick="document.getElementById('modalManual').style.display='block'" class="btn btn-primario">➕ Manual</button>
-                <a href="/logout" style="text-decoration:none; color: gray; font-size: 12px; margin-left: 10px;">Sair</a>
+                <button onclick="document.getElementById('modalManual').style.display='block'" class="btn btn-rosa">➕ Manual</button>
+                <a href="/logout" style="color:gray; font-size:12px; text-decoration:none; margin-left:10px;">Sair</a>
             </div>
         </div>
 
@@ -43,24 +40,18 @@
                 {% for r in registros %}
                 <tr>
                     <td>{{ r.data }}</td>
-                    <td style="color: #27ae60;">{{ r.e }}</td>
-                    <td style="color: #e74c3c;">{{ r.s }}</td>
-                    <td style="color: {{ r.cor }}; font-weight: bold;">{{ r.saldo }}</td>
-                    <td><a href="/excluir/{{ r.id }}" onclick="return confirm('Excluir?')" style="text-decoration:none;">🗑️</a></td>
+                    <td style="color:#27ae60;">{{ r.e }}</td>
+                    <td style="color:#e74c3c;">{{ r.s }}</td>
+                    <td style="color:{{ r.cor }}; font-weight:bold;">{{ r.saldo }}</td>
+                    <td><a href="/excluir/{{ r.id }}" style="text-decoration:none;">🗑️</a></td>
                 </tr>
                 {% endfor %}
             </tbody>
         </table>
 
-        <div class="resumo-card">
-            <div>
-                <small>DIAS TRABALHADOS</small><br>
-                <b style="font-size: 1.2em;">{{ qtd_dias }}</b>
-            </div>
-            <div>
-                <small>TOTAL HORAS EXTRAS</small><br>
-                <b style="font-size: 1.2em; color: var(--rosa);">{{ total_extra }}</b>
-            </div>
+        <div class="resumo">
+            <span>DIAS TRABALHADOS: {{ dias }}</span>
+            <span>TOTAL HORAS: {{ total }}</span>
         </div>
     </div>
 
@@ -75,12 +66,12 @@
                 </select>
                 <input type="date" name="data" required style="padding:10px; border-radius:10px; border:1px solid #ddd;">
                 <input type="time" name="hora" required style="padding:10px; border-radius:10px; border:1px solid #ddd;">
-                <button type="submit" class="btn btn-primario">Salvar Registro</button>
+                <button type="submit" class="btn btn-rosa">Salvar Registro</button>
                 <button type="button" onclick="document.getElementById('modalManual').style.display='none'" style="background:none; border:none; color:gray; cursor:pointer;">Cancelar</button>
             </form>
         </div>
     </div>
 
-    <footer>Desenvolvido por <b>Lucas Biazoto</b> 🐙</footer>
+    <footer style="text-align:center; margin-top:20px; color:#d68c9a; font-size:12px;">Desenvolvido por <b>Lucas Biazoto</b> 🐙</footer>
 </body>
 </html>
