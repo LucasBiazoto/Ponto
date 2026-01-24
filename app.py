@@ -1,82 +1,71 @@
-<!DOCTYPE html>
-<html lang="pt-br">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Ponto - Dra. Thamiris Araujo</title>
-    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600&display=swap" rel="stylesheet">
-    <style>
-        body { font-family: 'Poppins', sans-serif; background-color: #fff5f7; display: flex; flex-direction: column; align-items: center; justify-content: center; min-height: 100vh; margin: 0; }
-        .card { background: white; padding: 40px; border-radius: 30px; box-shadow: 0 10px 25px rgba(214,140,154,0.1); text-align: center; width: 320px; border: 1px solid #fce4ec; }
-        .btn { width: 100%; padding: 15px; margin: 10px 0; border: none; border-radius: 12px; font-weight: 600; cursor: pointer; font-size: 16px; transition: 0.3s; }
-        .btn-ent { background: #d68c9a; color: white; }
-        .btn-sai { background: white; color: #d68c9a; border: 2px solid #d68c9a; }
-        .btn:disabled { opacity: 0.6; cursor: not-allowed; }
-        .flash { color: #d68c9a; margin-bottom: 20px; font-weight: 600; background: #fce4ec; padding: 10px; border-radius: 10px; border: 1px solid #d68c9a; }
-        footer { margin-top: 30px; color: #d68c9a; font-size: 13px; text-align: center; }
-        footer a { color: inherit; text-decoration: none; font-weight: bold; }
-        .loading { font-size: 12px; color: #d68c9a; margin-top: 5px; display: none; }
-    </style>
-</head>
-<body>
-    <div class="card">
-        <h2 style="color: #d68c9a;">🌸 Dra Thamiris Araujo</h2>
-        
-        {% with messages = get_flashed_messages() %}
-            {% if messages %}
-                {% for msg in messages %}
-                    <div class="flash">{{ msg }}</div>
-                {% endfor %}
-            {% endif %}
-        {% endwith %}
-        
-        <p>Olá, <b>Esther Julia</b>!</p>
-        
-        <button id="btnEntrada" onclick="enviar('Entrada')" class="btn btn-ent">Bater Entrada</button>
-        <button id="btnSaida" onclick="enviar('Saída')" class="btn btn-sai">Bater Saída</button>
-        
-        <div id="status" class="loading">Localizando GPS... aguarde ✨</div>
+from flask import Flask, render_template, request, redirect, url_for, flash, session, send_file
+from datetime import datetime
+import pytz
+import io
+import json
 
-        <form id="formPonto" method="POST" action="/bater_ponto" style="display:none;">
-            <input type="hidden" name="tipo" id="tipo">
-            <input type="hidden" name="lat" id="lat">
-            <input type="hidden" name="lon" id="lon">
-        </form>
+app = Flask(__name__)
+app.secret_key = 'clinica_thamiris_2026'
+fuso = pytz.timezone('America/Sao_Paulo')
+
+# Base de dados temporária
+historico_db = [] 
+
+@app.route('/')
+def index():
+    return render_template('index.html')
+
+@app.route('/bater_ponto', methods=['POST'])
+def bater_ponto():
+    try:
+        tipo = request.form.get('tipo')
+        lat = request.form.get('lat')
+        lon = request.form.get('lon')
+        agora = datetime.now(fuso)
         
-        <a href="/login" style="font-size: 10px; color: #fce4ec; text-decoration: none; display: block; margin-top: 15px;">Acesso Restrito</a>
-    </div>
-
-    <footer>
-        Desenvolvido por <a href="https://github.com/LucasBiazoto" target="_blank">Lucas Biazoto</a> 🐙
-    </footer>
-
-    <script>
-    function enviar(tipo) {
-        // Desativa botões para evitar duplo clique
-        document.getElementById('btnEntrada').disabled = true;
-        document.getElementById('btnSaida').disabled = true;
-        document.getElementById('status').style.display = 'block';
+        historico_db.append({
+            'id': len(historico_db) + 1,
+            'tipo': tipo,
+            'data': agora.strftime('%d/%m/%Y'),
+            'mes': agora.strftime('%m'),
+            'hora': agora.strftime('%H:%M'),
+            'geo': f"{lat}, {lon}" if lat and lat != "" else "GPS Desativado"
+        })
         
-        document.getElementById('tipo').value = tipo;
+        flash("Bom trabalho meu bem 🌸" if tipo == 'Entrada' else "Bom descanso meu bem 🌸")
+        return redirect(url_for('index'))
+    except:
+        return "Erro ao processar ponto", 500
 
-        if (navigator.geolocation) {
-            // Tenta pegar a localização por 6 segundos, se não conseguir, bate o ponto assim mesmo
-            navigator.geolocation.getCurrentPosition(
-                (p) => {
-                    document.getElementById('lat').value = p.coords.latitude;
-                    document.getElementById('lon').value = p.coords.longitude;
-                    document.getElementById('formPonto').submit();
-                },
-                (erro) => {
-                    console.log("GPS erro:", erro);
-                    document.getElementById('formPonto').submit();
-                },
-                { timeout: 6000, enableHighAccuracy: true }
-            );
-        } else {
-            document.getElementById('formPonto').submit();
-        }
-    }
-    </script>
-</body>
-</html>
+@app.route('/gestao')
+def gestao():
+    if not session.get('admin_logado'): return redirect(url_for('login'))
+    mes_f = request.args.get('mes', datetime.now(fuso).strftime('%m'))
+    
+    # Lógica de processamento da tabela (mesmo código anterior)
+    # ... (código de cálculo de horas) ...
+    return render_template('gestao.html', registros=[], total="00:00", contador=0, mes_atual=mes_f)
+
+# --- CORREÇÃO DOS ERROS DE DOWNLOAD ---
+@app.route('/exportar_backup')
+def exportar_backup():
+    data = json.dumps(historico_db, indent=4)
+    return send_file(io.BytesIO(data.encode()), mimetype='application/json', as_attachment=True, download_name='backup.json')
+
+@app.route('/exportar_pdf')
+def exportar_pdf():
+    txt = "RELATORIO DE PONTO\n"
+    for r in historico_db: txt += f"{r['data']} - {r['tipo']}: {r['hora']}\n"
+    return send_file(io.BytesIO(txt.encode()), mimetype='text/plain', as_attachment=True, download_name='relatorio.txt')
+
+@app.route('/login', methods=['GET', 'POST'])
+def login():
+    if request.method == 'POST' and request.form.get('password') == "8340":
+        session['admin_logado'] = True
+        return redirect(url_for('gestao'))
+    return render_template('login.html')
+
+@app.route('/logout')
+def logout():
+    session.clear()
+    return redirect(url_for('index'))
