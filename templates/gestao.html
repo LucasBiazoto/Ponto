@@ -1,12 +1,50 @@
-<div class="btn-group">
-    <form method="GET" action="/gestao">
-        <select name="mes" onchange="this.form.submit()" class="btn btn-out">
-            <option value="01" {% if mes_atual=='01' %}selected{% endif %}>Janeiro</option>
-            <option value="02" {% if mes_atual=='02' %}selected{% endif %}>Fevereiro</option>
-            </select>
-    </form>
-    
-    <a href="/exportar_backup" class="btn btn-cinza">💾 Backup</a>
-    <a href="/exportar_pdf" class="btn btn-out">📄 PDF</a>
-    <button onclick="document.getElementById('modalManual').style.display='block'" class="btn btn-rosa">➕ Manual</button>
+<style>
+    /* CSS para manter os botões organizados e femininos */
+    .btn-container { display: flex; gap: 10px; margin-bottom: 20px; align-items: center; flex-wrap: wrap; }
+    .btn-acao { 
+        padding: 10px 15px; border-radius: 12px; border: 1px solid #d68c9a; 
+        background: white; color: #d68c9a; font-weight: bold; text-decoration: none; cursor: pointer;
+    }
+    .btn-manual { background: #d68c9a; color: white; border: none; }
+    .btn-backup { background: #8e8e8e; color: white; border: none; }
+    table { width: 100%; border-collapse: collapse; background: white; border-radius: 15px; overflow: hidden; }
+    th { background: #fce4ec; color: #d68c9a; padding: 15px; }
+    td { padding: 12px; text-align: center; border-bottom: 1px solid #f9f9f9; }
+</style>
+
+<div class="card">
+    <div class="btn-container">
+        <form method="GET" action="/gestao">
+            <select name="mes" onchange="this.form.submit()" class="btn-acao">
+                <option value="01" {% if mes_atual=='01' %}selected{% endif %}>Janeiro</option>
+                <option value="02" {% if mes_atual=='02' %}selected{% endif %}>Fevereiro</option>
+                </select>
+        </form>
+        <a href="/exportar_backup" class="btn-acao btn-backup">💾 Backup</a>
+        <a href="/exportar_pdf" class="btn-acao">📄 PDF</a>
+        <button onclick="abrirModal()" class="btn-acao btn-manual">➕ Manual</button>
+    </div>
+
+    <table>
+        <thead>
+            <tr>
+                <th>Data</th>
+                <th>Entrada</th>
+                <th>Saída</th>
+                <th>Saldo</th>
+                <th>Status</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for r in registros %}
+            <tr style="color: {{ r.cor }};">
+                <td>{{ r.data }}</td>
+                <td>{{ r.e }} {% if r.id_e %}<a href="/excluir/{{ r.id_e }}">🗑️</a>{% endif %}</td>
+                <td>{{ r.s }} {% if r.id_s %}<a href="/excluir/{{ r.id_s }}">🗑️</a>{% endif %}</td>
+                <td style="font-weight: bold;">{{ r.saldo }}</td>
+                <td>📍 Localizado</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
 </div>
