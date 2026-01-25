@@ -8,36 +8,24 @@
     <style>
         :root { --rosa-escuro: #d68c9a; --rosa-claro: #fce4ec; --fundo: #fff5f7; --texto: #5a4a4d; }
         body { font-family: 'Poppins', sans-serif; background-color: var(--fundo); display: flex; flex-direction: column; align-items: center; justify-content: center; min-height: 100vh; margin: 0; }
-        
-        .card { 
-            background: white; padding: 40px; border-radius: 30px; 
-            box-shadow: 0 10px 25px rgba(214,140,154,0.15); 
-            text-align: center; width: 320px; border: 1px solid var(--rosa-claro); 
-        }
-        
+        .card { background: white; padding: 40px; border-radius: 30px; box-shadow: 0 10px 25px rgba(214,140,154,0.15); text-align: center; width: 320px; border: 1px solid var(--rosa-claro); }
         h1 { color: var(--rosa-escuro); margin-bottom: 0; font-size: 24px; }
         h3 { color: var(--texto); margin-top: 5px; font-weight: 400; font-size: 16px; margin-bottom: 25px; }
-        
         .btn { width: 100%; padding: 16px; margin: 10px 0; border: none; border-radius: 15px; font-weight: 600; cursor: pointer; font-size: 16px; transition: 0.3s; }
         .btn-ent { background: var(--rosa-escuro); color: white; }
         .btn-sai { background: white; color: var(--rosa-escuro); border: 2px solid var(--rosa-escuro); }
-        
         .flash { color: var(--rosa-escuro); margin-bottom: 20px; font-weight: 600; background: var(--rosa-claro); padding: 12px; border-radius: 12px; font-size: 14px; }
         
-        /* ESTILO DO BOTÃO INVISÍVEL */
         .admin-link {
             font-size: 11px;
             color: var(--rosa-escuro);
             text-decoration: none;
             display: block;
             margin-top: 25px;
-            opacity: 0; /* Começa invisível */
-            transition: opacity 0.5s ease; /* Aparece suavemente ao passar o mouse */
+            opacity: 0; /* Invisível por padrão */
+            transition: opacity 0.5s ease;
         }
-
-        .admin-link:hover {
-            opacity: 1; /* Fica visível no hover */
-        }
+        .admin-link:hover { opacity: 1; }
 
         footer { margin-top: 40px; text-align: center; font-size: 13px; color: var(--rosa-escuro); }
         .github-link { text-decoration: none; color: var(--texto); font-weight: 600; display: inline-flex; align-items: center; gap: 5px; }
@@ -47,22 +35,17 @@
     <div class="card">
         <h1>Dra Thamiris Araujo</h1>
         <h3>Estética Avançada</h3>
-
         {% with messages = get_flashed_messages() %}
             {% if messages %}{% for msg in messages %}<div class="flash">{{ msg }}</div>{% endfor %}{% endif %}
         {% endwith %}
-
         <p>Olá, <strong>Esther Julia</strong>!</p>
-
         <form method="POST" action="/bater_ponto">
             <input type="hidden" name="tipo" id="tipo_input">
             <button type="submit" onclick="document.getElementById('tipo_input').value='Entrada'" class="btn btn-ent">Bater Entrada</button>
             <button type="submit" onclick="document.getElementById('tipo_input').value='Saída'" class="btn btn-sai">Bater Saída</button>
         </form>
-
         <a href="/login" class="admin-link">Acesso Administrativo</a>
     </div>
-
     <footer>
         <p>© 2026 Dra. Thamiris Araujo - Estética Avançada 🌸</p>
         <p>Desenvolvido por <strong>Lucas Biazoto</strong><br>

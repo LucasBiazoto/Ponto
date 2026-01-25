@@ -10,7 +10,15 @@ app.secret_key = 'clinica_thamiris_araujo_2026'
 fuso = pytz.timezone('America/Sao_Paulo')
 
 def get_db_connection():
-    return psycopg2.connect(os.environ.get('POSTGRES_URL'))
+    # Puxa a URL do banco das variáveis de ambiente da Vercel
+    url = os.environ.get('POSTGRES_URL')
+    # Ajuste para garantir conexão segura (evita erro 500)
+    if url and "sslmode" not in url:
+        if "?" in url:
+            url += "&sslmode=require"
+        else:
+            url += "?sslmode=require"
+    return psycopg2.connect(url)
 
 @app.route('/')
 def index():
@@ -20,14 +28,17 @@ def index():
 def bater_ponto():
     tipo = request.form.get('tipo')
     agora = datetime.now(fuso)
-    conn = get_db_connection()
-    cur = conn.cursor()
-    cur.execute('INSERT INTO pontos (tipo, data, mes, hora, geo) VALUES (%s, %s, %s, %s, %s)',
-                (tipo, agora.strftime('%d/%m/%Y'), agora.strftime('%m'), agora.strftime('%H:%M'), "Via Site"))
-    conn.commit()
-    cur.close()
-    conn.close()
-    flash(f"Bom {'trabalho' if tipo == 'Entrada' else 'descanso'} meu bem 🌸")
+    try:
+        conn = get_db_connection()
+        cur = conn.cursor()
+        cur.execute('INSERT INTO pontos (tipo, data, mes, hora, geo) VALUES (%s, %s, %s, %s, %s)',
+                    (tipo, agora.strftime('%d/%m/%Y'), agora.strftime('%m'), agora.strftime('%H:%M'), "Via Site"))
+        conn.commit()
+        cur.close()
+        conn.close()
+        flash(f"Bom {'trabalho' if tipo == 'Entrada' else 'descanso'} meu bem 🌸")
+    except Exception as e:
+        flash("Erro ao salvar no banco. Verifique a conexão.")
     return redirect(url_for('index'))
 
 @app.route('/ponto_manual', methods=['POST'])
@@ -82,9 +93,9 @@ def gestao():
             h2, m2 = map(int, v['s'].split(':'))
             diff = (h2 * 60 + m2) - (h1 * 60 + m1) - 360
             total_minutos_mes += diff
-            if diff > 0: cor = "#2980b9" # Azul Extra
-            elif diff == 0: cor = "#27ae60" # Verde OK
-            else: cor = "#e74c3c" # Vermelho Devendo
+            if diff > 0: cor = "#2980b9"
+            elif diff == 0: cor = "#27ae60"
+            else: cor = "#e74c3c"
             sinal = "+" if diff >= 0 else "-"
             saldo_dia_str = f"{sinal}{abs(diff)//60:02d}:{abs(diff)%60:02d}"
         
