@@ -10,13 +10,9 @@ app = Flask(__name__)
 app.secret_key = 'clinica_thamiris_araujo_2026'
 fuso = pytz.timezone('America/Sao_Paulo')
 
-# CONEXÃO COM O BANCO DE DADOS
 def get_db_connection():
-    # O Vercel injeta a URL do banco automaticamente aqui
-    conn = psycopg2.connect(os.environ.get('POSTGRES_URL'))
-    return conn
+    return psycopg2.connect(os.environ.get('POSTGRES_URL'))
 
-# CRIA A TABELA E AS COLUNAS NECESSÁRIAS
 def init_db():
     conn = get_db_connection()
     cur = conn.cursor()
@@ -43,8 +39,8 @@ def index():
 @app.route('/bater_ponto', methods=['POST'])
 def bater_ponto():
     tipo = request.form.get('tipo')
-    lat = request.form.get('lat')
-    lon = request.form.get('lon')
+    lat = request.form.get('lat') or '0'
+    lon = request.form.get('lon') or '0'
     agora = datetime.now(fuso)
     
     conn = get_db_connection()
@@ -55,7 +51,8 @@ def bater_ponto():
     cur.close()
     conn.close()
     
-    flash("Bom trabalho meu bem 🌸" if tipo == 'Entrada' else "Bom descanso meu bem 🌸")
+    msg = "Bom trabalho meu bem 🌸" if tipo == 'Entrada' else "Bom descanso meu bem 🌸"
+    flash(msg)
     return redirect(url_for('index'))
 
 @app.route('/gestao')
@@ -65,40 +62,49 @@ def gestao():
     
     conn = get_db_connection()
     cur = conn.cursor()
-    cur.execute('SELECT tipo, data, hora, id FROM pontos WHERE mes = %s ORDER BY id DESC', (mes_f,))
-    registros = cur.fetchall()
+    cur.execute('SELECT tipo, data, hora, id FROM pontos WHERE mes = %s ORDER BY data ASC, hora ASC', (mes_f,))
+    registros_raw = cur.fetchall()
     cur.close()
     conn.close()
 
     diario = {}
-    for tipo, data, hora, p_id in registros:
+    for tipo, data, hora, p_id in registros_raw:
         if data not in diario: diario[data] = {'e': '--:--', 's': '--:--', 'id_e': None, 'id_s': None}
         if tipo == 'Entrada': diario[data]['e'] = hora; diario[data]['id_e'] = p_id
         else: diario[data]['s'] = hora; diario[data]['id_s'] = p_id
 
-    tabela = []
+    total_minutos, dias_count, tabela = 0, 0, []
+
     for data, v in diario.items():
-        # Lógica simples de saldo (exemplo 6h)
-        tabela.append({'data': data, 'e': v['e'], 's': v['s'], 'id_e': v['id_e'], 'id_s': v['id_s'], 'cor': '#d68c9a', 'saldo': '--:--'})
+        cor, saldo = "#5a4a4d", "00:00"
+        if v['e'] != '--:--' and v['s'] != '--:--':
+            dias_count += 1
+            h1, m1 = map(int, v['e'].split(':'))
+            h2, m2 = map(int, v['s'].split(':'))
+            diff = (h2 * 60 + m2) - (h1 * 60 + m1) - 360 # Jornada 6h
+            total_minutos += diff
+            
+            if diff == 0: cor = "#27ae60"
+            elif diff > 0: cor = "#2980b9"
+            else: cor = "#e74c3c"
+            
+            sinal = "+" if diff >= 0 else "-"
+            saldo = f"{sinal}{abs(diff)//60:02d}:{abs(diff)%60:02d}"
+        
+        tabela.append({'data': data, 'e': v['e'], 's': v['s'], 'id_e': v['id_e'], 'id_s': v['id_s'], 'cor': cor, 'saldo': saldo})
 
-    return render_template('gestao.html', registros=tabela, mes_atual=mes_f)
-
-# --- NOVAS FUNÇÕES ADICIONADAS PARA O PAINEL FUNCIONAR 100% ---
+    total_txt = f"{'+' if total_minutos >= 0 else '-'}{abs(total_minutos)//60:02d}:{abs(total_minutos)%60:02d}"
+    return render_template('gestao.html', registros=tabela[::-1], total=total_txt, contador=dias_count, mes_atual=mes_f)
 
 @app.route('/ponto_manual', methods=['POST'])
 def ponto_manual():
     if not session.get('admin_logado'): return redirect(url_for('login'))
-    data_m = request.form.get('data') # AAAA-MM-DD
-    hora_m = request.form.get('hora')
-    tipo_m = request.form.get('tipo')
-    
-    data_f = datetime.strptime(data_m, '%Y-%m-%d').strftime('%d/%m/%Y')
-    mes_f = data_m.split('-')[1]
-
+    data_f = datetime.strptime(request.form.get('data'), '%Y-%m-%d').strftime('%d/%m/%Y')
+    mes_f = request.form.get('data').split('-')[1]
     conn = get_db_connection()
     cur = conn.cursor()
     cur.execute('INSERT INTO pontos (tipo, data, mes, hora, geo) VALUES (%s, %s, %s, %s, %s)',
-                (tipo_m, data_f, mes_f, hora_m, "Manual"))
+                (request.form.get('tipo'), data_f, mes_f, request.form.get('hora'), "Manual"))
     conn.commit()
     cur.close()
     conn.close()
@@ -123,8 +129,7 @@ def exportar_backup():
     dados = cur.fetchall()
     cur.close()
     conn.close()
-    output = json.dumps(dados, indent=4)
-    return send_file(io.BytesIO(output.encode()), mimetype='application/json', as_attachment=True, download_name='backup_clinica.json')
+    return send_file(io.BytesIO(json.dumps(dados).encode()), mimetype='application/json', as_attachment=True, download_name='backup.json')
 
 @app.route('/login', methods=['GET', 'POST'])
 def login():
