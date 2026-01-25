@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Gestão - Dra. Thamiris Araujo</title>
+    <title>Gestão - Clínica Dra. Thamiris</title>
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600&display=swap" rel="stylesheet">
     <style>
         :root { --rosa: #d68c9a; --fundo: #fff5f7; }
@@ -13,32 +13,22 @@
         .btn { padding: 10px 18px; border-radius: 12px; border: none; cursor: pointer; font-weight: 600; text-decoration: none; font-size: 14px; }
         .btn-rosa { background: var(--rosa); color: white; }
         .btn-out { background: white; border: 1px solid var(--rosa); color: var(--rosa); }
-        .btn-cinza { background: #8e8e8e; color: white; }
         table { width: 100%; border-collapse: collapse; }
         th { color: var(--rosa); border-bottom: 2px solid #fce4ec; padding: 15px; }
         td { padding: 12px; text-align: center; border-bottom: 1px solid #f9f9f9; }
-        .resumo { background: #fce4ec; padding: 20px; border-radius: 15px; display: flex; justify-content: space-around; margin-top: 25px; color: var(--rosa); font-weight: bold; }
-        #modalManual { display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.5); justify-content:center; align-items:center; z-index:1000; }
+        .modal { display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.5); justify-content:center; align-items:center; }
     </style>
 </head>
 <body>
     <div class="card">
         <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:20px;">
-            <h2 style="color: var(--rosa); margin:0;">🌸 Gestão de Pontos</h2>
-            <a href="/logout" style="text-decoration:none; color:gray; font-size:12px;">Sair</a>
+            <h2 style="color: var(--rosa);">🌸 Gestão de Pontos</h2>
+            <a href="/logout" style="color:gray; text-decoration:none; font-size:12px;">Sair</a>
         </div>
 
         <div class="btn-group">
-            <form method="GET" action="/gestao">
-                <select name="mes" onchange="this.form.submit()" class="btn btn-out">
-                    {% for m in ['01','02','03','04','05','06','07','08','09','10','11','12'] %}
-                    <option value="{{m}}" {% if mes_atual == m %}selected{% endif %}>Mês {{m}}</option>
-                    {% endfor %}
-                </select>
-            </form>
-            <a href="/exportar_backup" class="btn btn-cinza">💾 Backup</a>
-            <a href="/exportar_pdf" class="btn btn-out">📄 PDF</a>
-            <button onclick="document.getElementById('modalManual').style.display='flex'" class="btn btn-rosa">➕ Manual</button>
+            <a href="/exportar_backup" class="btn btn-out" style="background:#eee; border:none; color:#666;">💾 Backup</a>
+            <button onclick="document.getElementById('mManual').style.display='flex'" class="btn btn-rosa">➕ Manual</button>
         </div>
 
         <table>
@@ -47,31 +37,24 @@
                     <th>Data</th>
                     <th>Entrada</th>
                     <th>Saída</th>
-                    <th>Saldo</th>
                     <th>Status</th>
                 </tr>
             </thead>
             <tbody>
                 {% for r in registros %}
-                <tr style="color: {{ r.cor }};">
+                <tr>
                     <td>{{ r.data }}</td>
-                    <td>{{ r.e }}</td>
-                    <td>{{ r.s }}</td>
-                    <td style="font-weight: bold;">{{ r.saldo }}</td>
-                    <td><small>📍 OK</small></td>
+                    <td>{{ r.e }} {% if r.id_e %}<a href="/excluir/{{r.id_e}}" style="text-decoration:none;">🗑️</a>{% endif %}</td>
+                    <td>{{ r.s }} {% if r.id_s %}<a href="/excluir/{{r.id_s}}" style="text-decoration:none;">🗑️</a>{% endif %}</td>
+                    <td><small style="color:var(--rosa);">📍 Salvo</small></td>
                 </tr>
                 {% endfor %}
             </tbody>
         </table>
-
-        <div class="resumo">
-            <span>DIAS COMPLETOS: {{ contador }}</span>
-            <span>TOTAL: {{ total }}</span>
-        </div>
     </div>
 
-    <div id="modalManual">
-        <div style="background:white; padding:30px; border-radius:20px; width:300px; border: 2px solid var(--rosa);">
+    <div id="mManual" class="modal">
+        <div style="background:white; padding:30px; border-radius:20px; width:280px;">
             <h3 style="color:var(--rosa); text-align:center;">Ponto Manual</h3>
             <form action="/ponto_manual" method="POST">
                 <input type="date" name="data" required style="width:100%; margin-bottom:10px; padding:8px;">
@@ -81,7 +64,7 @@
                     <option value="Saída">Saída</option>
                 </select>
                 <div style="display:flex; gap:10px;">
-                    <button type="button" onclick="document.getElementById('modalManual').style.display='none'" class="btn btn-out" style="flex:1;">Sair</button>
+                    <button type="button" onclick="document.getElementById('mManual').style.display='none'" class="btn btn-out" style="flex:1;">Sair</button>
                     <button type="submit" class="btn btn-rosa" style="flex:1;">Salvar</button>
                 </div>
             </form>

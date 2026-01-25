@@ -11,11 +11,9 @@
         .btn { width: 100%; padding: 15px; margin: 10px 0; border: none; border-radius: 12px; font-weight: 600; cursor: pointer; font-size: 16px; transition: 0.3s; }
         .btn-ent { background: #d68c9a; color: white; }
         .btn-sai { background: white; color: #d68c9a; border: 2px solid #d68c9a; }
-        .btn:disabled { opacity: 0.6; cursor: not-allowed; }
+        .btn:disabled { opacity: 0.6; }
         .flash { color: #d68c9a; margin-bottom: 20px; font-weight: 600; background: #fce4ec; padding: 10px; border-radius: 10px; border: 1px solid #d68c9a; }
-        footer { margin-top: 30px; color: #d68c9a; font-size: 13px; text-align: center; }
-        footer a { color: inherit; text-decoration: none; font-weight: bold; }
-        .loading { font-size: 12px; color: #d68c9a; margin-top: 5px; display: none; }
+        footer { margin-top: 30px; color: #d68c9a; font-size: 13px; }
     </style>
 </head>
 <body>
@@ -23,59 +21,36 @@
         <h2 style="color: #d68c9a;">🌸 Dra Thamiris Araujo</h2>
         
         {% with messages = get_flashed_messages() %}
-            {% if messages %}
-                {% for msg in messages %}
-                    <div class="flash">{{ msg }}</div>
-                {% endfor %}
-            {% endif %}
+            {% if messages %}{% for msg in messages %}<div class="flash">{{ msg }}</div>{% endfor %}{% endif %}
         {% endwith %}
         
         <p>Olá, <b>Esther Julia</b>!</p>
         
-        <button id="btnEntrada" onclick="enviar('Entrada')" class="btn btn-ent">Bater Entrada</button>
-        <button id="btnSaida" onclick="enviar('Saída')" class="btn btn-sai">Bater Saída</button>
+        <button id="b1" onclick="enviar('Entrada')" class="btn btn-ent">Bater Entrada</button>
+        <button id="b2" onclick="enviar('Saída')" class="btn btn-sai">Bater Saída</button>
         
-        <div id="status" class="loading">Localizando GPS... aguarde ✨</div>
-
         <form id="formPonto" method="POST" action="/bater_ponto" style="display:none;">
             <input type="hidden" name="tipo" id="tipo">
             <input type="hidden" name="lat" id="lat">
             <input type="hidden" name="lon" id="lon">
         </form>
         
-        <a href="/login" style="font-size: 10px; color: #fce4ec; text-decoration: none; display: block; margin-top: 15px;">Acesso Restrito</a>
+        <a href="/login" style="font-size: 10px; color: #fce4ec; text-decoration: none; display: block; margin-top: 15px;">Painel Administrativo</a>
     </div>
-
-    <footer>
-        Desenvolvido por <a href="https://github.com/LucasBiazoto" target="_blank">Lucas Biazoto</a> 🐙
-    </footer>
 
     <script>
     function enviar(tipo) {
-        // Desativa botões para evitar duplo clique
-        document.getElementById('btnEntrada').disabled = true;
-        document.getElementById('btnSaida').disabled = true;
-        document.getElementById('status').style.display = 'block';
-        
+        document.getElementById('b1').disabled = true;
+        document.getElementById('b2').disabled = true;
         document.getElementById('tipo').value = tipo;
 
         if (navigator.geolocation) {
-            // Tenta pegar a localização por 6 segundos, se não conseguir, bate o ponto assim mesmo
-            navigator.geolocation.getCurrentPosition(
-                (p) => {
-                    document.getElementById('lat').value = p.coords.latitude;
-                    document.getElementById('lon').value = p.coords.longitude;
-                    document.getElementById('formPonto').submit();
-                },
-                (erro) => {
-                    console.log("GPS erro:", erro);
-                    document.getElementById('formPonto').submit();
-                },
-                { timeout: 6000, enableHighAccuracy: true }
-            );
-        } else {
-            document.getElementById('formPonto').submit();
-        }
+            navigator.geolocation.getCurrentPosition(p => {
+                document.getElementById('lat').value = p.coords.latitude;
+                document.getElementById('lon').value = p.coords.longitude;
+                document.getElementById('formPonto').submit();
+            }, () => { document.getElementById('formPonto').submit(); }, {timeout: 5000});
+        } else { document.getElementById('formPonto').submit(); }
     }
     </script>
 </body>
