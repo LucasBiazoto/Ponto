@@ -6,51 +6,167 @@
     <title>Ponto - Dra. Thamiris Araujo</title>
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600&display=swap" rel="stylesheet">
     <style>
-        body { font-family: 'Poppins', sans-serif; background-color: #fff5f7; display: flex; flex-direction: column; align-items: center; justify-content: center; min-height: 100vh; margin: 0; }
-        .card { background: white; padding: 40px; border-radius: 30px; box-shadow: 0 10px 25px rgba(214,140,154,0.1); text-align: center; width: 320px; border: 1px solid #fce4ec; }
-        .btn { width: 100%; padding: 15px; margin: 10px 0; border: none; border-radius: 12px; font-weight: 600; cursor: pointer; font-size: 16px; transition: 0.3s; }
-        .btn-ent { background: #d68c9a; color: white; }
-        .btn-sai { background: white; color: #d68c9a; border: 2px solid #d68c9a; }
-        .btn:disabled { opacity: 0.6; }
-        .flash { color: #d68c9a; margin-bottom: 20px; font-weight: 600; background: #fce4ec; padding: 10px; border-radius: 10px; border: 1px solid #d68c9a; }
-        footer { margin-top: 30px; color: #d68c9a; font-size: 13px; }
+        :root { 
+            --rosa-escuro: #d68c9a; 
+            --rosa-claro: #fce4ec; 
+            --fundo: #fff5f7; 
+            --texto: #5a4a4d;
+        }
+
+        body { 
+            font-family: 'Poppins', sans-serif; 
+            background-color: var(--fundo); 
+            display: flex; 
+            flex-direction: column; 
+            align-items: center; 
+            justify-content: center; 
+            min-height: 100vh; 
+            margin: 0; 
+            color: var(--texto);
+        }
+
+        .card { 
+            background: white; 
+            padding: 40px; 
+            border-radius: 30px; 
+            box-shadow: 0 10px 25px rgba(214,140,154,0.15); 
+            text-align: center; 
+            width: 340px; 
+            border: 1px solid var(--rosa-claro); 
+        }
+
+        h1 { color: var(--rosa-escuro); margin-bottom: 5px; font-size: 24px; }
+        h3 { color: var(--texto); margin-top: 0; font-weight: 400; font-size: 16px; letter-spacing: 1px; }
+
+        .btn { 
+            width: 100%; 
+            padding: 16px; 
+            margin: 12px 0; 
+            border: none; 
+            border-radius: 15px; 
+            font-weight: 600; 
+            cursor: pointer; 
+            font-size: 16px; 
+            transition: all 0.3s; 
+        }
+
+        .btn-ent { 
+            background: var(--rosa-escuro); 
+            color: white; 
+            box-shadow: 0 4px 15px rgba(214,140,154,0.3);
+        }
+
+        .btn-ent:hover { transform: translateY(-2px); opacity: 0.9; }
+
+        .btn-sai { 
+            background: white; 
+            color: var(--rosa-escuro); 
+            border: 2px solid var(--rosa-escuro); 
+        }
+
+        .btn-sai:hover { background: var(--rosa-claro); }
+
+        .btn:disabled { background: #ccc; border-color: #ccc; cursor: not-allowed; transform: none; }
+
+        .flash { 
+            color: var(--rosa-escuro); 
+            margin-bottom: 20px; 
+            font-weight: 600; 
+            background: var(--rosa-claro); 
+            padding: 12px; 
+            border-radius: 12px; 
+            border: 1px solid var(--rosa-escuro); 
+            font-size: 14px;
+        }
+
+        footer { 
+            margin-top: 40px; 
+            text-align: center; 
+            font-size: 13px; 
+            color: var(--rosa-escuro);
+        }
+
+        .github-link {
+            text-decoration: none;
+            color: var(--texto);
+            font-weight: 600;
+            display: inline-flex;
+            align-items: center;
+            gap: 5px;
+            margin-top: 5px;
+        }
+
+        .admin-link {
+            font-size: 11px;
+            color: var(--rosa-claro);
+            text-decoration: none;
+            display: block;
+            margin-top: 20px;
+        }
     </style>
 </head>
 <body>
+
     <div class="card">
-        <h2 style="color: #d68c9a;">🌸 Dra Thamiris Araujo</h2>
-        
+        <h1>🌸 Dra Thamiris Araujo</h1>
+        <h3>Estética Avançada</h3>
+
         {% with messages = get_flashed_messages() %}
-            {% if messages %}{% for msg in messages %}<div class="flash">{{ msg }}</div>{% endfor %}{% endif %}
+            {% if messages %}
+                {% for msg in messages %}
+                    <div class="flash">{{ msg }}</div>
+                {% endfor %}
+            {% endif %}
         {% endwith %}
-        
-        <p>Olá, <b>Esther Julia</b>!</p>
-        
+
+        <p style="margin-bottom: 25px;">Olá, <strong>Esther Julia</strong>!</p>
+
         <button id="b1" onclick="enviar('Entrada')" class="btn btn-ent">Bater Entrada</button>
         <button id="b2" onclick="enviar('Saída')" class="btn btn-sai">Bater Saída</button>
-        
+
         <form id="formPonto" method="POST" action="/bater_ponto" style="display:none;">
             <input type="hidden" name="tipo" id="tipo">
             <input type="hidden" name="lat" id="lat">
             <input type="hidden" name="lon" id="lon">
         </form>
-        
-        <a href="/login" style="font-size: 10px; color: #fce4ec; text-decoration: none; display: block; margin-top: 15px;">Painel Administrativo</a>
+
+        <a href="/login" class="admin-link">Acesso Administrativo</a>
     </div>
+
+    <footer>
+        <p>© 2026 Dra. Thamiris Araujo - Estética Avançada 🌸</p>
+        <p>Desenvolvido por <strong>Lucas Biazoto</strong><br>
+            <a href="https://github.com/lucasbiazoto" target="_blank" class="github-link">
+                <img src="https://cdn-icons-png.flaticon.com/512/25/25231.png" width="16"> GitHub
+            </a>
+        </p>
+    </footer>
 
     <script>
     function enviar(tipo) {
+        // Desabilita botões para evitar cliques duplos
         document.getElementById('b1').disabled = true;
         document.getElementById('b2').disabled = true;
+        document.getElementById('b1').innerText = "Enviando...";
         document.getElementById('tipo').value = tipo;
 
+        // Tenta capturar localização antes de enviar
         if (navigator.geolocation) {
-            navigator.geolocation.getCurrentPosition(p => {
-                document.getElementById('lat').value = p.coords.latitude;
-                document.getElementById('lon').value = p.coords.longitude;
-                document.getElementById('formPonto').submit();
-            }, () => { document.getElementById('formPonto').submit(); }, {timeout: 5000});
-        } else { document.getElementById('formPonto').submit(); }
+            navigator.geolocation.getCurrentPosition(
+                (p) => {
+                    document.getElementById('lat').value = p.coords.latitude;
+                    document.getElementById('lon').value = p.coords.longitude;
+                    document.getElementById('formPonto').submit();
+                }, 
+                () => { 
+                    // Se der erro na localização, envia assim mesmo
+                    document.getElementById('formPonto').submit(); 
+                }, 
+                { timeout: 5000 }
+            );
+        } else {
+            document.getElementById('formPonto').submit();
+        }
     }
     </script>
 </body>
