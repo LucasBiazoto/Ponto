@@ -9,13 +9,12 @@ app.secret_key = 'clinica_thamiris_araujo_2026'
 fuso = pytz.timezone('America/Sao_Paulo')
 
 def get_db_connection():
-    url = os.environ.get('STORAGE_URL') or os.environ.get('POSTGRES_URL') or os.environ.get('DATABASE_URL')
+    url = os.environ.get('POSTGRES_URL') or os.environ.get('DATABASE_URL')
     if url and "sslmode" not in url:
         url += "?sslmode=require"
     return psycopg2.connect(url)
 
-def formatar_saldo_extenso(minutos_totais):
-    """Calcula saldo exato como +0h 05m ou -0h 05m"""
+def formatar_saldo(minutos_totais):
     sinal = "+" if minutos_totais >= 0 else "-"
     m_abs = abs(int(minutos_totais))
     h = m_abs // 60
@@ -32,8 +31,7 @@ def login():
         if request.form.get('password') == "8340":
             session['admin_logado'] = True
             return redirect(url_for('gestao'))
-        else:
-            flash("Senha incorreta!")
+        flash("Senha incorreta!")
     return render_template('login.html')
 
 @app.route('/logout')
@@ -49,22 +47,18 @@ def bater_ponto():
     try:
         conn = get_db_connection()
         cur = conn.cursor()
-        
-        # Bloqueio de duplicidade
         cur.execute('SELECT id FROM pontos WHERE data = %s AND tipo = %s', (data_hoje, tipo))
         if cur.fetchone():
-            flash(f"Você já registrou sua {tipo} hoje! 🌸")
+            flash(f"Registro de {tipo} ja feito hoje! 🌸")
             return redirect(url_for('index'))
-            
         cur.execute('INSERT INTO pontos (tipo, data, mes, hora, geo) VALUES (%s, %s, %s, %s, %s)',
                     (tipo, data_hoje, agora.strftime('%m'), agora.strftime('%H:%M'), "Site"))
         conn.commit()
         cur.close(); conn.close()
-        
         msg = "Bom trabalho meu bem 🌸" if tipo == 'Entrada' else "Bom descanso meu bem 🌸"
         flash(msg)
     except:
-        flash("Erro de conexão com o banco.")
+        flash("Erro de conexao.")
     return redirect(url_for('index'))
 
 @app.route('/gestao')
@@ -72,44 +66,38 @@ def gestao():
     if not session.get('admin_logado'): return redirect(url_for('login'))
     mes_f = request.args.get('mes', datetime.now(fuso).strftime('%m'))
     
-    conn = get_db_connection()
-    cur = conn.cursor()
-    cur.execute('SELECT data, tipo, hora, id FROM pontos WHERE mes = %s ORDER BY data DESC, hora ASC', (mes_f,))
-    registros_raw = cur.fetchall()
-    cur.close(); conn.close()
+    try:
+        conn = get_db_connection()
+        cur = conn.cursor()
+        cur.execute('SELECT data, tipo, hora, id FROM pontos WHERE mes = %s ORDER BY data DESC', (mes_f,))
+        registros_raw = cur.fetchall()
+        cur.close(); conn.close()
 
-    dias = {}
-    for r in registros_raw:
-        data, tipo, hora, id_ponto = r
-        if data not in dias: dias[data] = {'entrada': None, 'saida': None, 'id_e': None, 'id_s': None}
-        if tipo == 'Entrada': dias[data]['entrada'], dias[data]['id_e'] = hora, id_ponto
-        else: dias[data]['saida'], dias[data]['id_s'] = hora, id_ponto
+        dias = {}
+        for r in registros_raw:
+            data, tipo, hora, id_ponto = r
+            if data not in dias: dias[data] = {'entrada': None, 'saida': None, 'id_e': None, 'id_s': None}
+            if tipo == 'Entrada': dias[data]['entrada'], dias[data]['id_e'] = hora, id_ponto
+            else: dias[data]['saida'], dias[data]['id_s'] = hora, id_ponto
 
-    tabela = []
-    minutos_mes = 0
-    dias_count = 0
-    
-    for data in sorted(dias.keys(), reverse=True):
-        info = dias[data]
-        cor, saldo_str = "vermelho", "0h 00m"
-        
-        if info['entrada'] and info['saida']:
-            dias_count += 1
-            t1 = datetime.strptime(info['entrada'], '%H:%M')
-            t2 = datetime.strptime(info['saida'], '%H:%M')
-            m_trab = (t2 - t1).total_seconds() / 60
-            saldo_dia = m_trab - 360 # Jornada de 6h
-            minutos_mes += saldo_dia
-            saldo_str = formatar_saldo_extenso(saldo_dia)
-            cor = "azul" if saldo_dia > 0 else ("verde" if saldo_dia == 0 else "vermelho")
-            
-        tabela.append({
-            'data': data, 'entrada': info['entrada'], 'saida': info['saida'],
-            'id_e': info['id_e'], 'id_s': info['id_s'], 'extra': saldo_str, 'cor': cor
-        })
+        tabela = []
+        minutos_total = 0
+        for d in sorted(dias.keys(), reverse=True):
+            info = dias[d]
+            saldo_str, cor = "0h 00m", "verde"
+            if info['entrada'] and info['saida']:
+                t1 = datetime.strptime(info['entrada'], '%H:%M')
+                t2 = datetime.strptime(info['saida'], '%H:%M')
+                dif = (t2 - t1).total_seconds() / 60
+                saldo_dia = dif - 360
+                minutos_total += saldo_dia
+                saldo_str = formatar_saldo(saldo_dia)
+                cor = "azul" if saldo_dia > 0 else ("verde" if saldo_dia == 0 else "vermelho")
+            tabela.append({'data': d, 'entrada': info['entrada'], 'saida': info['saida'], 'id_e': info['id_e'], 'id_s': info['id_s'], 'extra': saldo_str, 'cor': cor})
 
-    return render_template('gestao.html', registros=tabela, mes_atual=mes_f, 
-                           extras_mes=formatar_saldo_extenso(minutos_mes), dias=dias_count)
+        return render_template('gestao.html', registros=tabela, mes_atual=mes_f, extras_mes=formatar_saldo(minutos_total), dias=len(dias))
+    except Exception as e:
+        return str(e) # Se der erro, ele vai mostrar o texto do erro na tela para sabermos o que é.
 
 @app.route('/inserir_manual', methods=['POST'])
 def inserir_manual():
