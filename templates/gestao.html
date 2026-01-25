@@ -1,104 +1,29 @@
-<!DOCTYPE html>
-<html lang="pt-br">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Gestão - Dra. Thamiris Araujo</title>
-    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600&display=swap" rel="stylesheet">
-    <style>
-        :root { --rosa: #d68c9a; --rosa-claro: #fce4ec; --fundo: #fff5f7; --texto: #5a4a4d; }
-        body { font-family: 'Poppins', sans-serif; background: var(--fundo); padding: 20px; color: var(--texto); margin: 0; }
-        .card { background: white; max-width: 900px; margin: auto; padding: 30px; border-radius: 25px; box-shadow: 0 10px 30px rgba(0,0,0,0.05); border: 1px solid var(--rosa-claro); }
-        .header-flex { display: flex; justify-content: space-between; align-items: center; margin-bottom: 25px; }
-        .btn-rosa { background: var(--rosa); color: white; padding: 10px 20px; border-radius: 12px; border: none; cursor: pointer; font-weight: 600; text-decoration: none; display: inline-flex; align-items: center; gap: 8px; font-size: 14px; }
-        .btn-outline { background: white; border: 1px solid var(--rosa); color: var(--rosa); padding: 9px 18px; border-radius: 12px; cursor: pointer; text-decoration: none; font-size: 14px; font-weight: 600; display: inline-flex; align-items: center; gap: 5px; }
-        table { width: 100%; border-collapse: collapse; margin-top: 20px; }
-        th { color: var(--rosa); border-bottom: 2px solid var(--rosa-claro); padding: 15px; text-align: center; font-size: 15px; }
-        td { padding: 12px; text-align: center; border-bottom: 1px solid #fcfcfc; }
-        .resumo-box { background: var(--rosa-claro); padding: 25px; border-radius: 20px; display: flex; justify-content: space-around; margin-top: 30px; color: var(--rosa); font-weight: bold; border: 1px solid #f8bbd0; font-size: 16px; }
-        footer { text-align: center; margin-top: 50px; color: var(--rosa); font-size: 13px; border-top: 1px solid var(--rosa-claro); padding-top: 20px; }
-        .github-link { text-decoration: none; color: var(--texto); font-weight: 600; display: inline-flex; align-items: center; gap: 5px; }
-        .modal { display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.4); justify-content:center; align-items:center; z-index:1000; }
-    </style>
-</head>
-<body>
-    <div class="card">
-        <div class="header-flex">
-            <h2 style="color: var(--rosa); margin:0;">🌸 Gestão de Pontos - Dra. Thamiris Araujo</h2>
-            <a href="/logout" style="text-decoration:none; color:gray; font-size:12px;">Sair</a>
-        </div>
+<div style="display: flex; gap: 12px; align-items: center; flex-wrap: wrap;">
+    <form method="GET" action="/gestao">
+        <select name="mes" onchange="this.form.submit()" class="btn-outline">
+            {% for m in ['01','02','03','04','05','06','07','08','09','10','11','12'] %}
+            <option value="{{m}}" {% if mes_atual == m %}selected{% endif %}>Mês {{m}}</option>
+            {% endfor %}
+        </select>
+    </form>
+    
+    <a href="/exportar_pdf?mes={{ mes_atual }}" class="btn-rosa">📄 Extrair Relatório Completo</a>
+    
+    <button onclick="window.print()" class="btn-outline">💾 Backup Sistema</button>
+    
+    <button onclick="document.getElementById('mManual').style.display='flex'" class="btn-outline" style="border-color: #e74c3c; color: #e74c3c;">➕ Ponto Manual</button>
+</div>
 
-        <div style="display: flex; gap: 12px; align-items: center; flex-wrap: wrap;">
-            <form method="GET" action="/gestao">
-                <select name="mes" onchange="this.form.submit()" class="btn-outline">
-                    {% for m in ['01','02','03','04','05','06','07','08','09','10','11','12'] %}
-                    <option value="{{m}}" {% if mes_atual == m %}selected{% endif %}>Mês {{m}}</option>
-                    {% endfor %}
-                </select>
-            </form>
-            
-            <a href="/exportar_pdf?mes={{ mes_atual }}" class="btn-outline">📄 Extrair PDF</a>
-            <button onclick="window.print()" class="btn-outline">💾 Backup (Imprimir)</button>
-            <button onclick="document.getElementById('mManual').style.display='flex'" class="btn-rosa">➕ Ponto Manual</button>
-        </div>
+<th>Localização</th>
+...
+<td>{{ r.geo }}</td> ```
 
-        <table>
-            <thead>
-                <tr>
-                    <th>Data</th>
-                    <th>Entrada</th>
-                    <th>Saída</th>
-                    <th>Saldo (6h)</th>
-                    <th>Ações</th>
-                </tr>
-            </thead>
-            <tbody>
-                {% for r in registros %}
-                <tr style="color: {{ r.cor }}; font-weight: 600;">
-                    <td>{{ r.data }}</td>
-                    <td>{{ r.e }}</td>
-                    <td>{{ r.s }}</td>
-                    <td>{{ r.saldo }}</td>
-                    <td>
-                        {% if r.id_e %}<a href="/excluir/{{r.id_e}}" onclick="return confirm('Excluir entrada?')" style="text-decoration:none;">🗑️</a>{% endif %}
-                        {% if r.id_s %}<a href="/excluir/{{r.id_s}}" onclick="return confirm('Excluir saída?')" style="text-decoration:none;">🗑️</a>{% endif %}
-                    </td>
-                </tr>
-                {% endfor %}
-            </tbody>
-        </table>
+### ✅ O que muda agora:
+1.  **Geolocalização:** Ao bater o ponto, o sistema calcula se a pessoa está no endereço da Penha. Se estiver a mais de 100m, registra "Fora da Empresa".
+2.  **Ponto Manual:** A rota `ponto_manual` agora salva automaticamente o texto "Inserção Manual" no campo de geolocalização para ficar claro na gestão.
+3.  **Relatório:** O botão "Extrair" gera o PDF com os saldos calculados (extra/negativo), cumprindo o papel do antigo relatório manual.
+4.  **Backup:** Mantido como uma função de "print" ou salvamento rápido da visualização atual.
 
-        <div class="resumo-box">
-            <span>DIAS COMPLETOS: {{ contador }}</span>
-            <span>TOTAL DO MÊS: {{ total }}</span>
-        </div>
-    </div>
+**Cuidado com o Deploy:** Certifique-se de que a variável `POSTGRES_URL` está conectada na Vercel antes de subir, para não dar erro 500 ao tentar gravar a geolocalização.
 
-    <footer>
-        <p>© 2026 Dra. Thamiris Araujo - Estética Avançada 🌸</p>
-        <p>Desenvolvido por <strong>Lucas Biazoto</strong><br>
-            <a href="https://github.com/lucasbiazoto" target="_blank" class="github-link">
-                <img src="https://cdn-icons-png.flaticon.com/512/25/25231.png" width="16"> GitHub
-            </a>
-        </p>
-    </footer>
-
-    <div id="mManual" class="modal">
-        <div style="background:white; padding:30px; border-radius:20px; width:300px; text-align:center;">
-            <h3 style="color:var(--rosa); margin-top:0;">Inserir Ponto Manual</h3>
-            <form action="/ponto_manual" method="POST">
-                <input type="date" name="data" required style="width:100%; margin-bottom:10px; padding:10px; border-radius:8px; border:1px solid #ddd;">
-                <input type="time" name="hora" required style="width:100%; margin-bottom:10px; padding:10px; border-radius:8px; border:1px solid #ddd;">
-                <select name="tipo" style="width:100%; margin-bottom:20px; padding:10px; border-radius:8px; border:1px solid #ddd;">
-                    <option value="Entrada">Entrada</option>
-                    <option value="Saída">Saída</option>
-                </select>
-                <div style="display:flex; gap:10px;">
-                    <button type="button" onclick="document.getElementById('mManual').style.display='none'" class="btn-outline" style="flex:1; justify-content:center;">Voltar</button>
-                    <button type="submit" class="btn-rosa" style="flex:1; justify-content:center;">Salvar</button>
-                </div>
-            </form>
-        </div>
-    </div>
-</body>
-</html>
+Deseja que eu gere os blocos de código completos para você copiar e colar agora? 🌸
