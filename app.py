@@ -1,6 +1,7 @@
 import os
 import psycopg2
-from flask import Flask, render_template, request, redirect, url_for, flash, session, jsonify
+import json # Importado para processar o arquivo de backup
+from flask import Flask, render_template, request, redirect, url_for, flash, session, jsonify, Response
 from datetime import datetime
 import pytz
 
@@ -86,14 +87,31 @@ def gestao():
         tabela.append({'data': d, 'entrada': info['entrada'], 'saida': info['saida'], 'id_e': info['id_e'], 'id_s': info['id_s'], 'extra': saldo_str, 'cor': cor})
     return render_template('gestao.html', registros=tabela, mes_atual=mes_f, extras_mes=formatar_saldo(minutos_total), dias=len(dias))
 
+# ROTA CORRIGIDA: Agora realiza o download do arquivo JSON
 @app.route('/backup')
 def backup():
     if not session.get('admin_logado'): return redirect(url_for('login'))
-    conn = get_db_connection(); cur = conn.cursor()
-    cur.execute('SELECT * FROM pontos')
-    dados = cur.fetchall()
-    cur.close(); conn.close()
-    return jsonify(dados)
+    try:
+        conn = get_db_connection(); cur = conn.cursor()
+        cur.execute('SELECT id, tipo, data, mes, hora, geo FROM pontos ORDER BY id ASC')
+        dados = cur.fetchall()
+        cur.close(); conn.close()
+
+        lista_backup = []
+        for d in dados:
+            lista_backup.append({
+                "id": d[0], "tipo": d[1], "data": d[2], 
+                "mes": d[3], "hora": d[4], "origem": d[5]
+            })
+
+        json_dados = json.dumps(lista_backup, indent=4, ensure_ascii=False)
+        return Response(
+            json_dados,
+            mimetype='application/json',
+            headers={'Content-Disposition': 'attachment;filename=backup_clinica.json'}
+        )
+    except Exception as e:
+        return f"Erro ao gerar backup: {str(e)}"
 
 @app.route('/inserir_manual', methods=['POST'])
 def inserir_manual():
@@ -109,6 +127,4 @@ def inserir_manual():
 def excluir(id):
     if not session.get('admin_logado'): return redirect(url_for('login'))
     conn = get_db_connection(); cur = conn.cursor()
-    cur.execute('DELETE FROM pontos WHERE id = %s', (id,)); conn.commit()
-    cur.close(); conn.close()
-    return redirect(url_for('gestao'))
+    cur.execute('DELETE FROM pontos
