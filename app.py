@@ -1,10 +1,8 @@
 import os
 import psycopg2
-from flask import Flask, render_template, request, redirect, url_for, flash, session, send_file
+from flask import Flask, render_template, request, redirect, url_for, flash, session
 from datetime import datetime
 import pytz
-import io
-import json
 
 app = Flask(__name__)
 app.secret_key = 'clinica_thamiris_araujo_2026'
@@ -19,11 +17,8 @@ def index():
 
 @app.route('/bater_ponto', methods=['POST'])
 def bater_ponto():
-    tipo = request.form.get('tipo')
-    lat = request.form.get('lat') or '0'
-    lon = request.form.get('lon') or '0'
+    tipo, lat, lon = request.form.get('tipo'), request.form.get('lat') or '0', request.form.get('lon') or '0'
     agora = datetime.now(fuso)
-    
     conn = get_db_connection()
     cur = conn.cursor()
     cur.execute('INSERT INTO pontos (tipo, data, mes, hora, geo) VALUES (%s, %s, %s, %s, %s)',
@@ -31,16 +26,13 @@ def bater_ponto():
     conn.commit()
     cur.close()
     conn.close()
-    
-    msg = "Bom trabalho meu bem 🌸" if tipo == 'Entrada' else "Bom descanso meu bem 🌸"
-    flash(msg)
+    flash("Bom trabalho meu bem 🌸" if tipo == 'Entrada' else "Bom descanso meu bem 🌸")
     return redirect(url_for('index'))
 
 @app.route('/gestao')
 def gestao():
     if not session.get('admin_logado'): return redirect(url_for('login'))
     mes_f = request.args.get('mes', datetime.now(fuso).strftime('%m'))
-    
     conn = get_db_connection()
     cur = conn.cursor()
     cur.execute('SELECT tipo, data, hora, id FROM pontos WHERE mes = %s ORDER BY data ASC, hora ASC', (mes_f,))
@@ -51,58 +43,30 @@ def gestao():
     diario = {}
     for tipo, data, hora, p_id in registros_raw:
         if data not in diario: diario[data] = {'e': '--:--', 's': '--:--', 'id_e': None, 'id_s': None}
-        if tipo == 'Entrada': 
-            diario[data]['e'] = hora
-            diario[data]['id_e'] = p_id
-        else: 
-            diario[data]['s'] = hora
-            diario[data]['id_s'] = p_id
+        if tipo == 'Entrada': diario[data]['e'], diario[data]['id_e'] = hora, p_id
+        else: diario[data]['s'], diario[data]['id_s'] = hora, p_id
 
-    total_minutos_mes = 0
-    dias_completos = 0
-    tabela_final = []
+    total_minutos_mes, dias_completos, tabela_final = 0, 0, []
 
     for data in sorted(diario.keys()):
         v = diario[data]
         cor, saldo_dia_str = "#5a4a4d", "00:00"
-        
         if v['e'] != '--:--' and v['s'] != '--:--':
             dias_completos += 1
             h1, m1 = map(int, v['e'].split(':'))
             h2, m2 = map(int, v['s'].split(':'))
-            minutos_trabalhados = (h2 * 60 + m2) - (h1 * 60 + m1)
-            saldo_minutos = minutos_trabalhados - 360 # Jornada 6h
-            total_minutos_mes += saldo_minutos
-            
-            if saldo_minutos == 0: cor = "#27ae60" # Verde
-            elif saldo_minutos > 0: cor = "#2980b9" # Azul (Extra)
-            else: cor = "#e74c3c" # Vermelho (Falta)
-            
-            sinal = "+" if saldo_minutos >= 0 else "-"
-            saldo_dia_str = f"{sinal}{abs(saldo_minutos)//60:02d}:{abs(saldo_minutos)%60:02d}"
-        
+            diff = (h2 * 60 + m2) - (h1 * 60 + m1) - 360 # 360min = 6h
+            total_minutos_mes += diff
+            cor = "#2980b9" if diff > 0 else ("#27ae60" if diff == 0 else "#e74c3c")
+            sinal = "+" if diff >= 0 else "-"
+            saldo_dia_str = f"{sinal}{abs(diff)//60:02d}:{abs(diff)%60:02d}"
         tabela_final.append({'data': data, 'e': v['e'], 's': v['s'], 'id_e': v['id_e'], 'id_s': v['id_s'], 'cor': cor, 'saldo': saldo_dia_str})
 
-    total_h_mes = f"{'+' if total_minutos_mes >= 0 else '-'}{abs(total_minutos_mes)//60:02d}:{abs(total_minutos_mes)%60:02d}"
-    return render_template('gestao.html', registros=tabela_final[::-1], total=total_h_mes, contador=dias_completos, mes_atual=mes_f)
-
-@app.route('/ponto_manual', methods=['POST'])
-def ponto_manual():
-    if not session.get('admin_logado'): return redirect(url_for('login'))
-    data_f = datetime.strptime(request.form.get('data'), '%Y-%m-%d').strftime('%d/%m/%Y')
-    mes_f = request.form.get('data').split('-')[1]
-    conn = get_db_connection()
-    cur = conn.cursor()
-    cur.execute('INSERT INTO pontos (tipo, data, mes, hora, geo) VALUES (%s, %s, %s, %s, %s)',
-                (request.form.get('tipo'), data_f, mes_f, request.form.get('hora'), "Manual"))
-    conn.commit()
-    cur.close()
-    conn.close()
-    return redirect(url_for('gestao'))
+    total_txt = f"{'+' if total_minutos_mes >= 0 else '-'}{abs(total_minutos_mes)//60:02d}:{abs(total_minutos_mes)%60:02d}"
+    return render_template('gestao.html', registros=tabela_final[::-1], total=total_txt, contador=dias_completos, mes_atual=mes_f)
 
 @app.route('/excluir/<int:id>')
 def excluir(id):
-    if not session.get('admin_logado'): return redirect(url_for('login'))
     conn = get_db_connection()
     cur = conn.cursor()
     cur.execute('DELETE FROM pontos WHERE id = %s', (id,))

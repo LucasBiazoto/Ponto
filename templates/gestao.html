@@ -7,34 +7,31 @@
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600&display=swap" rel="stylesheet">
     <style>
         :root { --rosa: #d68c9a; --fundo: #fff5f7; }
-        body { font-family: 'Poppins', sans-serif; background: var(--fundo); padding: 20px; }
-        .card { background: white; max-width: 900px; margin: auto; padding: 30px; border-radius: 25px; box-shadow: 0 10px 30px rgba(0,0,0,0.05); }
-        .btn-rosa { background: var(--rosa); color: white; padding: 10px 20px; border-radius: 12px; border: none; cursor: pointer; font-weight: 600; text-decoration: none; }
-        .btn-out { background: white; border: 1px solid var(--rosa); color: var(--rosa); padding: 9px 18px; border-radius: 12px; cursor: pointer; text-decoration: none; font-size: 14px; }
+        body { font-family: 'Poppins', sans-serif; background: var(--fundo); padding: 20px; color: #5a4a4d; }
+        .card { background: white; max-width: 900px; margin: auto; padding: 30px; border-radius: 25px; box-shadow: 0 10px 30px rgba(0,0,0,0.05); border: 1px solid #fce4ec; }
         table { width: 100%; border-collapse: collapse; margin-top: 25px; }
-        th { color: var(--rosa); border-bottom: 2px solid #fce4ec; padding: 15px; text-align: center; }
+        th { color: var(--rosa); border-bottom: 2px solid #fce4ec; padding: 15px; }
         td { padding: 12px; text-align: center; border-bottom: 1px solid #f9f9f9; }
-        .resumo { background: #fce4ec; padding: 25px; border-radius: 20px; display: flex; justify-content: space-around; margin-top: 30px; color: var(--rosa); font-weight: bold; border: 1px solid #f8bbd0; font-size: 18px; }
-        footer { text-align: center; margin-top: 40px; color: var(--rosa); font-size: 13px; opacity: 0.8; }
-        .modal { display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.5); justify-content:center; align-items:center; z-index: 100; }
+        .resumo { background: #fce4ec; padding: 20px; border-radius: 15px; display: flex; justify-content: space-around; margin-top: 25px; color: var(--rosa); font-weight: bold; }
+        .btn-rosa { background: var(--rosa); color: white; padding: 10px 20px; border-radius: 12px; border: none; cursor: pointer; text-decoration: none; font-weight: 600; }
+        footer { text-align: center; margin-top: 40px; color: var(--rosa); font-size: 13px; font-weight: 600; }
     </style>
 </head>
 <body>
     <div class="card">
-        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:20px;">
-            <h2 style="color: var(--rosa); margin:0;">🌸 Gestão de Pontos</h2>
+        <div style="display:flex; justify-content:space-between; align-items:center;">
+            <h2 style="color: var(--rosa);">🌸 Gestão de Pontos</h2>
             <a href="/logout" style="text-decoration:none; color:gray; font-size:12px;">Sair</a>
         </div>
 
-        <div style="display: flex; gap: 10px; flex-wrap: wrap;">
-            <form method="GET" action="/gestao">
-                <select name="mes" onchange="this.form.submit()" class="btn-out">
+        <div style="margin-top:20px;">
+            <form method="GET" action="/gestao" style="display:inline;">
+                <select name="mes" onchange="this.form.submit()" style="padding:8px; border-radius:10px; border:1px solid var(--rosa);">
                     {% for m in ['01','02','03','04','05','06','07','08','09','10','11','12'] %}
                     <option value="{{m}}" {% if mes_atual == m %}selected{% endif %}>Mês {{m}}</option>
                     {% endfor %}
                 </select>
             </form>
-            <button onclick="document.getElementById('mManual').style.display='flex'" class="btn-rosa">➕ Inserir Manual</button>
         </div>
 
         <table>
@@ -43,47 +40,31 @@
                     <th>Data</th>
                     <th>Entrada</th>
                     <th>Saída</th>
-                    <th>Saldo (Base 6h)</th>
-                    <th>Status</th>
+                    <th>Saldo (6h)</th>
+                    <th>Ação</th>
                 </tr>
             </thead>
             <tbody>
                 {% for r in registros %}
                 <tr style="color: {{ r.cor }}; font-weight: 600;">
                     <td>{{ r.data }}</td>
-                    <td>{{ r.e }} {% if r.id_e %}<a href="/excluir/{{r.id_e}}" style="text-decoration:none; font-size:12px;">🗑️</a>{% endif %}</td>
-                    <td>{{ r.s }} {% if r.id_s %}<a href="/excluir/{{r.id_s}}" style="text-decoration:none; font-size:12px;">🗑️</a>{% endif %}</td>
-                    <td style="font-style: italic;">{{ r.saldo }}</td>
-                    <td><small>📌 Salvo</small></td>
+                    <td>{{ r.e }}</td>
+                    <td>{{ r.s }}</td>
+                    <td style="font-weight: bold;">{{ r.saldo }}</td>
+                    <td>
+                        {% if r.id_e %}<a href="/excluir/{{r.id_e}}" onclick="return confirm('Excluir?')">🗑️</a>{% endif %}
+                        {% if r.id_s %}<a href="/excluir/{{r.id_s}}" onclick="return confirm('Excluir?')">🗑️</a>{% endif %}
+                    </td>
                 </tr>
                 {% endfor %}
             </tbody>
         </table>
 
         <div class="resumo">
-            <span>DIAS TRABALHADOS: {{ contador }}</span>
+            <span>DIAS COMPLETOS: {{ contador }}</span>
             <span>TOTAL DO MÊS: {{ total }}</span>
         </div>
     </div>
-
     <footer>© 2026 Dra. Thamiris Araujo - Estética Avançada 🌸</footer>
-
-    <div id="mManual" class="modal">
-        <div style="background:white; padding:30px; border-radius:20px; width:280px; text-align:center;">
-            <h3 style="color:var(--rosa);">Ponto Manual</h3>
-            <form action="/ponto_manual" method="POST">
-                <input type="date" name="data" required style="width:100%; margin-bottom:10px; padding:8px;">
-                <input type="time" name="hora" required style="width:100%; margin-bottom:10px; padding:8px;">
-                <select name="tipo" style="width:100%; margin-bottom:20px; padding:8px;">
-                    <option value="Entrada">Entrada</option>
-                    <option value="Saída">Saída</option>
-                </select>
-                <div style="display:flex; gap:10px;">
-                    <button type="button" onclick="document.getElementById('mManual').style.display='none'" class="btn-out" style="flex:1;">Voltar</button>
-                    <button type="submit" class="btn-rosa" style="flex:1;">Salvar</button>
-                </div>
-            </form>
-        </div>
-    </div>
 </body>
 </html>
