@@ -6,32 +6,39 @@
     <title>Gestão - Dra. Thamiris Araujo</title>
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600&display=swap" rel="stylesheet">
     <style>
-        :root { --rosa: #d68c9a; --fundo: #fff5f7; }
+        :root { --rosa: #d68c9a; --rosa-claro: #fce4ec; --fundo: #fff5f7; }
         body { font-family: 'Poppins', sans-serif; background: var(--fundo); padding: 20px; color: #5a4a4d; }
-        .card { background: white; max-width: 900px; margin: auto; padding: 30px; border-radius: 25px; box-shadow: 0 10px 30px rgba(0,0,0,0.05); border: 1px solid #fce4ec; }
-        table { width: 100%; border-collapse: collapse; margin-top: 25px; }
-        th { color: var(--rosa); border-bottom: 2px solid #fce4ec; padding: 15px; }
+        .card { background: white; max-width: 900px; margin: auto; padding: 30px; border-radius: 25px; box-shadow: 0 10px 30px rgba(0,0,0,0.05); }
+        .header-flex { display: flex; justify-content: space-between; align-items: center; margin-bottom: 25px; }
+        .btn-rosa { background: var(--rosa); color: white; padding: 10px 20px; border-radius: 12px; border: none; cursor: pointer; font-weight: 600; text-decoration: none; display: inline-flex; align-items: center; gap: 8px; font-size: 14px; }
+        .btn-outline { background: white; border: 1px solid var(--rosa); color: var(--rosa); padding: 9px 18px; border-radius: 12px; cursor: pointer; text-decoration: none; font-size: 14px; }
+        table { width: 100%; border-collapse: collapse; margin-top: 20px; }
+        th { color: var(--rosa); border-bottom: 2px solid var(--rosa-claro); padding: 15px; text-align: center; font-size: 15px; }
         td { padding: 12px; text-align: center; border-bottom: 1px solid #f9f9f9; }
-        .resumo { background: #fce4ec; padding: 20px; border-radius: 15px; display: flex; justify-content: space-around; margin-top: 25px; color: var(--rosa); font-weight: bold; }
-        .btn-rosa { background: var(--rosa); color: white; padding: 10px 20px; border-radius: 12px; border: none; cursor: pointer; text-decoration: none; font-weight: 600; }
-        footer { text-align: center; margin-top: 40px; color: var(--rosa); font-size: 13px; font-weight: 600; }
+        .resumo-box { background: var(--rosa-claro); padding: 20px; border-radius: 15px; display: flex; justify-content: space-around; margin-top: 30px; color: var(--rosa); font-weight: bold; border: 1px solid #f8bbd0; }
+        footer { text-align: center; margin-top: 50px; color: var(--rosa); font-size: 14px; font-weight: 500; }
+        .modal { display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.4); justify-content:center; align-items:center; z-index:1000; }
     </style>
 </head>
 <body>
     <div class="card">
-        <div style="display:flex; justify-content:space-between; align-items:center;">
-            <h2 style="color: var(--rosa);">🌸 Gestão de Pontos</h2>
+        <div class="header-flex">
+            <h2 style="color: var(--rosa); margin:0;">🌸 Gestão de Pontos - Dra. Thamiris Araujo</h2>
             <a href="/logout" style="text-decoration:none; color:gray; font-size:12px;">Sair</a>
         </div>
 
-        <div style="margin-top:20px;">
-            <form method="GET" action="/gestao" style="display:inline;">
-                <select name="mes" onchange="this.form.submit()" style="padding:8px; border-radius:10px; border:1px solid var(--rosa);">
+        <div style="display: flex; gap: 12px; align-items: center; flex-wrap: wrap;">
+            <form method="GET" action="/gestao">
+                <select name="mes" onchange="this.form.submit()" class="btn-outline">
                     {% for m in ['01','02','03','04','05','06','07','08','09','10','11','12'] %}
                     <option value="{{m}}" {% if mes_atual == m %}selected{% endif %}>Mês {{m}}</option>
                     {% endfor %}
                 </select>
             </form>
+            
+            <button onclick="document.getElementById('mManual').style.display='flex'" class="btn-rosa">
+                <span>➕</span> Ponto Manual
+            </button>
         </div>
 
         <table>
@@ -40,8 +47,8 @@
                     <th>Data</th>
                     <th>Entrada</th>
                     <th>Saída</th>
-                    <th>Saldo (6h)</th>
-                    <th>Ação</th>
+                    <th>Saldo (Base 6h)</th>
+                    <th>Ações</th>
                 </tr>
             </thead>
             <tbody>
@@ -50,21 +57,42 @@
                     <td>{{ r.data }}</td>
                     <td>{{ r.e }}</td>
                     <td>{{ r.s }}</td>
-                    <td style="font-weight: bold;">{{ r.saldo }}</td>
+                    <td>{{ r.saldo }}</td>
                     <td>
-                        {% if r.id_e %}<a href="/excluir/{{r.id_e}}" onclick="return confirm('Excluir?')">🗑️</a>{% endif %}
-                        {% if r.id_s %}<a href="/excluir/{{r.id_s}}" onclick="return confirm('Excluir?')">🗑️</a>{% endif %}
+                        {% if r.id_e %}<a href="/excluir/{{r.id_e}}" onclick="return confirm('Excluir entrada?')" style="text-decoration:none;">🗑️</a>{% endif %}
+                        {% if r.id_s %}<a href="/excluir/{{r.id_s}}" onclick="return confirm('Excluir saída?')" style="text-decoration:none;">🗑️</a>{% endif %}
                     </td>
                 </tr>
                 {% endfor %}
             </tbody>
         </table>
 
-        <div class="resumo">
+        <div class="resumo-box">
             <span>DIAS COMPLETOS: {{ contador }}</span>
             <span>TOTAL DO MÊS: {{ total }}</span>
         </div>
     </div>
-    <footer>© 2026 Dra. Thamiris Araujo - Estética Avançada 🌸</footer>
+
+    <footer>
+        © 2026 Dra. Thamiris Araujo - Estética Avançada 🌸
+    </footer>
+
+    <div id="mManual" class="modal">
+        <div style="background:white; padding:30px; border-radius:20px; width:300px; text-align:center; box-shadow: 0 10px 40px rgba(0,0,0,0.2);">
+            <h3 style="color:var(--rosa); margin-top:0;">Inserir Ponto Manual</h3>
+            <form action="/ponto_manual" method="POST">
+                <input type="date" name="data" required style="width:100%; margin-bottom:10px; padding:10px; border-radius:8px; border:1px solid #ddd;">
+                <input type="time" name="hora" required style="width:100%; margin-bottom:10px; padding:10px; border-radius:8px; border:1px solid #ddd;">
+                <select name="tipo" style="width:100%; margin-bottom:20px; padding:10px; border-radius:8px; border:1px solid #ddd;">
+                    <option value="Entrada">Entrada</option>
+                    <option value="Saída">Saída</option>
+                </select>
+                <div style="display:flex; gap:10px;">
+                    <button type="button" onclick="document.getElementById('mManual').style.display='none'" class="btn-outline" style="flex:1;">Voltar</button>
+                    <button type="submit" class="btn-rosa" style="flex:1; justify-content: center;">Salvar</button>
+                </div>
+            </form>
+        </div>
+    </div>
 </body>
 </html>
