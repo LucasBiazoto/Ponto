@@ -6,43 +6,51 @@
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600&display=swap" rel="stylesheet">
     <style>
         :root { --rosa: #d68c9a; --rosa-claro: #fce4ec; --texto: #5a4a4d; }
-        body { font-family: 'Poppins', sans-serif; background: #fff5f7; padding: 20px; }
+        body { font-family: 'Poppins', sans-serif; background: #fff5f7; padding: 20px; color: var(--texto); }
         .container { max-width: 900px; margin: auto; background: white; padding: 30px; border-radius: 20px; box-shadow: 0 5px 20px rgba(0,0,0,0.05); }
-        .resumo { display: flex; gap: 15px; margin-bottom: 25px; }
-        .card { flex: 1; padding: 15px; border-radius: 12px; text-align: center; background: var(--rosa-claro); }
         
-        /* CORES DE STATUS SOLICITADAS */
+        .resumo { display: flex; gap: 20px; margin-bottom: 25px; }
+        .card { flex: 1; padding: 20px; border-radius: 15px; text-align: center; }
+        .card-dias { background: var(--rosa-claro); }
+        .card-saldo { background: #e3f2fd; color: #1976D2; }
+
         .status-azul { color: #2196F3; font-weight: 600; }
         .status-verde { color: #2e7d32; font-weight: 600; }
         .status-vermelho { color: #f44336; font-weight: 600; }
 
-        table { width: 100%; border-collapse: collapse; margin-top: 20px; }
-        th { text-align: left; padding: 12px; border-bottom: 2px solid var(--rosa-claro); color: var(--rosa); }
-        td { padding: 12px; border-bottom: 1px solid #eee; font-size: 14px; }
+        .toolbar { display: flex; gap: 10px; align-items: center; margin-bottom: 20px; flex-wrap: wrap; }
+        select, .btn { padding: 10px 15px; border-radius: 10px; border: 1px solid #ddd; font-family: inherit; }
+        .btn-pdf { background: var(--rosa); color: white; border: none; cursor: pointer; }
         
-        .btn { padding: 8px 15px; border-radius: 8px; border: none; cursor: pointer; text-decoration: none; font-size: 13px; }
-        .btn-pdf { background: var(--rosa); color: white; }
-        .btn-manual { background: #555; color: white; }
-        .del { text-decoration: none; font-size: 10px; margin-left: 4px; color: #ccc; }
-        .del:hover { color: red; }
+        table { width: 100%; border-collapse: collapse; }
+        th { text-align: left; padding: 15px; border-bottom: 2px solid var(--rosa-claro); color: var(--rosa); }
+        td { padding: 15px; border-bottom: 1px solid #eee; }
+        .del { color: #ccc; text-decoration: none; font-size: 11px; margin-left: 5px; }
 
-        .footer { text-align: center; margin-top: 50px; font-size: 12px; color: #bbb; border-top: 1px solid #eee; padding-top: 20px; }
+        .footer { text-align: center; margin-top: 50px; padding: 20px; border-top: 1px solid #eee; color: #bbb; font-size: 13px; }
     </style>
 </head>
 <body>
     <div class="container">
-        <h2 style="color: var(--rosa);">🌸 Painel de Gestão</h2>
+        <h2 style="color: var(--rosa); text-align: center;">🌸 Painel de Gestão</h2>
         
         <div class="resumo">
-            <div class="card"><small>Dias</small><br><strong>{{ dias }}</strong></div>
-            <div class="card"><small>Total Horas</small><br><strong>{{ total_h }}h</strong></div>
-            <div class="card" style="background: #e3f2fd;"><small>Saldo Geral</small><br><strong>{{ extras }}h</strong></div>
+            <div class="card card-dias"><small>Dias Trabalhados</small><br><b style="font-size: 24px;">{{ dias }}</b></div>
+            <div class="card card-saldo"><small>Saldo Total do Mês</small><br><b style="font-size: 24px;">{{ extras_mes }}h</b></div>
         </div>
 
-        <div style="display: flex; gap: 10px;">
-            <a href="/exportar_pdf?mes={{ mes_atual }}" class="btn btn-pdf">📄 Extrair PDF</a>
-            <button onclick="alert('Backup realizado no servidor Postgres!')" class="btn" style="border: 1px solid #ddd;">💾 Backup</button>
-            <button onclick="document.getElementById('m').style.display='block'" class="btn btn-manual">+ Inserir</button>
+        <div class="toolbar">
+            <form method="GET" id="filtroMes">
+                <select name="mes" onchange="document.getElementById('filtroMes').submit()">
+                    {% set meses = [('01','Janeiro'),('02','Fevereiro'),('03','Março'),('04','Abril'),('05','Maio'),('06','Junho'),('07','Julho'),('08','Agosto'),('09','Setembro'),('10','Outubro'),('11','Novembro'),('12','Dezembro')] %}
+                    {% for val, nome in meses %}
+                        <option value="{{ val }}" {% if mes_atual == val %}selected{% endif %}>{{ nome }}</option>
+                    {% endfor %}
+                </select>
+            </form>
+            <a href="/exportar_pdf?mes={{ mes_atual }}" class="btn btn-pdf">Extrair PDF</a>
+            <button onclick="alert('Backup de segurança realizado!')" class="btn">Backup</button>
+            <button onclick="document.getElementById('m').style.display='block'" class="btn" style="background:#555; color:white;">+ Inserir</button>
         </div>
 
         <table>
@@ -71,13 +79,14 @@
         </div>
     </div>
 
-    <div id="m" style="display:none; position:fixed; top:50%; left:50%; transform:translate(-50%,-50%); background:white; padding:30px; border-radius:15px; box-shadow:0 0 20px rgba(0,0,0,0.2);">
+    <div id="m" style="display:none; position:fixed; top:50%; left:50%; transform:translate(-50%,-50%); background:white; padding:30px; border-radius:20px; box-shadow:0 0 30px rgba(0,0,0,0.2); z-index:1000;">
+        <h3 style="color: var(--rosa); margin-top:0;">Lançamento Manual</h3>
         <form action="/inserir_manual" method="POST">
-            <input type="date" name="data" required><br><br>
-            <input type="time" name="hora" required><br><br>
-            <select name="tipo"><option>Entrada</option><option>Saída</option></select><br><br>
-            <button type="submit" class="btn btn-pdf">Salvar</button>
-            <button type="button" onclick="this.parentElement.parentElement.style.display='none'" class="btn">Fechar</button>
+            <input type="date" name="data" style="width:100%; padding:10px; margin-bottom:10px;" required>
+            <input type="time" name="hora" style="width:100%; padding:10px; margin-bottom:10px;" required>
+            <select name="tipo" style="width:100%; padding:10px; margin-bottom:15px;"><option>Entrada</option><option>Saída</option></select>
+            <button type="submit" class="btn btn-pdf" style="width:100%;">Salvar Registro</button>
+            <button type="button" onclick="this.parentElement.parentElement.style.display='none'" class="btn" style="width:100%; margin-top:5px;">Cancelar</button>
         </form>
     </div>
 </body>
