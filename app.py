@@ -13,6 +13,29 @@ fuso = pytz.timezone('America/Sao_Paulo')
 def get_db_connection():
     return psycopg2.connect(os.environ.get('POSTGRES_URL'))
 
+@app.route('/')
+def index():
+    return render_template('index.html')
+
+@app.route('/bater_ponto', methods=['POST'])
+def bater_ponto():
+    tipo = request.form.get('tipo')
+    lat = request.form.get('lat') or '0'
+    lon = request.form.get('lon') or '0'
+    agora = datetime.now(fuso)
+    
+    conn = get_db_connection()
+    cur = conn.cursor()
+    cur.execute('INSERT INTO pontos (tipo, data, mes, hora, geo) VALUES (%s, %s, %s, %s, %s)',
+                (tipo, agora.strftime('%d/%m/%Y'), agora.strftime('%m'), agora.strftime('%H:%M'), f"{lat}, {lon}"))
+    conn.commit()
+    cur.close()
+    conn.close()
+    
+    msg = "Bom trabalho meu bem 🌸" if tipo == 'Entrada' else "Bom descanso meu bem 🌸"
+    flash(msg)
+    return redirect(url_for('index'))
+
 @app.route('/gestao')
 def gestao():
     if not session.get('admin_logado'): return redirect(url_for('login'))
@@ -20,7 +43,6 @@ def gestao():
     
     conn = get_db_connection()
     cur = conn.cursor()
-    # Puxamos os pontos ordenados para garantir que o cálculo siga a cronologia
     cur.execute('SELECT tipo, data, hora, id FROM pontos WHERE mes = %s ORDER BY data ASC, hora ASC', (mes_f,))
     registros_raw = cur.fetchall()
     cur.close()
@@ -40,49 +62,63 @@ def gestao():
     dias_completos = 0
     tabela_final = []
 
-    # Lógica de Cálculo de Horas
     for data in sorted(diario.keys()):
         v = diario[data]
-        cor = "#5a4a4d" # Cor padrão (escuro)
-        saldo_dia_str = "00:00"
+        cor, saldo_dia_str = "#5a4a4d", "00:00"
         
         if v['e'] != '--:--' and v['s'] != '--:--':
             dias_completos += 1
-            # Converter horas para minutos
             h1, m1 = map(int, v['e'].split(':'))
             h2, m2 = map(int, v['s'].split(':'))
             minutos_trabalhados = (h2 * 60 + m2) - (h1 * 60 + m1)
-            
-            # Cálculo do Saldo (Base: 6 horas = 360 minutos)
-            saldo_minutos = minutos_trabalhados - 360
+            saldo_minutos = minutos_trabalhados - 360 # Jornada 6h
             total_minutos_mes += saldo_minutos
             
-            # Definir Cor com base no Saldo
-            if saldo_minutos == 0: cor = "#27ae60" # Verde (Exato)
+            if saldo_minutos == 0: cor = "#27ae60" # Verde
             elif saldo_minutos > 0: cor = "#2980b9" # Azul (Extra)
             else: cor = "#e74c3c" # Vermelho (Falta)
             
             sinal = "+" if saldo_minutos >= 0 else "-"
-            horas_abs = abs(saldo_minutos) // 60
-            mins_abs = abs(saldo_minutos) % 60
-            saldo_dia_str = f"{sinal}{horas_abs:02d}:{mins_abs:02d}"
+            saldo_dia_str = f"{sinal}{abs(saldo_minutos)//60:02d}:{abs(saldo_minutos)%60:02d}"
         
-        tabela_final.append({
-            'data': data, 'e': v['e'], 's': v['s'], 
-            'id_e': v['id_e'], 'id_s': v['id_s'], 
-            'cor': cor, 'saldo': saldo_dia_str
-        })
+        tabela_final.append({'data': data, 'e': v['e'], 's': v['s'], 'id_e': v['id_e'], 'id_s': v['id_s'], 'cor': cor, 'saldo': saldo_dia_str})
 
-    # Formatação do Saldo Total do Mês
-    sinal_total = "+" if total_minutos_mes >= 0 else "-"
-    total_h = abs(total_minutos_mes) // 60
-    total_m = abs(total_minutos_mes) % 60
-    total_mes_str = f"{sinal_total}{total_h:02d}:{total_m:02d}"
+    total_h_mes = f"{'+' if total_minutos_mes >= 0 else '-'}{abs(total_minutos_mes)//60:02d}:{abs(total_minutos_mes)%60:02d}"
+    return render_template('gestao.html', registros=tabela_final[::-1], total=total_h_mes, contador=dias_completos, mes_atual=mes_f)
 
-    # Invertemos a tabela para mostrar o dia mais recente no topo do painel
-    return render_template('gestao.html', 
-                           registros=tabela_final[::-1], 
-                           total=total_mes_str, 
-                           contador=dias_completos, 
-                           mes_atual=mes_f)
-# ... (restante das rotas bater_ponto, login e excluir permanecem iguais)
+@app.route('/ponto_manual', methods=['POST'])
+def ponto_manual():
+    if not session.get('admin_logado'): return redirect(url_for('login'))
+    data_f = datetime.strptime(request.form.get('data'), '%Y-%m-%d').strftime('%d/%m/%Y')
+    mes_f = request.form.get('data').split('-')[1]
+    conn = get_db_connection()
+    cur = conn.cursor()
+    cur.execute('INSERT INTO pontos (tipo, data, mes, hora, geo) VALUES (%s, %s, %s, %s, %s)',
+                (request.form.get('tipo'), data_f, mes_f, request.form.get('hora'), "Manual"))
+    conn.commit()
+    cur.close()
+    conn.close()
+    return redirect(url_for('gestao'))
+
+@app.route('/excluir/<int:id>')
+def excluir(id):
+    if not session.get('admin_logado'): return redirect(url_for('login'))
+    conn = get_db_connection()
+    cur = conn.cursor()
+    cur.execute('DELETE FROM pontos WHERE id = %s', (id,))
+    conn.commit()
+    cur.close()
+    conn.close()
+    return redirect(url_for('gestao'))
+
+@app.route('/login', methods=['GET', 'POST'])
+def login():
+    if request.method == 'POST' and request.form.get('password') == "8340":
+        session['admin_logado'] = True
+        return redirect(url_for('gestao'))
+    return render_template('login.html')
+
+@app.route('/logout')
+def logout():
+    session.clear()
+    return redirect(url_for('index'))
