@@ -17,17 +17,32 @@ def index():
 
 @app.route('/bater_ponto', methods=['POST'])
 def bater_ponto():
-    tipo, lat, lon = request.form.get('tipo'), request.form.get('lat') or '0', request.form.get('lon') or '0'
+    tipo = request.form.get('tipo')
     agora = datetime.now(fuso)
     conn = get_db_connection()
     cur = conn.cursor()
-    cur.execute('INSERT INTO pontos (tipo, data, mes, hora, geo) VALUES (%s, %s, %s, %s, %s)',
-                (tipo, agora.strftime('%d/%m/%Y'), agora.strftime('%m'), agora.strftime('%H:%M'), f"{lat}, {lon}"))
+    cur.execute('INSERT INTO pontos (tipo, data, mes, hora) VALUES (%s, %s, %s, %s)',
+                (tipo, agora.strftime('%d/%m/%Y'), agora.strftime('%m'), agora.strftime('%H:%M')))
     conn.commit()
     cur.close()
     conn.close()
     flash("Bom trabalho meu bem 🌸" if tipo == 'Entrada' else "Bom descanso meu bem 🌸")
     return redirect(url_for('index'))
+
+# ROTA QUE ESTAVA FALTANDO PARA O PONTO MANUAL
+@app.route('/ponto_manual', methods=['POST'])
+def ponto_manual():
+    if not session.get('admin_logado'): return redirect(url_for('login'))
+    data_f = datetime.strptime(request.form.get('data'), '%Y-%m-%d').strftime('%d/%m/%Y')
+    mes_f = data_f.split('/')[1]
+    conn = get_db_connection()
+    cur = conn.cursor()
+    cur.execute('INSERT INTO pontos (tipo, data, mes, hora) VALUES (%s, %s, %s, %s)',
+                (request.form.get('tipo'), data_f, mes_f, request.form.get('hora')))
+    conn.commit()
+    cur.close()
+    conn.close()
+    return redirect(url_for('gestao'))
 
 @app.route('/gestao')
 def gestao():
@@ -50,12 +65,12 @@ def gestao():
 
     for data in sorted(diario.keys()):
         v = diario[data]
-        cor, saldo_dia_str = "#5a4a4d", "00:00"
+        cor, saldo_dia_str = "#d68c9a", "00:00"
         if v['e'] != '--:--' and v['s'] != '--:--':
             dias_completos += 1
             h1, m1 = map(int, v['e'].split(':'))
             h2, m2 = map(int, v['s'].split(':'))
-            diff = (h2 * 60 + m2) - (h1 * 60 + m1) - 360 # 360min = 6h
+            diff = (h2 * 60 + m2) - (h1 * 60 + m1) - 360 # Base 6h
             total_minutos_mes += diff
             cor = "#2980b9" if diff > 0 else ("#27ae60" if diff == 0 else "#e74c3c")
             sinal = "+" if diff >= 0 else "-"
