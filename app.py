@@ -1,9 +1,8 @@
 import os
 import psycopg2
-from flask import Flask, render_template, request, redirect, url_for, flash, session, make_response
+from flask import Flask, render_template, request, redirect, url_for, flash, session
 from datetime import datetime
 import pytz
-from fpdf import FPDF
 
 app = Flask(__name__)
 app.secret_key = 'clinica_thamiris_araujo_2026'
@@ -33,7 +32,7 @@ def login():
             session['admin_logado'] = True
             return redirect(url_for('gestao'))
         else:
-            flash("Senha incorreta")
+            flash("Senha incorreta!")
     return render_template('login.html')
 
 @app.route('/logout')
@@ -49,17 +48,22 @@ def bater_ponto():
     try:
         conn = get_db_connection()
         cur = conn.cursor()
+        
+        # TRAVA DE DUPLICIDADE
         cur.execute('SELECT id FROM pontos WHERE data = %s AND tipo = %s', (data_hoje, tipo))
         if cur.fetchone():
-            flash(f"Registro de {tipo} ja realizado hoje!")
+            flash(f"Você já registrou sua {tipo} hoje! 🌸")
             return redirect(url_for('index'))
+            
         cur.execute('INSERT INTO pontos (tipo, data, mes, hora, geo) VALUES (%s, %s, %s, %s, %s)',
                     (tipo, data_hoje, agora.strftime('%m'), agora.strftime('%H:%M'), "Site"))
         conn.commit()
         cur.close(); conn.close()
-        flash(f"{'Bom trabalho' if tipo == 'Entrada' else 'Bom descanso'} meu bem")
+        
+        msg = "Bom trabalho meu bem 🌸" if tipo == 'Entrada' else "Bom descanso meu bem 🌸"
+        flash(msg)
     except:
-        flash("Erro banco de dados")
+        flash("Erro ao conectar ao banco.")
     return redirect(url_for('index'))
 
 @app.route('/gestao')
@@ -110,22 +114,11 @@ def inserir_manual():
 
 @app.route('/excluir/<int:id>')
 def excluir(id):
+    if not session.get('admin_logado'): return redirect(url_for('login'))
     conn = get_db_connection(); cur = conn.cursor()
     cur.execute('DELETE FROM pontos WHERE id = %s', (id,)); conn.commit()
     cur.close(); conn.close()
     return redirect(url_for('gestao'))
-
-@app.route('/exportar_pdf')
-def exportar_pdf():
-    if not session.get('admin_logado'): return redirect(url_for('login'))
-    pdf = FPDF()
-    pdf.add_page()
-    pdf.set_font("Arial", "B", 12)
-    pdf.cell(190, 10, "Relatorio Clinica", ln=True, align="C")
-    res = make_response(pdf.output(dest='S').encode('latin-1', 'ignore'))
-    res.headers.set('Content-Disposition', 'attachment', filename='Relatorio.pdf')
-    res.headers.set('Content-Type', 'application/pdf')
-    return res
 
 if __name__ == '__main__':
     app.run(debug=True)
