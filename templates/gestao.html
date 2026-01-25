@@ -1,70 +1,56 @@
-<!DOCTYPE html>
-<html lang="pt-br">
-<head>
-    <meta charset="UTF-8">
-    <title>Gestão de Pontos - Dra. Thamiris Araujo</title>
-    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600&display=swap" rel="stylesheet">
-    <style>
-        :root { --rosa: #d68c9a; --rosa-claro: #fce4ec; --texto: #5a4a4d; }
-        body { font-family: 'Poppins', sans-serif; background-color: #fff5f7; margin: 0; padding: 20px; color: var(--texto); }
-        .container { max-width: 1000px; margin: auto; background: white; padding: 30px; border-radius: 20px; box-shadow: 0 10px 30px rgba(0,0,0,0.05); }
-        .header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 30px; border-bottom: 2px solid var(--rosa-claro); padding-bottom: 15px; }
-        h2 { color: var(--rosa); margin: 0; }
-        .btn { padding: 10px 20px; border-radius: 10px; border: none; cursor: pointer; font-weight: 600; text-decoration: none; display: inline-flex; align-items: center; gap: 8px; transition: 0.3s; }
-        .btn-relatorio { background: var(--rosa); color: white; }
-        .btn-backup { background: white; color: var(--rosa); border: 1px solid var(--rosa); }
-        .btn:hover { opacity: 0.8; transform: translateY(-1px); }
-        table { width: 100%; border-collapse: collapse; margin-top: 20px; }
-        th { text-align: left; padding: 15px; border-bottom: 2px solid var(--rosa-claro); color: var(--rosa); font-size: 14px; }
-        td { padding: 15px; border-bottom: 1px solid #eee; font-size: 14px; }
-        .status-badge { background: #e8f5e9; color: #2e7d32; padding: 4px 10px; border-radius: 20px; font-size: 12px; font-weight: 600; }
-        .sair { color: #999; font-size: 13px; text-decoration: none; }
-    </style>
-</head>
-<body>
-    <div class="container">
-        <div class="header">
-            <h2>🌸 Gestão de Pontos - Dra. Thamiris Araujo</h2>
-            <a href="/logout" class="sair">Sair</a>
-        </div>
-
-        <div style="margin-bottom: 20px; display: flex; gap: 10px;">
-            <a href="/gerar_pdf?mes={{ mes_atual }}" class="btn btn-relatorio">📄 Extrair Relatório</a>
-            
-            <button onclick="alert('Backup de segurança realizado no servidor Postgres!')" class="btn btn-backup">💾 Backup Sistema</button>
-            
-            <form method="GET" style="margin-left: auto;">
-                <select name="mes" onchange="this.form.submit()" style="padding: 10px; border-radius: 10px; border: 1px solid var(--rosa);">
-                    <option value="01" {% if mes_atual == '01' %}selected{% endif %}>Janeiro</option>
-                    <option value="02" {% if mes_atual == '02' %}selected{% endif %}>Fevereiro</option>
-                    </select>
-            </form>
-        </div>
-
-        <table>
-            <thead>
-                <tr>
-                    <th>Data</th>
-                    <th>Tipo</th>
-                    <th>Hora</th>
-                    <th>Plataforma</th>
-                    <th>Status</th>
-                </tr>
-            </thead>
-            <tbody>
-                {% for r in registros %}
-                <tr>
-                    <td>{{ r.data }}</td>
-                    <td><strong>{{ r.tipo }}</strong></td>
-                    <td>{{ r.hora }}</td>
-                    <td><small>{{ r.geo }}</small></td>
-                    <td><span class="status-badge">Registrado</span></td>
-                </tr>
-                {% endfor %}
-            </tbody>
-        </table>
-        
-        <p style="margin-top: 20px; font-size: 13px; color: #999;">Total de registros neste mês: {{ contador }}</p>
+<div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 15px; margin-bottom: 20px;">
+    <div style="background: var(--rosa-claro); padding: 15px; border-radius: 15px; text-align: center;">
+        <small>Dias Trabalhados</small><br><strong>{{ dias }}</strong>
     </div>
-</body>
-</html>
+    <div style="background: var(--rosa-claro); padding: 15px; border-radius: 15px; text-align: center;">
+        <small>Total de Horas</small><br><strong>{{ total_h }}h</strong>
+    </div>
+    <div style="background: #e8f5e9; padding: 15px; border-radius: 15px; text-align: center; color: #2e7d32;">
+        <small>Horas Extras (Meta 6h)</small><br><strong>{{ extras }}h</strong>
+    </div>
+</div>
+
+<button onclick="document.getElementById('modalManual').style.display='block'" class="btn btn-backup">➕ Inserir Manual</button>
+
+<table>
+    <thead>
+        <tr>
+            <th>Data</th>
+            <th>Tipo</th>
+            <th>Hora</th>
+            <th>Plataforma</th>
+            <th>Ação</th>
+        </tr>
+    </thead>
+    <tbody>
+        {% for r in registros %}
+        <tr>
+            <td>{{ r.data }}</td>
+            <td>
+                <span style="color: {% if r.tipo == 'Entrada' %}#2e7d32{% else %}#d68c9a{% endif %}; font-weight: bold;">
+                    {{ r.tipo }}
+                </span>
+            </td>
+            <td>{{ r.hora }}</td>
+            <td>{{ r.geo }}</td>
+            <td>
+                <a href="/excluir/{{ r.id }}" style="color: #ff5252; text-decoration: none; font-size: 12px;" onclick="return confirm('Excluir esta marcação?')">❌ Excluir</a>
+            </td>
+        </tr>
+        {% endfor %}
+    </tbody>
+</table>
+
+<div id="modalManual" style="display:none; position:fixed; top:50%; left:50%; transform:translate(-50%, -50%); background:white; padding:30px; border-radius:20px; box-shadow:0 0 20px rgba(0,0,0,0.2); z-index:100;">
+    <form action="/inserir_manual" method="POST">
+        <h3>Inserir Ponto Manual</h3>
+        <input type="date" name="data" required style="display:block; margin-bottom:10px; padding:10px; width:100%;">
+        <input type="time" name="hora" required style="display:block; margin-bottom:10px; padding:10px; width:100%;">
+        <select name="tipo" style="display:block; margin-bottom:20px; padding:10px; width:100%;">
+            <option value="Entrada">Entrada</option>
+            <option value="Saída">Saída</option>
+        </select>
+        <button type="submit" class="btn btn-relatorio">Salvar</button>
+        <button type="button" onclick="this.parentElement.parentElement.style.display='none'" class="btn">Cancelar</button>
+    </form>
+</div>

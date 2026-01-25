@@ -1,74 +1,60 @@
-import os
-import psycopg2
-from flask import Flask, render_template, request, redirect, url_for, flash, session, make_response
-from datetime import datetime
-import pytz
-from fpdf import FPDF
+from flask import Flask, render_template, request, redirect, url_for, session
+from datetime import datetime, timedelta
 
-app = Flask(__name__)
-app.secret_key = 'clinica_thamiris_araujo_2026'
-fuso = pytz.timezone('America/Sao_Paulo')
+# ... (sua configuração de conexão com o banco aqui)
 
-def get_db_connection():
-    # Puxa a URL do banco das variáveis que você já tem na Vercel
-    url = os.environ.get('POSTGRES_URL')
-    if url and "sslmode" not in url:
-        url += "?sslmode=require"
-    return psycopg2.connect(url)
+def calcular_resumo_mes(registros):
+    dias_trabalhados = len(set(r['data'] for r in registros))
+    total_segundos = 0
+    # Agrupar por data para calcular horas (Entrada/Saída)
+    pontos_por_dia = {}
+    for r in registros:
+        if r['data'] not in pontos_por_dia: pontos_por_dia[r['data']] = []
+        pontos_por_dia[r['data']].append(r)
 
-@app.route('/')
-def index():
-    return render_template('index.html')
+    for data, pontos in pontos_por_dia.items():
+        # Lógica simples: ordena por hora e subtrai pares (Saída - Entrada)
+        pontos.sort(key=lambda x: x['hora'])
+        for i in range(0, len(pontos) - 1, 2):
+            if pontos[i]['tipo'] == 'Entrada' and pontos[i+1]['tipo'] == 'Saída':
+                fmt = '%H:%M'
+                e = datetime.strptime(pontos[i]['hora'], fmt)
+                s = datetime.strptime(pontos[i+1]['hora'], fmt)
+                total_segundos += (s - e).total_seconds()
 
-@app.route('/bater_ponto', methods=['POST'])
-def bater_ponto():
-    tipo = request.form.get('tipo')
-    agora = datetime.now(fuso)
-    try:
-        conn = get_db_connection()
-        cur = conn.cursor()
-        # Voltamos para o padrão "Via Site" sem coordenadas
-        cur.execute('INSERT INTO pontos (tipo, data, mes, hora, geo) VALUES (%s, %s, %s, %s, %s)',
-                    (tipo, agora.strftime('%d/%m/%Y'), agora.strftime('%m'), agora.strftime('%H:%M'), "Via Site"))
-        conn.commit()
-        cur.close()
-        conn.close()
-        flash(f"Bom {'trabalho' if tipo == 'Entrada' else 'descanso'} meu bem 🌸")
-    except Exception as e:
-        flash("Erro ao conectar com o banco de dados.")
-    return redirect(url_for('index'))
+    horas_totais = total_segundos / 3600
+    # Meta: 6h por dia trabalhado
+    meta_horas = dias_trabalhados * 6
+    horas_extras = horas_totais - meta_horas
+    
+    return dias_trabalhados, f"{horas_totais:.1f}", f"{horas_extras:.1f}"
 
 @app.route('/gestao')
 def gestao():
-    if not session.get('admin_logado'): return redirect(url_for('login'))
-    mes_f = request.args.get('mes', datetime.now(fuso).strftime('%m'))
-    conn = get_db_connection()
-    cur = conn.cursor()
-    cur.execute('SELECT tipo, data, hora, geo, id FROM pontos WHERE mes = %s ORDER BY data ASC, hora ASC', (mes_f,))
-    registros_raw = cur.fetchall()
-    cur.close()
-    conn.close()
-
-    total_minutos_mes = 0
-    dias_completos = 0
-    tabela_final = []
-    # Logica de resumo simplificada
-    for r in registros_raw:
-        tabela_final.append({'tipo': r[0], 'data': r[1], 'hora': r[2], 'geo': r[3], 'id': r[4]})
+    mes = request.args.get('mes', datetime.now().strftime('%m'))
+    # Busque os registros do banco filtrando pelo mês...
+    registros = buscar_registros_banco(mes) # Sua função de busca
     
-    return render_template('gestao.html', registros=tabela_final, mes_atual=mes_f, total="00:00", contador=len(tabela_final))
+    dias, total_h, extras = calcular_resumo_mes(registros)
+    
+    return render_template('gestao.html', 
+                           registros=registros, 
+                           mes_atual=mes,
+                           dias=dias, 
+                           total_h=total_h, 
+                           extras=extras)
 
-@app.route('/login', methods=['GET', 'POST'])
-def login():
-    if request.method == 'POST' and request.form.get('password') == "8340":
-        session['admin_logado'] = True
-        return redirect(url_for('gestao'))
-    return render_template('login.html')
+@app.route('/excluir/<int:id>')
+def excluir(id):
+    # Lógica para deletar do Postgres: DELETE FROM pontos WHERE id = %s
+    deletar_registro(id)
+    return redirect(url_for('gestao'))
 
-@app.route('/logout')
-def logout():
-    session.clear()
-    return redirect(url_for('index'))
-
-if __name__ == '__main__':
-    app.run(debug=True)
+@app.route('/inserir_manual', methods=['POST'])
+def inserir_manual():
+    data = request.form.get('data') # formato YYYY-MM-DD
+    hora = request.form.get('hora')
+    tipo = request.form.get('tipo')
+    # Salvar no banco com geo='Manual'
+    salvar_no_banco(data, hora, tipo, "Manual")
+    return redirect(url_for('gestao'))
