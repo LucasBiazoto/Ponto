@@ -31,17 +31,17 @@
             border-radius: 30px; 
             box-shadow: 0 10px 25px rgba(214,140,154,0.15); 
             text-align: center; 
-            width: 340px; 
+            width: 320px; 
             border: 1px solid var(--rosa-claro); 
         }
 
-        h1 { color: var(--rosa-escuro); margin-bottom: 5px; font-size: 24px; }
-        h3 { color: var(--texto); margin-top: 0; font-weight: 400; font-size: 16px; letter-spacing: 1px; }
+        h1 { color: var(--rosa-escuro); margin-bottom: 0; font-size: 24px; line-height: 1.2; }
+        h3 { color: var(--texto); margin-top: 5px; font-weight: 400; font-size: 16px; letter-spacing: 1px; margin-bottom: 25px; }
 
         .btn { 
             width: 100%; 
             padding: 16px; 
-            margin: 12px 0; 
+            margin: 10px 0; 
             border: none; 
             border-radius: 15px; 
             font-weight: 600; 
@@ -66,8 +66,6 @@
 
         .btn-sai:hover { background: var(--rosa-claro); }
 
-        .btn:disabled { background: #ccc; border-color: #ccc; cursor: not-allowed; transform: none; }
-
         .flash { 
             color: var(--rosa-escuro); 
             margin-bottom: 20px; 
@@ -75,7 +73,6 @@
             background: var(--rosa-claro); 
             padding: 12px; 
             border-radius: 12px; 
-            border: 1px solid var(--rosa-escuro); 
             font-size: 14px;
         }
 
@@ -98,17 +95,17 @@
 
         .admin-link {
             font-size: 11px;
-            color: var(--rosa-claro);
+            color: #ddd;
             text-decoration: none;
             display: block;
-            margin-top: 20px;
+            margin-top: 25px;
         }
     </style>
 </head>
 <body>
 
     <div class="card">
-        <h1>🌸 Dra Thamiris Araujo</h1>
+        <h1>Dra Thamiris Araujo</h1>
         <h3>Estética Avançada</h3>
 
         {% with messages = get_flashed_messages() %}
@@ -119,15 +116,12 @@
             {% endif %}
         {% endwith %}
 
-        <p style="margin-bottom: 25px;">Olá, <strong>Esther Julia</strong>!</p>
+        <p>Olá, <strong>Esther Julia</strong>!</p>
 
-        <button id="b1" onclick="enviar('Entrada')" class="btn btn-ent">Bater Entrada</button>
-        <button id="b2" onclick="enviar('Saída')" class="btn btn-sai">Bater Saída</button>
-
-        <form id="formPonto" method="POST" action="/bater_ponto" style="display:none;">
-            <input type="hidden" name="tipo" id="tipo">
-            <input type="hidden" name="lat" id="lat">
-            <input type="hidden" name="lon" id="lon">
+        <form method="POST" action="/bater_ponto">
+            <input type="hidden" name="tipo" id="tipo_input">
+            <button type="submit" onclick="document.getElementById('tipo_input').value='Entrada'" class="btn btn-ent">Bater Entrada</button>
+            <button type="submit" onclick="document.getElementById('tipo_input').value='Saída'" class="btn btn-sai">Bater Saída</button>
         </form>
 
         <a href="/login" class="admin-link">Acesso Administrativo</a>
@@ -142,32 +136,5 @@
         </p>
     </footer>
 
-    <script>
-    function enviar(tipo) {
-        // Desabilita botões para evitar cliques duplos
-        document.getElementById('b1').disabled = true;
-        document.getElementById('b2').disabled = true;
-        document.getElementById('b1').innerText = "Enviando...";
-        document.getElementById('tipo').value = tipo;
-
-        // Tenta capturar localização antes de enviar
-        if (navigator.geolocation) {
-            navigator.geolocation.getCurrentPosition(
-                (p) => {
-                    document.getElementById('lat').value = p.coords.latitude;
-                    document.getElementById('lon').value = p.coords.longitude;
-                    document.getElementById('formPonto').submit();
-                }, 
-                () => { 
-                    // Se der erro na localização, envia assim mesmo
-                    document.getElementById('formPonto').submit(); 
-                }, 
-                { timeout: 5000 }
-            );
-        } else {
-            document.getElementById('formPonto').submit();
-        }
-    }
-    </script>
 </body>
 </html>

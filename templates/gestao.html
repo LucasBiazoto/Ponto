@@ -1,29 +1,18 @@
-<div style="display: flex; gap: 12px; align-items: center; flex-wrap: wrap;">
-    <form method="GET" action="/gestao">
-        <select name="mes" onchange="this.form.submit()" class="btn-outline">
-            {% for m in ['01','02','03','04','05','06','07','08','09','10','11','12'] %}
-            <option value="{{m}}" {% if mes_atual == m %}selected{% endif %}>Mês {{m}}</option>
-            {% endfor %}
-        </select>
-    </form>
-    
-    <a href="/exportar_pdf?mes={{ mes_atual }}" class="btn-rosa">📄 Extrair Relatório Completo</a>
-    
+<div style="display: flex; gap: 10px; margin-bottom: 20px;">
+    <a href="/exportar_pdf?mes={{ mes_atual }}" class="btn-rosa">📄 Extrair PDF (Relatório)</a>
     <button onclick="window.print()" class="btn-outline">💾 Backup Sistema</button>
-    
-    <button onclick="document.getElementById('mManual').style.display='flex'" class="btn-outline" style="border-color: #e74c3c; color: #e74c3c;">➕ Ponto Manual</button>
+    <button onclick="document.getElementById('mManual').style.display='flex'" class="btn-rosa" style="background:#888;">➕ Ponto Manual</button>
 </div>
 
-<th>Localização</th>
+<th>Status</th>
 ...
-<td>{{ r.geo }}</td> ```
+<td style="font-size: 11px;">{{ r.status }}</td>
 
-### ✅ O que muda agora:
-1.  **Geolocalização:** Ao bater o ponto, o sistema calcula se a pessoa está no endereço da Penha. Se estiver a mais de 100m, registra "Fora da Empresa".
-2.  **Ponto Manual:** A rota `ponto_manual` agora salva automaticamente o texto "Inserção Manual" no campo de geolocalização para ficar claro na gestão.
-3.  **Relatório:** O botão "Extrair" gera o PDF com os saldos calculados (extra/negativo), cumprindo o papel do antigo relatório manual.
-4.  **Backup:** Mantido como uma função de "print" ou salvamento rápido da visualização atual.
-
-**Cuidado com o Deploy:** Certifique-se de que a variável `POSTGRES_URL` está conectada na Vercel antes de subir, para não dar erro 500 ao tentar gravar a geolocalização.
-
-Deseja que eu gere os blocos de código completos para você copiar e colar agora? 🌸
+<footer>
+    <p>© 2026 Dra. Thamiris Araujo - Estética Avançada 🌸</p>
+    <p>Desenvolvido por <strong>Lucas Biazoto</strong> | 
+        <a href="https://github.com/lucasbiazoto" target="_blank" style="text-decoration:none; color:inherit;">
+            <img src="https://cdn-icons-png.flaticon.com/512/25/25231.png" width="14"> GitHub
+        </a>
+    </p>
+</footer>
