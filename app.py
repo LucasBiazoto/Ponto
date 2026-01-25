@@ -1,6 +1,6 @@
 import os
 import psycopg2
-from flask import Flask, render_template, request, redirect, url_for, flash, session
+from flask import Flask, render_template, request, redirect, url_for, flash, session, jsonify
 from datetime import datetime
 import pytz
 
@@ -45,59 +45,55 @@ def bater_ponto():
     agora = datetime.now(fuso)
     data_hoje = agora.strftime('%d/%m/%Y')
     try:
-        conn = get_db_connection()
-        cur = conn.cursor()
+        conn = get_db_connection(); cur = conn.cursor()
         cur.execute('SELECT id FROM pontos WHERE data = %s AND tipo = %s', (data_hoje, tipo))
         if cur.fetchone():
             flash(f"Registro de {tipo} ja feito hoje! 🌸")
             return redirect(url_for('index'))
         cur.execute('INSERT INTO pontos (tipo, data, mes, hora, geo) VALUES (%s, %s, %s, %s, %s)',
                     (tipo, data_hoje, agora.strftime('%m'), agora.strftime('%H:%M'), "Site"))
-        conn.commit()
-        cur.close(); conn.close()
-        msg = "Bom trabalho meu bem 🌸" if tipo == 'Entrada' else "Bom descanso meu bem 🌸"
-        flash(msg)
-    except:
-        flash("Erro de conexao.")
+        conn.commit(); cur.close(); conn.close()
+        flash("Bom trabalho meu bem 🌸" if tipo == 'Entrada' else "Bom descanso meu bem 🌸")
+    except: flash("Erro de conexao.")
     return redirect(url_for('index'))
 
 @app.route('/gestao')
 def gestao():
     if not session.get('admin_logado'): return redirect(url_for('login'))
     mes_f = request.args.get('mes', datetime.now(fuso).strftime('%m'))
-    
-    try:
-        conn = get_db_connection()
-        cur = conn.cursor()
-        cur.execute('SELECT data, tipo, hora, id FROM pontos WHERE mes = %s ORDER BY data DESC', (mes_f,))
-        registros_raw = cur.fetchall()
-        cur.close(); conn.close()
+    conn = get_db_connection(); cur = conn.cursor()
+    cur.execute('SELECT data, tipo, hora, id FROM pontos WHERE mes = %s ORDER BY data DESC, hora ASC', (mes_f,))
+    registros_raw = cur.fetchall()
+    cur.close(); conn.close()
+    dias = {}
+    for r in registros_raw:
+        data, tipo, hora, id_ponto = r
+        if data not in dias: dias[data] = {'entrada': None, 'saida': None, 'id_e': None, 'id_s': None}
+        if tipo == 'Entrada': dias[data]['entrada'], dias[data]['id_e'] = hora, id_ponto
+        else: dias[data]['saida'], dias[data]['id_s'] = hora, id_ponto
+    tabela = []
+    minutos_total = 0
+    for d in sorted(dias.keys(), reverse=True):
+        info = dias[d]
+        saldo_str, cor = "0h 00m", "verde"
+        if info['entrada'] and info['saida']:
+            t1 = datetime.strptime(info['entrada'], '%H:%M')
+            t2 = datetime.strptime(info['saida'], '%H:%M')
+            saldo_dia = ((t2 - t1).total_seconds() / 60) - 360
+            minutos_total += saldo_dia
+            saldo_str = formatar_saldo(saldo_dia)
+            cor = "azul" if saldo_dia > 0 else ("verde" if saldo_dia == 0 else "vermelho")
+        tabela.append({'data': d, 'entrada': info['entrada'], 'saida': info['saida'], 'id_e': info['id_e'], 'id_s': info['id_s'], 'extra': saldo_str, 'cor': cor})
+    return render_template('gestao.html', registros=tabela, mes_atual=mes_f, extras_mes=formatar_saldo(minutos_total), dias=len(dias))
 
-        dias = {}
-        for r in registros_raw:
-            data, tipo, hora, id_ponto = r
-            if data not in dias: dias[data] = {'entrada': None, 'saida': None, 'id_e': None, 'id_s': None}
-            if tipo == 'Entrada': dias[data]['entrada'], dias[data]['id_e'] = hora, id_ponto
-            else: dias[data]['saida'], dias[data]['id_s'] = hora, id_ponto
-
-        tabela = []
-        minutos_total = 0
-        for d in sorted(dias.keys(), reverse=True):
-            info = dias[d]
-            saldo_str, cor = "0h 00m", "verde"
-            if info['entrada'] and info['saida']:
-                t1 = datetime.strptime(info['entrada'], '%H:%M')
-                t2 = datetime.strptime(info['saida'], '%H:%M')
-                dif = (t2 - t1).total_seconds() / 60
-                saldo_dia = dif - 360
-                minutos_total += saldo_dia
-                saldo_str = formatar_saldo(saldo_dia)
-                cor = "azul" if saldo_dia > 0 else ("verde" if saldo_dia == 0 else "vermelho")
-            tabela.append({'data': d, 'entrada': info['entrada'], 'saida': info['saida'], 'id_e': info['id_e'], 'id_s': info['id_s'], 'extra': saldo_str, 'cor': cor})
-
-        return render_template('gestao.html', registros=tabela, mes_atual=mes_f, extras_mes=formatar_saldo(minutos_total), dias=len(dias))
-    except Exception as e:
-        return str(e) # Se der erro, ele vai mostrar o texto do erro na tela para sabermos o que é.
+@app.route('/backup')
+def backup():
+    if not session.get('admin_logado'): return redirect(url_for('login'))
+    conn = get_db_connection(); cur = conn.cursor()
+    cur.execute('SELECT * FROM pontos')
+    dados = cur.fetchall()
+    cur.close(); conn.close()
+    return jsonify(dados)
 
 @app.route('/inserir_manual', methods=['POST'])
 def inserir_manual():
@@ -116,6 +112,3 @@ def excluir(id):
     cur.execute('DELETE FROM pontos WHERE id = %s', (id,)); conn.commit()
     cur.close(); conn.close()
     return redirect(url_for('gestao'))
-
-if __name__ == '__main__':
-    app.run(debug=True)

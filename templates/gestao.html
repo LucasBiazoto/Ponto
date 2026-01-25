@@ -6,7 +6,7 @@
     <title>Gestão Dra. Thamiris Araujo</title>
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600&display=swap" rel="stylesheet">
     <style>
-        :root { --rosa: #d68c9a; --rosa-claro: #fce4ec; --texto: #5a4a4d; --azul-extra: #2196F3; --verde-ok: #2e7d32; --vermelho-debito: #f44336; }
+        :root { --rosa: #d68c9a; --rosa-claro: #fce4ec; --texto: #5a4a4d; --azul: #2196F3; --verde: #2e7d32; --vermelho: #f44336; }
         body { font-family: 'Poppins', sans-serif; background: #fff5f7; padding: 20px; color: var(--texto); margin: 0; }
         .container { max-width: 900px; margin: auto; background: white; padding: 30px; border-radius: 20px; box-shadow: 0 5px 25px rgba(0,0,0,0.05); }
         .nav-top { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; }
@@ -16,18 +16,26 @@
         .card-dias { background: var(--rosa-claro); }
         .card-saldo { background: #e3f2fd; color: #1976D2; }
         .card b { font-size: 28px; display: block; margin-top: 5px; }
-        .status-azul { color: var(--azul-extra); font-weight: 600; }
-        .status-verde { color: var(--verde-ok); font-weight: 600; }
-        .status-vermelho { color: var(--vermelho-debito); font-weight: 600; }
         .toolbar { display: flex; gap: 10px; align-items: center; margin-bottom: 25px; flex-wrap: wrap; }
-        select, .btn { padding: 10px 18px; border-radius: 10px; border: 1px solid #ddd; font-size: 14px; cursor: pointer; text-decoration: none; }
+        select, .btn { padding: 10px 18px; border-radius: 10px; border: 1px solid #ddd; font-size: 14px; cursor: pointer; text-decoration: none; font-weight: 600; }
+        .btn-pdf { background: var(--rosa); color: white; border: none; }
         .btn-manual { background: var(--texto); color: white; border: none; }
         table { width: 100%; border-collapse: collapse; }
         th { text-align: left; padding: 15px; border-bottom: 2px solid var(--rosa-claro); color: var(--rosa); }
         td { padding: 15px; border-bottom: 1px solid #f9f9f9; font-size: 14px; }
+        .status-azul { color: var(--azul); font-weight: 600; }
+        .status-verde { color: var(--verde); font-weight: 600; }
+        .status-vermelho { color: var(--vermelho); font-weight: 600; }
         .link-excluir { color: #ccc; text-decoration: none; font-size: 10px; margin-left: 5px; }
-        .modal { display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.5); z-index:1000; }
-        .modal-content { background:white; width:90%; max-width:400px; margin: 100px auto; padding:30px; border-radius:20px; }
+        footer { margin-top: 40px; text-align: center; font-size: 13px; color: var(--rosa); }
+        .github-link { text-decoration: none; color: var(--texto); font-weight: 600; display: inline-flex; align-items: center; gap: 5px; }
+        
+        /* Estilo para Impressão/PDF */
+        @media print {
+            .nav-top, .toolbar, .link-excluir, footer { display: none !important; }
+            body { background: white; padding: 0; }
+            .container { box-shadow: none; border: none; max-width: 100%; }
+        }
     </style>
 </head>
 <body>
@@ -37,7 +45,7 @@
             <a href="/logout" style="color: #999;">Sair</a>
         </div>
 
-        <h2 style="color: var(--rosa);">Painel de Gestão</h2>
+        <h2 style="color: var(--rosa); text-align: center;">Painel de Gestão - Dra. Thamiris Araujo</h2>
 
         <div class="resumo-grid">
             <div class="card card-dias"><small>Dias com Registro</small><b>{{ dias }}</b></div>
@@ -47,11 +55,14 @@
         <div class="toolbar">
             <form method="GET">
                 <select name="mes" onchange="this.form.submit()">
-                    <option value="01" {% if mes_atual == '01' %}selected{% endif %}>Janeiro</option>
-                    <option value="02" {% if mes_atual == '02' %}selected{% endif %}>Fevereiro</option>
-                    <option value="03" {% if mes_atual == '03' %}selected{% endif %}>Março</option>
+                    {% set meses = [('01','Janeiro'),('02','Fevereiro'),('03','Março'),('04','Abril'),('05','Maio'),('06','Junho'),('07','Julho'),('08','Agosto'),('09','Setembro'),('10','Outubro'),('11','Novembro'),('12','Dezembro')] %}
+                    {% for val, nome in meses %}
+                    <option value="{{ val }}" {% if mes_atual == val %}selected{% endif %}>{{ nome }}</option>
+                    {% endfor %}
                 </select>
             </form>
+            <button onclick="window.print()" class="btn btn-pdf">Extrair PDF</button>
+            <a href="/backup" target="_blank" class="btn">Backup</a>
             <button onclick="document.getElementById('modalManual').style.display='block'" class="btn btn-manual">+ Inserir Manual</button>
         </div>
 
@@ -68,28 +79,29 @@
                 {% for r in registros %}
                 <tr>
                     <td>{{ r.data }}</td>
-                    <td>
-                        {{ r.entrada if r.entrada else '--:--' }}
-                        {% if r.id_e %}<a href="/excluir/{{ r.id_e }}" class="link-excluir">excluir</a>{% endif %}
-                    </td>
-                    <td>
-                        {{ r.saida if r.saida else '--:--' }}
-                        {% if r.id_s %}<a href="/excluir/{{ r.id_s }}" class="link-excluir">excluir</a>{% endif %}
-                    </td>
+                    <td>{{ r.entrada if r.entrada else '--:--' }} {% if r.id_e %}<a href="/excluir/{{ r.id_e }}" class="link-excluir">excluir</a>{% endif %}</td>
+                    <td>{{ r.saida if r.saida else '--:--' }} {% if r.id_s %}<a href="/excluir/{{ r.id_s }}" class="link-excluir">excluir</a>{% endif %}</td>
                     <td class="status-{{ r.cor }}">{{ r.extra }}</td>
                 </tr>
                 {% endfor %}
             </tbody>
         </table>
+
+        <footer>
+            <p>Desenvolvido por <strong>Lucas Biazoto</strong> © 2026<br>
+            <a href="https://github.com/lucasbiazoto" target="_blank" class="github-link">
+                <img src="https://cdn-icons-png.flaticon.com/512/25/25231.png" width="16"> GitHub
+            </a></p>
+        </footer>
     </div>
 
-    <div id="modalManual" class="modal">
-        <div class="modal-content">
+    <div id="modalManual" style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.5);">
+        <div style="background:white; width:90%; max-width:400px; margin: 100px auto; padding:30px; border-radius:20px;">
             <h3>Ponto Manual</h3>
             <form action="/inserir_manual" method="POST">
-                <input type="date" name="data" required style="width:100%; margin-bottom:10px;">
-                <input type="time" name="hora" required style="width:100%; margin-bottom:10px;">
-                <select name="tipo" style="width:100%; margin-bottom:10px;">
+                <input type="date" name="data" required style="width:100%; margin-bottom:10px; padding:10px;">
+                <input type="time" name="hora" required style="width:100%; margin-bottom:10px; padding:10px;">
+                <select name="tipo" style="width:100%; margin-bottom:10px; padding:10px;">
                     <option value="Entrada">Entrada</option>
                     <option value="Saída">Saída</option>
                 </select>
