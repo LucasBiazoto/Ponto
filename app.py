@@ -15,6 +15,7 @@ def get_db_connection():
     return psycopg2.connect(url)
 
 def formatar_saldo_extenso(minutos_totais):
+    """Calcula saldo exato como +0h 05m ou -0h 05m"""
     sinal = "+" if minutos_totais >= 0 else "-"
     m_abs = abs(int(minutos_totais))
     h = m_abs // 60
@@ -49,7 +50,7 @@ def bater_ponto():
         conn = get_db_connection()
         cur = conn.cursor()
         
-        # TRAVA DE DUPLICIDADE
+        # Bloqueio de duplicidade
         cur.execute('SELECT id FROM pontos WHERE data = %s AND tipo = %s', (data_hoje, tipo))
         if cur.fetchone():
             flash(f"Você já registrou sua {tipo} hoje! 🌸")
@@ -63,13 +64,14 @@ def bater_ponto():
         msg = "Bom trabalho meu bem 🌸" if tipo == 'Entrada' else "Bom descanso meu bem 🌸"
         flash(msg)
     except:
-        flash("Erro ao conectar ao banco.")
+        flash("Erro de conexão com o banco.")
     return redirect(url_for('index'))
 
 @app.route('/gestao')
 def gestao():
     if not session.get('admin_logado'): return redirect(url_for('login'))
     mes_f = request.args.get('mes', datetime.now(fuso).strftime('%m'))
+    
     conn = get_db_connection()
     cur = conn.cursor()
     cur.execute('SELECT data, tipo, hora, id FROM pontos WHERE mes = %s ORDER BY data DESC, hora ASC', (mes_f,))
@@ -86,21 +88,28 @@ def gestao():
     tabela = []
     minutos_mes = 0
     dias_count = 0
+    
     for data in sorted(dias.keys(), reverse=True):
         info = dias[data]
-        cor, saldo = "vermelho", "0h 00m"
+        cor, saldo_str = "vermelho", "0h 00m"
+        
         if info['entrada'] and info['saida']:
             dias_count += 1
             t1 = datetime.strptime(info['entrada'], '%H:%M')
             t2 = datetime.strptime(info['saida'], '%H:%M')
             m_trab = (t2 - t1).total_seconds() / 60
-            saldo_min = m_trab - 360
-            minutos_mes += saldo_min
-            saldo = formatar_saldo_extenso(saldo_min)
-            cor = "azul" if saldo_min > 0 else ("verde" if saldo_min == 0 else "vermelho")
-        tabela.append({'data': data, 'entrada': info['entrada'], 'saida': info['saida'], 'id_e': info['id_e'], 'id_s': info['id_s'], 'extra': saldo, 'cor': cor})
+            saldo_dia = m_trab - 360 # Jornada de 6h
+            minutos_mes += saldo_dia
+            saldo_str = formatar_saldo_extenso(saldo_dia)
+            cor = "azul" if saldo_dia > 0 else ("verde" if saldo_dia == 0 else "vermelho")
+            
+        tabela.append({
+            'data': data, 'entrada': info['entrada'], 'saida': info['saida'],
+            'id_e': info['id_e'], 'id_s': info['id_s'], 'extra': saldo_str, 'cor': cor
+        })
 
-    return render_template('gestao.html', registros=tabela, mes_atual=mes_f, extras_mes=formatar_saldo_extenso(minutos_mes), dias=dias_count)
+    return render_template('gestao.html', registros=tabela, mes_atual=mes_f, 
+                           extras_mes=formatar_saldo_extenso(minutos_mes), dias=dias_count)
 
 @app.route('/inserir_manual', methods=['POST'])
 def inserir_manual():
