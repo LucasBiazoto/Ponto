@@ -10,7 +10,7 @@
         body { font-family: 'Poppins', sans-serif; background: #fff5f7; padding: 20px; color: var(--texto); margin: 0; }
         .container { max-width: 900px; margin: auto; background: white; padding: 30px; border-radius: 20px; box-shadow: 0 5px 25px rgba(0,0,0,0.05); }
         .nav-top { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; }
-        .nav-top a { text-decoration: none; font-size: 14px; font-weight: 600; }
+        .nav-top a { text-decoration: none; font-size: 14px; font-weight: 600; color: var(--rosa); }
         .resumo-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin-bottom: 30px; }
         .card { padding: 20px; border-radius: 15px; text-align: center; border: 1px solid var(--rosa-claro); }
         .card-dias { background: var(--rosa-claro); }
@@ -21,13 +21,11 @@
         .status-vermelho { color: var(--vermelho-debito); font-weight: 600; }
         .toolbar { display: flex; gap: 10px; align-items: center; margin-bottom: 25px; flex-wrap: wrap; }
         select, .btn { padding: 10px 18px; border-radius: 10px; border: 1px solid #ddd; font-size: 14px; cursor: pointer; text-decoration: none; }
-        .btn-pdf { background: var(--rosa); color: white; border: none; }
         .btn-manual { background: var(--texto); color: white; border: none; }
         table { width: 100%; border-collapse: collapse; }
         th { text-align: left; padding: 15px; border-bottom: 2px solid var(--rosa-claro); color: var(--rosa); }
         td { padding: 15px; border-bottom: 1px solid #f9f9f9; font-size: 14px; }
-        .link-excluir { color: #ccc; text-decoration: none; font-size: 11px; margin-left: 8px; }
-        .footer { text-align: center; margin-top: 50px; color: #bbb; font-size: 13px; }
+        .link-excluir { color: #ccc; text-decoration: none; font-size: 10px; margin-left: 5px; }
         .modal { display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.5); z-index:1000; }
         .modal-content { background:white; width:90%; max-width:400px; margin: 100px auto; padding:30px; border-radius:20px; }
     </style>
@@ -35,29 +33,70 @@
 <body>
     <div class="container">
         <div class="nav-top">
-            <a href="/" style="color: var(--rosa);">← Início / Bater Ponto</a>
+            <a href="/">← Voltar ao Ponto</a>
             <a href="/logout" style="color: #999;">Sair</a>
         </div>
-        <h2 style="color: var(--rosa); margin-bottom: 25px;">🌸 Painel de Gestão Dra Thamiris Araujo</h2>
+
+        <h2 style="color: var(--rosa);">Painel de Gestão</h2>
+
         <div class="resumo-grid">
-            <div class="card card-dias"><small>Dias Trabalhados</small><b>{{ dias }}</b></div>
-            <div class="card card-saldo"><small>Saldo Total do Mês</small><b>{{ extras_mes }}</b></div>
+            <div class="card card-dias"><small>Dias com Registro</small><b>{{ dias }}</b></div>
+            <div class="card card-saldo"><small>Saldo do Mês</small><b>{{ extras_mes }}</b></div>
         </div>
+
         <div class="toolbar">
-            <form method="GET" id="formFiltro">
+            <form method="GET">
                 <select name="mes" onchange="this.form.submit()">
-                    {% set meses = [('01','Jan'),('02','Fev'),('03','Mar'),('04','Abr'),('05','Mai'),('06','Jun'),('07','Jul'),('08','Ago'),('09','Set'),('10','Out'),('11','Nov'),('12','Dez')] %}
-                    {% for val, nome in meses %}<option value="{{ val }}" {% if mes_atual == val %}selected{% endif %}>{{ nome }}</option>{% endfor %}
+                    <option value="01" {% if mes_atual == '01' %}selected{% endif %}>Janeiro</option>
+                    <option value="02" {% if mes_atual == '02' %}selected{% endif %}>Fevereiro</option>
+                    <option value="03" {% if mes_atual == '03' %}selected{% endif %}>Março</option>
                 </select>
             </form>
-            <a href="/exportar_pdf?mes={{ mes_atual }}" class="btn btn-pdf">Extrair PDF</a>
-            <button onclick="alert('Backup realizado! ✅')" class="btn" style="background: white;">💾 Backup</button>
-            <button onclick="document.getElementById('modalManual').style.display='block'" class="btn btn-manual">+ Manual</button>
+            <button onclick="document.getElementById('modalManual').style.display='block'" class="btn btn-manual">+ Inserir Manual</button>
         </div>
+
         <table>
-            <thead><tr><th>Data</th><th>Entrada</th><th>Saída</th><th>Saldo (Ref. 6h)</th></tr></thead>
+            <thead>
+                <tr>
+                    <th>Data</th>
+                    <th>Entrada</th>
+                    <th>Saída</th>
+                    <th>Saldo (6h)</th>
+                </tr>
+            </thead>
             <tbody>
                 {% for r in registros %}
                 <tr>
                     <td>{{ r.data }}</td>
-                    <td>{{ r.entrada if r.entrada else '--:--' }} {% if r.id_e %}<a href="/excluir/{{ r.id_e }}" class="link-excluir">excluir</a>{%
+                    <td>
+                        {{ r.entrada if r.entrada else '--:--' }}
+                        {% if r.id_e %}<a href="/excluir/{{ r.id_e }}" class="link-excluir">excluir</a>{% endif %}
+                    </td>
+                    <td>
+                        {{ r.saida if r.saida else '--:--' }}
+                        {% if r.id_s %}<a href="/excluir/{{ r.id_s }}" class="link-excluir">excluir</a>{% endif %}
+                    </td>
+                    <td class="status-{{ r.cor }}">{{ r.extra }}</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+
+    <div id="modalManual" class="modal">
+        <div class="modal-content">
+            <h3>Ponto Manual</h3>
+            <form action="/inserir_manual" method="POST">
+                <input type="date" name="data" required style="width:100%; margin-bottom:10px;">
+                <input type="time" name="hora" required style="width:100%; margin-bottom:10px;">
+                <select name="tipo" style="width:100%; margin-bottom:10px;">
+                    <option value="Entrada">Entrada</option>
+                    <option value="Saída">Saída</option>
+                </select>
+                <button type="submit" class="btn btn-manual" style="width:100%;">Salvar</button>
+                <button type="button" onclick="document.getElementById('modalManual').style.display='none'" class="btn" style="width:100%; margin-top:5px;">Cancelar</button>
+            </form>
+        </div>
+    </div>
+</body>
+</html>
