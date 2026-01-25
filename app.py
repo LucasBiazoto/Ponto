@@ -15,6 +15,14 @@ def get_db_connection():
         url += "?sslmode=require"
     return psycopg2.connect(url)
 
+def formatar_saldo_extenso(minutos_totais):
+    """Transforma minutos em string: +0h 05m ou -0h 05m"""
+    sinal = "+" if minutos_totais >= 0 else "-"
+    m_abs = abs(int(minutos_totais))
+    h = m_abs // 60
+    m = m_abs % 60
+    return f"{sinal}{h}h {m:02d}m"
+
 @app.route('/')
 def index():
     return render_template('index.html')
@@ -41,7 +49,7 @@ def bater_ponto():
         conn = get_db_connection()
         cur = conn.cursor()
         
-        # --- TRAVA DE DUPLICIDADE ---
+        # TRAVA DE DUPLICIDADE
         cur.execute('SELECT id FROM pontos WHERE data = %s AND tipo = %s', (data_hoje, tipo))
         if cur.fetchone():
             flash(f"Você já registrou sua {tipo} hoje! 🌸")
@@ -55,8 +63,8 @@ def bater_ponto():
         
         msg = "Bom trabalho meu bem" if tipo == 'Entrada' else "Bom descanso meu bem"
         flash(f"{msg} 🌸")
-    except Exception as e:
-        flash("Erro de conexão. Tente novamente.")
+    except:
+        flash("Erro ao conectar ao banco.")
     return redirect(url_for('index'))
 
 @app.route('/gestao')
@@ -82,36 +90,75 @@ def gestao():
             dias[data]['saida'], dias[data]['id_s'] = hora, id_ponto
 
     tabela_final = []
-    minutos_totais_saldo = 0
+    minutos_totais_mes = 0
     dias_completos = 0
 
     for data in sorted(dias.keys(), reverse=True):
         info = dias[data]
-        cor, saldo_diario_str = "vermelho", "0.0h"
+        cor, saldo_str = "vermelho", "0h 00m"
         
         if info['entrada'] and info['saida']:
             dias_completos += 1
-            # Lógica exata de Minutos
             t1 = datetime.strptime(info['entrada'], '%H:%M')
             t2 = datetime.strptime(info['saida'], '%H:%M')
             minutos_trabalhados = (t2 - t1).total_seconds() / 60
-            minutos_extra = minutos_trabalhados - 360 # 6h = 360 min
-            minutos_totais_saldo += minutos_extra
+            saldo_dia = minutos_trabalhados - 360 # 6 horas = 360 min
+            minutos_totais_mes += saldo_dia
             
-            saldo_diario_str = f"{(minutos_extra/60):+.2f}h"
-            
-            if minutos_extra > 0: cor = "azul" 
-            elif minutos_extra == 0: cor = "verde"
+            saldo_str = formatar_saldo_extenso(saldo_dia)
+            if saldo_dia > 0: cor = "azul"
+            elif saldo_dia == 0: cor = "verde"
             else: cor = "vermelho"
         
         tabela_final.append({
             'data': data, 'entrada': info['entrada'], 'id_e': info['id_e'],
             'saida': info['saida'], 'id_s': info['id_s'], 
-            'extra': saldo_diario_str, 'cor': cor
+            'extra': saldo_str, 'cor': cor
         })
 
-    saldo_final_h = minutos_totais_saldo / 60
     return render_template('gestao.html', registros=tabela_final, mes_atual=mes_f, 
-                           extras_mes=f"{saldo_final_h:+.2f}", dias=dias_completos)
+                           extras_mes=formatar_saldo_extenso(minutos_totais_mes), dias=dias_completos)
 
-# ... (Manter rotas de excluir, inserir_manual e exportar_pdf iguais)
+@app.route('/inserir_manual', methods=['POST'])
+def inserir_manual():
+    if not session.get('admin_logado'): return redirect(url_for('login'))
+    data_raw = request.form.get('data')
+    data_f = datetime.strptime(data_raw, '%Y-%m-%d').strftime('%d/%m/%Y')
+    hora, tipo = request.form.get('hora'), request.form.get('tipo')
+    
+    conn = get_db_connection()
+    cur = conn.cursor()
+    cur.execute('INSERT INTO pontos (tipo, data, mes, hora, geo) VALUES (%s, %s, %s, %s, %s)',
+                (tipo, data_f, data_f.split('/')[1], hora, "Manual (Gestora)"))
+    conn.commit()
+    cur.close()
+    conn.close()
+    return redirect(url_for('gestao'))
+
+@app.route('/excluir/<int:id>')
+def excluir(id):
+    if not session.get('admin_logado'): return redirect(url_for('login'))
+    conn = get_db_connection()
+    cur = conn.cursor()
+    cur.execute('DELETE FROM pontos WHERE id = %s', (id,))
+    conn.commit()
+    cur.close()
+    conn.close()
+    return redirect(url_for('gestao'))
+
+@app.route('/exportar_pdf')
+def exportar_pdf():
+    if not session.get('admin_logado'): return redirect(url_for('login'))
+    mes_f = request.args.get('mes', datetime.now(fuso).strftime('%m'))
+    # Lógica de PDF simplificada para garantir funcionamento
+    pdf = FPDF()
+    pdf.add_page()
+    pdf.set_font("Arial", "B", 16)
+    pdf.cell(190, 10, f"Dra. Thamiris Araujo - Mes {mes_f}", ln=True, align="C")
+    pdf.ln(10)
+    pdf.set_font("Arial", "I", 10)
+    pdf.cell(190, 10, "Desenvolvido por Lucas Biazoto", ln=True, align="C")
+    
+    res = make_response(pdf.output(dest='S').encode('latin-1', 'ignore'))
+    res.headers.set('Content-Disposition', 'attachment', filename=f'Relatorio_{mes_f}.pdf')
+    res.headers.set('Content-Type', 'application/pdf')
