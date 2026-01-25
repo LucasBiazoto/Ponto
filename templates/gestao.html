@@ -1,18 +1,70 @@
-<div style="display: flex; gap: 10px; margin-bottom: 20px;">
-    <a href="/exportar_pdf?mes={{ mes_atual }}" class="btn-rosa">📄 Extrair PDF (Relatório)</a>
-    <button onclick="window.print()" class="btn-outline">💾 Backup Sistema</button>
-    <button onclick="document.getElementById('mManual').style.display='flex'" class="btn-rosa" style="background:#888;">➕ Ponto Manual</button>
-</div>
-
-<th>Status</th>
-...
-<td style="font-size: 11px;">{{ r.status }}</td>
-
-<footer>
-    <p>© 2026 Dra. Thamiris Araujo - Estética Avançada 🌸</p>
-    <p>Desenvolvido por <strong>Lucas Biazoto</strong> | 
-        <a href="https://github.com/lucasbiazoto" target="_blank" style="text-decoration:none; color:inherit;">
-            <img src="https://cdn-icons-png.flaticon.com/512/25/25231.png" width="14"> GitHub
-        </a>
-    </p>
-</footer>
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Gestão - Dra. Thamiris Araujo</title>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600&display=swap" rel="stylesheet">
+    <style>
+        :root { --rosa: #d68c9a; --rosa-claro: #fce4ec; --fundo: #fff5f7; --texto: #5a4a4d; }
+        body { font-family: 'Poppins', sans-serif; background: var(--fundo); padding: 20px; color: var(--texto); margin: 0; }
+        .card { background: white; max-width: 950px; margin: auto; padding: 30px; border-radius: 25px; box-shadow: 0 10px 30px rgba(0,0,0,0.05); border: 1px solid var(--rosa-claro); }
+        .btn-rosa { background: var(--rosa); color: white; padding: 10px 22px; border-radius: 12px; border: none; cursor: pointer; font-weight: 600; text-decoration: none; font-size: 14px; }
+        .btn-outline { background: white; border: 1px solid var(--rosa); color: var(--rosa); padding: 9px 18px; border-radius: 12px; cursor: pointer; text-decoration: none; font-size: 14px; font-weight: 600; }
+        table { width: 100%; border-collapse: collapse; margin-top: 20px; }
+        th { color: var(--rosa); border-bottom: 2px solid var(--rosa-claro); padding: 15px; }
+        td { padding: 12px; text-align: center; border-bottom: 1px solid #fcfcfc; }
+        .resumo-box { background: var(--rosa-claro); padding: 20px; border-radius: 20px; display: flex; justify-content: space-around; margin-top: 30px; color: var(--rosa); font-weight: bold; }
+        footer { text-align: center; margin-top: 50px; color: var(--rosa); font-size: 13px; border-top: 1px solid var(--rosa-claro); padding-top: 20px; }
+        .modal { display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.4); justify-content:center; align-items:center; }
+    </style>
+</head>
+<body>
+    <div class="card">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+            <h2 style="color: var(--rosa); margin:0;">🌸 Gestão de Pontos - Dra. Thamiris Araujo</h2>
+            <a href="/logout" style="color: gray; font-size: 12px;">Sair</a>
+        </div>
+        <div style="display: flex; gap: 12px; align-items: center; flex-wrap: wrap;">
+            <form method="GET" action="/gestao">
+                <select name="mes" onchange="this.form.submit()" class="btn-outline">
+                    {% for m in ['01','02','03','04','05','06','07','08','09','10','11','12'] %}<option value="{{m}}" {% if mes_atual == m %}selected{% endif %}>Mês {{m}}</option>{% endfor %}
+                </select>
+            </form>
+            <a href="/exportar_pdf?mes={{ mes_atual }}" class="btn-rosa">📄 Extrair Relatório</a>
+            <button onclick="window.print()" class="btn-outline">💾 Backup Sistema</button>
+            <button onclick="document.getElementById('mManual').style.display='flex'" class="btn-outline" style="color:#888; border-color:#888;">➕ Manual</button>
+        </div>
+        <table>
+            <thead><tr><th>Data</th><th>Entrada</th><th>Saída</th><th>Saldo (6h)</th><th>Status</th><th>Ação</th></tr></thead>
+            <tbody>
+                {% for r in registros %}
+                <tr style="color: {{ r.cor }}; font-weight: 600;">
+                    <td>{{ r.data }}</td><td>{{ r.e }}</td><td>{{ r.s }}</td><td>{{ r.saldo }}</td>
+                    <td style="font-size: 11px; font-weight: 400;">{{ r.status }}</td>
+                    <td>{% if r.id_e %}<a href="/excluir/{{r.id_e}}">🗑️</a>{% endif %} {% if r.id_s %}<a href="/excluir/{{r.id_s}}">🗑️</a>{% endif %}</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+        <div class="resumo-box"><span>DIAS COMPLETOS: {{ contador }}</span><span>TOTAL DO MÊS: {{ total }}</span></div>
+    </div>
+    <footer>
+        <p>© 2026 Dra. Thamiris Araujo - Estética Avançada 🌸 | Desenvolvido por <strong>Lucas Biazoto</strong></p>
+    </footer>
+    <div id="mManual" class="modal">
+        <div style="background:white; padding:30px; border-radius:20px; width:300px; text-align:center;">
+            <h3>Ponto Manual</h3>
+            <form action="/ponto_manual" method="POST">
+                <input type="date" name="data" required style="width:100%; margin-bottom:10px; padding:10px;">
+                <input type="time" name="hora" required style="width:100%; margin-bottom:10px; padding:10px;">
+                <select name="tipo" style="width:100%; margin-bottom:20px; padding:10px;">
+                    <option value="Entrada">Entrada</option><option value="Saída">Saída</option>
+                </select>
+                <button type="button" onclick="document.getElementById('mManual').style.display='none'" class="btn-outline">Voltar</button>
+                <button type="submit" class="btn-rosa">Salvar</button>
+            </form>
+        </div>
+    </div>
+</body>
+</html>

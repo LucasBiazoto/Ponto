@@ -22,13 +22,12 @@ def bater_ponto():
     agora = datetime.now(fuso)
     conn = get_db_connection()
     cur = conn.cursor()
-    # O campo 'geo' agora apenas registra que foi via site
     cur.execute('INSERT INTO pontos (tipo, data, mes, hora, geo) VALUES (%s, %s, %s, %s, %s)',
                 (tipo, agora.strftime('%d/%m/%Y'), agora.strftime('%m'), agora.strftime('%H:%M'), "Via Site"))
     conn.commit()
     cur.close()
     conn.close()
-    flash("Bom trabalho meu bem 🌸" if tipo == 'Entrada' else "Bom descanso meu bem 🌸")
+    flash(f"Bom {'trabalho' if tipo == 'Entrada' else 'descanso'} meu bem 🌸")
     return redirect(url_for('index'))
 
 @app.route('/ponto_manual', methods=['POST'])
@@ -42,7 +41,6 @@ def ponto_manual():
 
     conn = get_db_connection()
     cur = conn.cursor()
-    # Identifica explicitamente que foi Manual no campo geo
     cur.execute('INSERT INTO pontos (tipo, data, mes, hora, geo) VALUES (%s, %s, %s, %s, %s)',
                 (tipo_f, data_f, mes_f, hora_f, "Ponto Manual"))
     conn.commit()
@@ -84,9 +82,9 @@ def gestao():
             h2, m2 = map(int, v['s'].split(':'))
             diff = (h2 * 60 + m2) - (h1 * 60 + m1) - 360
             total_minutos_mes += diff
-            if diff > 0: cor = "#2980b9"
-            elif diff == 0: cor = "#27ae60"
-            else: cor = "#e74c3c"
+            if diff > 0: cor = "#2980b9" # Azul Extra
+            elif diff == 0: cor = "#27ae60" # Verde OK
+            else: cor = "#e74c3c" # Vermelho Devendo
             sinal = "+" if diff >= 0 else "-"
             saldo_dia_str = f"{sinal}{abs(diff)//60:02d}:{abs(diff)%60:02d}"
         
@@ -98,12 +96,11 @@ def gestao():
 
 @app.route('/exportar_pdf')
 def exportar_pdf():
-    # Rota simplificada para gerar o relatório com os dados da tela
     if not session.get('admin_logado'): return redirect(url_for('login'))
     mes_f = request.args.get('mes', datetime.now(fuso).strftime('%m'))
     conn = get_db_connection()
     cur = conn.cursor()
-    cur.execute('SELECT data, tipo, hora, geo FROM pontos WHERE mes = %s ORDER BY data ASC', (mes_f,))
+    cur.execute('SELECT data, tipo, hora, geo FROM pontos WHERE mes = %s ORDER BY data ASC, hora ASC', (mes_f,))
     dados = cur.fetchall()
     cur.close()
     conn.close()
@@ -111,14 +108,14 @@ def exportar_pdf():
     pdf = FPDF()
     pdf.add_page()
     pdf.set_font("Arial", "B", 16)
-    pdf.cell(190, 10, f"Relatorio Mensal - Mes {mes_f}", ln=True, align="C")
+    pdf.cell(190, 10, f"Relatorio Dra Thamiris Araujo - Mes {mes_f}", ln=True, align="C")
     pdf.ln(10)
     pdf.set_font("Arial", "B", 10)
-    pdf.cell(45, 10, "Data", 1); pdf.cell(45, 10, "Tipo", 1); pdf.cell(45, 10, "Hora", 1); pdf.cell(55, 10, "Obs", 1)
+    pdf.cell(40, 10, "Data", 1); pdf.cell(40, 10, "Tipo", 1); pdf.cell(40, 10, "Hora", 1); pdf.cell(70, 10, "Observacao", 1)
     pdf.ln()
     pdf.set_font("Arial", "", 10)
     for r in dados:
-        pdf.cell(45, 10, str(r[0]), 1); pdf.cell(45, 10, str(r[1]), 1); pdf.cell(45, 10, str(r[2]), 1); pdf.cell(55, 10, str(r[3]), 1)
+        pdf.cell(40, 10, str(r[0]), 1); pdf.cell(40, 10, str(r[1]), 1); pdf.cell(40, 10, str(r[2]), 1); pdf.cell(70, 10, str(r[3]), 1)
         pdf.ln()
     
     res = make_response(pdf.output(dest='S').encode('latin-1', 'ignore'))
