@@ -1,9 +1,145 @@
-body { background-color: #fff0f3; font-family: sans-serif; display: flex; justify-content: center; align-items: center; height: 100vh; margin: 0; }
-.container { background: white; padding: 40px; border-radius: 25px; box-shadow: 0 10px 30px rgba(0,0,0,0.05); text-align: center; width: 320px; border: 1px solid #f8d7da; }
-h1 { color: #d68c9a; margin-bottom: 5px; }
-select { width: 100%; padding: 12px; border-radius: 10px; border: 1px solid #f8d7da; margin-bottom: 20px; }
-button { width: 100%; padding: 15px; margin: 5px 0; border-radius: 10px; border: none; cursor: pointer; font-weight: bold; }
-.btn-entrada { background-color: #d68c9a; color: white; }
-.btn-saida { background-color: white; color: #d68c9a; border: 1px solid #d68c9a; }
-.alert { background-color: #fce4ec; color: #c2185b; padding: 10px; border-radius: 10px; margin-bottom: 15px; }
-.footer-link a { color: #d68c9a; text-decoration: none; font-size: 12px; display: block; margin-top: 20px; }
+/* Configurações Gerais */
+:root {
+    --rosa-principal: #d68c9a;
+    --rosa-claro: #fce4ec;
+    --fundo: #fff5f7;
+    --texto: #5a4a4d;
+    --branco: #ffffff;
+}
+
+body {
+    font-family: 'Poppins', sans-serif;
+    background-color: var(--fundo);
+    color: var(--texto);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    min-height: 100vh;
+    margin: 0;
+}
+
+/* Card Principal */
+.card {
+    background: var(--branco);
+    padding: 40px;
+    border-radius: 30px;
+    box-shadow: 0 10px 25px rgba(214, 140, 154, 0.15);
+    text-align: center;
+    width: 320px;
+    border: 1px solid var(--rosa-claro);
+}
+
+h1 {
+    color: var(--rosa-principal);
+    margin-bottom: 0;
+    font-size: 24px;
+}
+
+h3 {
+    color: var(--texto);
+    margin-top: 5px;
+    font-weight: 400;
+    font-size: 14px;
+    letter-spacing: 1px;
+    margin-bottom: 25px;
+    text-transform: uppercase;
+}
+
+/* Botões */
+.btn {
+    width: 100%;
+    padding: 16px;
+    margin: 10px 0;
+    border: none;
+    border-radius: 15px;
+    font-weight: 600;
+    cursor: pointer;
+    font-size: 16px;
+    transition: all 0.3s ease;
+}
+
+.btn-ent {
+    background: var(--rosa-principal);
+    color: white;
+    box-shadow: 0 4px 15px rgba(214, 140, 154, 0.3);
+}
+
+.btn-ent:hover {
+    transform: translateY(-2px);
+    opacity: 0.9;
+}
+
+.btn-sai {
+    background: white;
+    color: var(--rosa-principal);
+    border: 2px solid var(--rosa-principal);
+}
+
+.btn-sai:hover {
+    background: var(--rosa-claro);
+}
+
+/* Mensagens de Feedback */
+.flash {
+    color: var(--rosa-principal);
+    margin-bottom: 20px;
+    font-weight: 600;
+    background: var(--rosa-claro);
+    padding: 12px;
+    border-radius: 12px;
+    font-size: 14px;
+}
+
+/* Link Administrativo (Efeito de Invisibilidade) */
+.admin-link {
+    font-size: 11px;
+    color: #e0e0e0; /* Cor muito clara, quase fundo */
+    text-decoration: none;
+    display: block;
+    margin-top: 25px;
+    opacity: 0; /* Totalmente invisível */
+    transition: opacity 0.5s ease; /* Aparece suavemente */
+}
+
+.admin-link:hover {
+    opacity: 1; /* Aparece ao passar o mouse */
+    color: var(--rosa-principal);
+}
+
+/* Rodapé */
+footer {
+    margin-top: 40px;
+    text-align: center;
+    font-size: 12px;
+    color: var(--rosa-principal);
+}
+
+.github-link {
+    text-decoration: none;
+    color: var(--texto);
+    font-weight: 600;
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+}
+
+/* Estilo para a Tabela de Gestão */
+table {
+    width: 100%;
+    border-collapse: collapse;
+    background: white;
+    border-radius: 15px;
+    overflow: hidden;
+}
+
+th {
+    background-color: var(--rosa-claro);
+    color: var(--rosa-principal);
+    padding: 12px;
+}
+
+td {
+    padding: 10px;
+    border-bottom: 1px solid #eee;
+}
