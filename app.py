@@ -5,11 +5,16 @@ from datetime import datetime
 import pytz
 
 app = Flask(__name__)
+# Chave secreta personalizada para a clínica
 app.secret_key = 'clinica_thamiris_araujo_2026'
 fuso = pytz.timezone('America/Sao_Paulo')
 
 def get_db_connection():
-    url = os.environ.get('POSTGRES_URL') or os.environ.get('DATABASE_URL')
+    # Ajuste crucial: Adicionamos CLINICA_URL para bater com sua configuração na Vercel
+    url = (os.environ.get('CLINICA_URL') or 
+           os.environ.get('POSTGRES_URL') or 
+           os.environ.get('DATABASE_URL'))
+    
     if url and "sslmode" not in url:
         url += "?sslmode=require"
     return psycopg2.connect(url)
@@ -28,6 +33,7 @@ def index():
 @app.route('/login', methods=['GET', 'POST'])
 def login():
     if request.method == 'POST':
+        # Senha definida por você
         if request.form.get('password') == "8340":
             session['admin_logado'] = True
             return redirect(url_for('gestao'))
@@ -45,62 +51,93 @@ def bater_ponto():
     agora = datetime.now(fuso)
     data_hoje = agora.strftime('%d/%m/%Y')
     try:
-        conn = get_db_connection(); cur = conn.cursor()
+        conn = get_db_connection()
+        cur = conn.cursor()
+        
+        # Verifica se já bateu esse tipo de ponto hoje
         cur.execute('SELECT id FROM pontos WHERE data = %s AND tipo = %s', (data_hoje, tipo))
         if cur.fetchone():
-            flash(f"Registro de {tipo} ja feito hoje! 🌸")
+            flash(f"Registro de {tipo} já feito hoje! 🌸")
+            cur.close()
+            conn.close()
             return redirect(url_for('index'))
+        
+        # Insere o novo ponto
         cur.execute('INSERT INTO pontos (tipo, data, mes, hora, geo) VALUES (%s, %s, %s, %s, %s)',
                     (tipo, data_hoje, agora.strftime('%m'), agora.strftime('%H:%M'), "Site"))
-        conn.commit(); cur.close(); conn.close()
-        flash("Bom trabalho meu bem 🌸" if tipo == 'Entrada' else "Bom descanso meu bem 🌸")
-    except:
-        flash("Erro de conexao.")
+        conn.commit()
+        cur.close()
+        conn.close()
+        
+        # Mensagens personalizadas conforme solicitado
+        if tipo == 'Entrada':
+            flash("Bom trabalho meu bem 🌸")
+        else:
+            flash("Bom descanso meu bem 🌸")
+            
+    except Exception as e:
+        print(f"Erro de conexão: {e}")
+        flash("Erro de conexão com o banco de dados.")
     return redirect(url_for('index'))
 
 @app.route('/gestao')
 def gestao():
-    if not session.get('admin_logado'): return redirect(url_for('login'))
+    if not session.get('admin_logado'): 
+        return redirect(url_for('login'))
+    
     mes_f = request.args.get('mes', datetime.now(fuso).strftime('%m'))
     
-    conn = get_db_connection(); cur = conn.cursor()
-    cur.execute('SELECT data, tipo, hora, id FROM pontos WHERE mes = %s ORDER BY data DESC, hora ASC', (mes_f,))
-    registros_raw = cur.fetchall()
-    cur.close(); conn.close()
+    try:
+        conn = get_db_connection()
+        cur = conn.cursor()
+        cur.execute('SELECT data, tipo, hora, id FROM pontos WHERE mes = %s ORDER BY data DESC, hora ASC', (mes_f,))
+        registros_raw = cur.fetchall()
+        cur.close()
+        conn.close()
 
-    dias = {}
-    for r in registros_raw:
-        data, tipo, hora, id_ponto = r
-        if data not in dias: dias[data] = {'entrada': None, 'saida': None, 'id_e': None, 'id_s': None}
-        if tipo == 'Entrada': dias[data]['entrada'], dias[data]['id_e'] = hora, id_ponto
-        else: dias[data]['saida'], dias[data]['id_s'] = hora, id_ponto
+        dias = {}
+        for r in registros_raw:
+            data, tipo, hora, id_ponto = r
+            if data not in dias: 
+                dias[data] = {'entrada': None, 'saida': None, 'id_e': None, 'id_s': None}
+            if tipo == 'Entrada': 
+                dias[data]['entrada'], dias[data]['id_e'] = hora, id_ponto
+            else: 
+                dias[data]['saida'], dias[data]['id_s'] = hora, id_ponto
 
-    tabela = []
-    minutos_total = 0
-    for d in sorted(dias.keys(), reverse=True):
-        info = dias[d]
-        saldo_str, cor = "0h 00m", "verde"
-        if info['entrada'] and info['saida']:
-            t1 = datetime.strptime(info['entrada'], '%H:%M')
-            t2 = datetime.strptime(info['saida'], '%H:%M')
-            saldo_dia = ((t2 - t1).total_seconds() / 60) - 360 # Jornada 6h
-            minutos_total += saldo_dia
-            saldo_str = formatar_saldo(saldo_dia)
-            if saldo_dia > 0: cor = "azul"
-            elif saldo_dia < 0: cor = "vermelho"
-            else: cor = "verde"
-            
-        tabela.append({'data': d, 'entrada': info['entrada'], 'saida': info['saida'], 
-                       'id_e': info['id_e'], 'id_s': info['id_s'], 'extra': saldo_str, 'cor': cor})
+        tabela = []
+        minutos_total = 0
+        for d in sorted(dias.keys(), reverse=True):
+            info = dias[d]
+            saldo_str, cor = "0h 00m", "verde"
+            if info['entrada'] and info['saida']:
+                t1 = datetime.strptime(info['entrada'], '%H:%M')
+                t2 = datetime.strptime(info['saida'], '%H:%M')
+                # Cálculo baseado em jornada de 6h (360 min)
+                saldo_dia = ((t2 - t1).total_seconds() / 60) - 360 
+                minutos_total += saldo_dia
+                saldo_str = formatar_saldo(saldo_dia)
+                
+                if saldo_dia > 0: cor = "azul"
+                elif saldo_dia < 0: cor = "vermelho"
+                else: cor = "verde"
+                
+            tabela.append({
+                'data': d, 'entrada': info['entrada'], 'saida': info['saida'], 
+                'id_e': info['id_e'], 'id_s': info['id_s'], 'extra': saldo_str, 'cor': cor
+            })
 
-    return render_template('gestao.html', registros=tabela, mes_atual=mes_f, 
-                           extras_mes=formatar_saldo(minutos_total), dias=len(dias))
+        return render_template('gestao.html', registros=tabela, mes_atual=mes_f, 
+                               extras_mes=formatar_saldo(minutos_total), dias=len(dias))
+    except:
+        return "Erro ao carregar os dados de gestão."
 
 @app.route('/backup')
 def backup():
     if not session.get('admin_logado'): return redirect(url_for('login'))
     try:
-        conn = get_db_connection(); cur = conn.cursor()
+        conn = get_db_connection()
+        cur = conn.cursor()
         cur.execute('SELECT id, tipo, data, mes, hora, geo FROM pontos ORDER BY id ASC')
         dados = cur.fetchall()
         cur.close(); conn.close()
@@ -112,17 +149,26 @@ def backup():
 @app.route('/inserir_manual', methods=['POST'])
 def inserir_manual():
     if not session.get('admin_logado'): return redirect(url_for('login'))
-    data_f = datetime.strptime(request.form.get('data'), '%Y-%m-%d').strftime('%d/%m/%Y')
-    conn = get_db_connection(); cur = conn.cursor()
-    cur.execute('INSERT INTO pontos (tipo, data, mes, hora, geo) VALUES (%s, %s, %s, %s, %s)',
-                (request.form.get('tipo'), data_f, data_f.split('/')[1], request.form.get('hora'), "Manual"))
-    conn.commit(); cur.close(); conn.close()
+    try:
+        data_f = datetime.strptime(request.form.get('data'), '%Y-%m-%d').strftime('%d/%m/%Y')
+        conn = get_db_connection(); cur = conn.cursor()
+        cur.execute('INSERT INTO pontos (tipo, data, mes, hora, geo) VALUES (%s, %s, %s, %s, %s)',
+                    (request.form.get('tipo'), data_f, data_f.split('/')[1], request.form.get('hora'), "Manual"))
+        conn.commit(); cur.close(); conn.close()
+    except:
+        flash("Erro ao inserir registro manual.")
     return redirect(url_for('gestao'))
 
 @app.route('/excluir/<int:id>')
 def excluir(id):
     if not session.get('admin_logado'): return redirect(url_for('login'))
-    conn = get_db_connection(); cur = conn.cursor()
-    cur.execute('DELETE FROM pontos WHERE id = %s', (id,)); conn.commit()
-    cur.close(); conn.close()
-    return redirect(url_for('gestao')) 
+    try:
+        conn = get_db_connection(); cur = conn.cursor()
+        cur.execute('DELETE FROM pontos WHERE id = %s', (id,)); conn.commit()
+        cur.close(); conn.close()
+    except:
+        flash("Erro ao excluir registro.")
+    return redirect(url_for('gestao'))
+
+if __name__ == '__main__':
+    app.run(debug=True)
